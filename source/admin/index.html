@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>写作后台 · LyZeroMoon</title>
+<style>
+:root{
+  --bg:#f5f7fa; --card:#fff; --border:#e2e6ea; --text:#2c3e50; --muted:#7b8794;
+  --primary:#2f4154; --primary-hover:#3d5570; --accent:#0366d6; --danger:#d64545;
+  --success:#1a9d63; --radius:10px; --shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:8px 14px;transition:background .15s,opacity .15s}
+button:disabled{opacity:.5;cursor:not-allowed}
+input,textarea{font-family:inherit;font-size:13px;color:var(--text)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--primary-hover)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover:not(:disabled){background:#eef1f5}
+.btn-danger{background:transparent;color:var(--danger);border:1px solid #f0c8c8}
+.btn-danger:hover:not(:disabled){background:#fdf2f2}
+.hidden{display:none !important}
+
+/* ---------- 登录 ---------- */
+#login-view{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);max-width:520px;width:100%;padding:36px}
+.login-card h1{font-size:20px;font-weight:600;margin-bottom:8px}
+.login-card .sub{color:var(--muted);margin-bottom:24px;font-size:13px}
+.field-label{display:block;font-size:13px;font-weight:500;margin-bottom:6px}
+.field-hint{color:var(--muted);font-size:12px;margin-top:6px;line-height:1.6}
+input[type=text],input[type=password],textarea{
+  width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;
+  background:#fbfcfd;outline:none;transition:border-color .15s,box-shadow .15s;
+}
+input[type=text]:focus,input[type=password]:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(3,102,214,.1);background:#fff}
+.login-actions{margin-top:20px;display:flex;gap:10px;align-items:center}
+.msg{margin-top:14px;font-size:13px;padding:10px 12px;border-radius:8px;display:none}
+.msg.show{display:block}
+.msg.err{background:#fdf2f2;color:#a32020;border:1px solid #f5d0d0}
+.msg.ok{background:#f0faf5;color:#116b45;border:1px solid #c6ead8}
+details{margin-top:22px;font-size:13px;color:var(--muted)}
+details summary{cursor:pointer;color:var(--accent);outline:none}
+details ol{margin:10px 0 0 18px;line-height:1.9}
+details code{background:#eef1f5;padding:1px 5px;border-radius:4px;font-size:12px}
+
+/* ---------- 应用 ---------- */
+#app-view{display:flex;flex-direction:column;height:100vh}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--primary);color:#fff;padding:10px 18px;flex-shrink:0;
+}
+.topbar .brand{font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+.topbar .brand .dot{width:8px;height:8px;border-radius:50%;background:#7ee2a8;box-shadow:0 0 0 3px rgba(126,226,168,.25)}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.topbar button{background:rgba(255,255,255,.14);color:#fff}
+.topbar button:hover:not(:disabled){background:rgba(255,255,255,.26)}
+.topbar button.solid{background:#fff;color:var(--primary);font-weight:500}
+.topbar button.solid:hover:not(:disabled){background:#e8edf3}
+.topbar a{color:rgba(255,255,255,.8);font-size:12px;text-decoration:none}
+.topbar a:hover{color:#fff;text-decoration:underline}
+
+.workspace{display:flex;flex:1;min-height:0}
+.sidebar{
+  width:270px;flex-shrink:0;background:var(--card);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;min-height:0;
+}
+.sidebar-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.sidebar-head span{font-size:12px;color:var(--muted);letter-spacing:.3px}
+.post-list{flex:1;overflow-y:auto;padding:6px}
+.post-item{padding:9px 11px;border-radius:8px;cursor:pointer;margin-bottom:2px;border:1px solid transparent}
+.post-item:hover{background:#f2f5f8}
+.post-item.active{background:#eaf1fa;border-color:#cfe0f5}
+.post-item .t{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.post-item .d{font-size:11px;color:var(--muted);margin-top:1px}
+.list-empty{padding:24px 14px;text-align:center;color:var(--muted);font-size:13px}
+
+.editor{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.meta-bar{padding:14px 18px;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0}
+.meta-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.meta-item{display:flex;flex-direction:column;gap:4px}
+.meta-item label{font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.2px}
+.meta-item.wide{grid-column:span 2}
+
+.panes{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
+.pane{display:flex;flex-direction:column;min-height:0;min-width:0}
+.pane + .pane{border-left:1px solid var(--border)}
+.pane-head{padding:8px 16px;font-size:11px;color:var(--muted);background:#fafbfc;border-bottom:1px solid var(--border);letter-spacing:.4px;flex-shrink:0}
+#md-input{
+  flex:1;border:none;border-radius:0;resize:none;padding:18px 20px;background:var(--card);
+  font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;font-size:13px;line-height:1.75;
+}
+#md-input:focus{box-shadow:none;border:none;background:var(--card)}
+#preview{flex:1;overflow-y:auto;padding:18px 22px;background:var(--card)}
+
+/* 预览区排版 */
+#preview h1,#preview h2,#preview h3{font-weight:600;line-height:1.35;margin:1.4em 0 .6em}
+#preview h1{font-size:23px;border-bottom:1px solid var(--border);padding-bottom:.3em}
+#preview h2{font-size:19px;border-bottom:1px solid var(--border);padding-bottom:.3em}
+#preview h3{font-size:16px}
+#preview p{margin:.9em 0}
+#preview ul,#preview ol{margin:.8em 0 .8em 1.5em}
+#preview li{margin:.3em 0}
+#preview code{background:#eef1f5;padding:2px 5px;border-radius:4px;font-size:12.5px;font-family:"SFMono-Regular",Consolas,monospace}
+#preview pre{background:#f6f8fa;border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:1em 0}
+#preview pre code{background:none;padding:0;font-size:12.5px;line-height:1.7}
+#preview blockquote{border-left:3px solid #d0d7de;color:var(--muted);margin:1em 0;padding:.2em 0 .2em 16px}
+#preview table{border-collapse:collapse;margin:1em 0;width:100%}
+#preview th,#preview td{border:1px solid var(--border);padding:7px 11px;text-align:left}
+#preview th{background:#f6f8fa;font-weight:600}
+#preview img{max-width:100%;border-radius:6px}
+#preview a{color:var(--accent);text-decoration:none}
+#preview a:hover{text-decoration:underline}
+#preview hr{border:none;border-top:1px solid var(--border);margin:1.6em 0}
+
+.statusbar{
+  padding:7px 18px;background:#fafbfc;border-top:1px solid var(--border);font-size:12px;
+  color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-shrink:0;
+}
+.statusbar .path{font-family:Consolas,monospace;font-size:11.5px}
+
+.toast{
+  position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);
+  background:#26313d;color:#fff;padding:11px 20px;border-radius:9px;font-size:13px;
+  box-shadow:0 6px 20px rgba(16,24,40,.22);opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;z-index:99;max-width:80vw;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:#8f2626}
+.toast.ok{background:#146b45}
+
+.mask{position:fixed;inset:0;background:rgba(28,36,46,.42);display:flex;align-items:center;justify-content:center;z-index:80;padding:24px}
+.dialog{background:#fff;border-radius:12px;padding:24px;max-width:380px;width:100%;box-shadow:0 12px 32px rgba(16,24,40,.2)}
+.dialog h3{font-size:16px;margin-bottom:8px}
+.dialog p{color:var(--muted);font-size:13px;margin-bottom:18px}
+.dialog-actions{display:flex;justify-content:flex-end;gap:10px}
+
+@media (max-width:900px){
+  .workspace{flex-direction:column}
+  .sidebar{width:100%;max-height:180px;border-right:none;border-bottom:1px solid var(--border)}
+  .meta-grid{grid-template-columns:1fr 1fr}
+  .meta-item.wide{grid-column:span 2}
+  .panes{grid-template-columns:1fr}
+  .pane + .pane{border-left:none;border-top:1px solid var(--border)}
+  .topbar a{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 登录 ============ -->
+<div id="login-view">
+  <div class="login-card">
+    <h1>写作后台</h1>
+    <p class="sub">粘贴一次 GitHub Token，之后就能直接在这里写文章并发布。</p>
+
+    <label class="field-label" for="token-input">GitHub Token</label>
+    <input type="password" id="token-input" placeholder="ghp_... 或 github_pat_..." autocomplete="off" spellcheck="false">
+    <p class="field-hint">
+      Token 只保存在**你当前浏览器**里，不会上传到任何服务器。别人打开这个页面没有 Token，就无法发布任何内容。
+    </p>
+
+    <div class="login-actions">
+      <button class="btn-primary" id="btn-connect">连接</button>
+      <button class="btn-ghost" id="btn-clear-token">清除已存 Token</button>
+    </div>
+    <div class="msg" id="login-msg"></div>
+
+    <details>
+      <summary>还没有 Token？点这里看怎么生成</summary>
+      <ol>
+        <li>打开 <code>github.com/settings/tokens</code></li>
+        <li>点 <code>Generate new token</code> → <code>Generate new token (classic)</code></li>
+        <li>Expiration 建议选 <code>No expiration</code> 或尽量长</li>
+        <li>权限勾选 <code>repo</code> 和 <code>workflow</code>（两个都要）</li>
+        <li>生成后复制那串字符，粘贴到上面的输入框</li>
+      </ol>
+      <p class="field-hint" style="margin-top:12px">
+        提示：勾选 <code>repo</code> 就够了；<code>workflow</code> 是为了以后改动部署配置时不被拒绝。
+      </p>
+    </details>
+  </div>
+</div>
+
+<!-- ============ 应用 ============ -->
+<div id="app-view" class="hidden">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span><span>写作后台</span></div>
+    <div class="topbar-actions">
+      <a id="link-site" href="https://lyzeromoon.github.io" target="_blank" rel="noopener">查看站点</a>
+      <a id="link-actions" href="https://github.com/LyZeroMoon/LyZeroMoon.github.io/actions" target="_blank" rel="noopener">构建记录</a>
+      <button id="btn-new">新建文章</button>
+      <button id="btn-delete" class="btn-danger hidden">删除</button>
+      <button id="btn-save" class="solid">发布</button>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <span>文章列表</span>
+        <button class="btn-ghost" id="btn-refresh" style="padding:3px 9px;font-size:12px">刷新</button>
+      </div>
+      <div class="post-list" id="post-list">
+        <div class="list-empty">加载中…</div>
+      </div>
+    </aside>
+
+    <main class="editor">
+      <div class="meta-bar">
+        <div class="meta-grid">
+          <div class="meta-item">
+            <label for="f-slug">文件名（英文，决定 URL）</label>
+            <input type="text" id="f-slug" placeholder="my-new-post" spellcheck="false">
+          </div>
+          <div class="meta-item wide">
+            <label for="f-title">标题</label>
+            <input type="text" id="f-title" placeholder="文章标题">
+          </div>
+          <div class="meta-item">
+            <label for="f-date">日期</label>
+            <input type="text" id="f-date" placeholder="2026-10-13 17:30:00" spellcheck="false">
+          </div>
+          <div class="meta-item">
+            <label for="f-categories">分类（逗号分隔）</label>
+            <input type="text" id="f-categories" placeholder="教程, 工具">
+          </div>
+          <div class="meta-item wide">
+            <label for="f-tags">标签（逗号分隔）</label>
+            <input type="text" id="f-tags" placeholder="Hexo, GitHub Pages">
+          </div>
+        </div>
+      </div>
+
+      <div class="panes">
+        <div class="pane">
+          <div class="pane-head">MARKDOWN</div>
+          <textarea id="md-input" placeholder="在这里写正文…" spellcheck="false"></textarea>
+        </div>
+        <div class="pane">
+          <div class="pane-head">预览</div>
+          <div id="preview"></div>
+        </div>
+      </div>
+
+      <div class="statusbar">
+        <span class="path" id="status-path">未选择文章</span>
+        <span id="status-info">就绪</span>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="./marked.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var CFG = {
+    owner: 'LyZeroMoon',
+    repo: 'LyZeroMoon.github.io',
+    branch: 'main',
+    dir: 'source/_posts',
+    api: 'https://api.github.com',
+    site: 'https://lyzeromoon.github.io'
+  };
+
+  var state = {
+    token: '',
+    posts: [],
+    editingPath: null,
+    editingSha: null,
+    dirty: false
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------------- 工具 ---------------- */
+
+  function b64encode(str) {
+    var bytes = new TextEncoder().encode(str);
+    var bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+
+  function b64decode(b64) {
+    var clean = String(b64).replace(/\s/g, '');
+    var bin = atob(clean);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function nowLocal() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+      ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+
+  function parseList(str) {
+    if (!str) return [];
+    return str.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+
+  var toastTimer = null;
+  function toast(msg, type) {
+    var el = $('toast');
+    el.textContent = msg;
+    el.className = 'toast show' + (type ? ' ' + type : '');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.className = 'toast'; }, 3200);
+  }
+
+  function confirmDialog(title, text, onOk) {
+    var mask = document.createElement('div');
+    mask.className = 'mask';
+    mask.innerHTML =
+      '<div class="dialog"><h3></h3><p></p><div class="dialog-actions">' +
+      '<button class="btn-ghost" data-act="cancel">取消</button>' +
+      '<button class="btn-danger" data-act="ok">确定删除</button></div></div>';
+    mask.querySelector('h3').textContent = title;
+    mask.querySelector('p').textContent = text;
+    function close() { if (mask.parentNode) mask.parentNode.removeChild(mask); }
+    mask.addEventListener('click', function (e) {
+      var act = e.target.getAttribute && e.target.getAttribute('data-act');
+      if (act === 'ok') { close(); onOk(); }
+      else if (act === 'cancel' || e.target === mask) { close(); }
+    });
+    document.body.appendChild(mask);
+  }
+
+  /* ---------------- GitHub API ---------------- */
+
+  function gh(path, options) {
+    options = options || {};
+    return fetch(CFG.api + path, {
+      method: options.method || 'GET',
+      headers: {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': 'Bearer ' + state.token,
+        'X-GitHub-Api-Version': '2022-11-28'
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined
+    }).then(function (res) {
+      if (res.status === 204) return null;
+      return res.json().then(function (data) {
+        if (!res.ok) {
+          var msg = (data && data.message) || ('HTTP ' + res.status);
+          if (res.status === 401) msg = 'Token 无效或已过期，请重新生成后粘贴。';
+          if (res.status === 403) msg = 'Token 权限不足（需要 repo 权限）。' + msg;
+          if (res.status === 404) msg = '找不到资源，请确认 Token 有该仓库的访问权限。';
+          throw new Error(msg);
+        }
+        return data;
+      });
+    });
+  }
+
+  function verifyToken() {
+    return gh('/user').then(function (u) { return u.login; });
+  }
+
+  function fetchPosts() {
+    return gh('/repos/' + CFG.owner + '/' + CFG.repo + '/contents/' + CFG.dir + '?ref=' + CFG.branch)
+      .then(function (list) {
+        if (!Array.isArray(list)) throw new Error('返回格式异常');
+        return list.filter(function (f) {
+          return f.type === 'file' && /\.md$/i.test(f.name);
+        });
+      });
+  }
+
+  function fetchPost(path) {
+    return gh('/repos/' + CFG.owner + '/' + CFG.repo + '/contents/' + encodeURI(path) + '?ref=' + CFG.branch)
+      .then(function (data) {
+        return { text: b64decode(data.content), sha: data.sha };
+      });
+  }
+
+  function getSha(path) {
+    return gh('/repos/' + CFG.owner + '/' + CFG.repo + '/contents/' + encodeURI(path) + '?ref=' + CFG.branch)
+      .then(function (d) { return d.sha; })
+      .catch(function () { return null; });
+  }
+
+  function putFile(path, text, message, sha) {
+    var body = { message: message, content: b64encode(text), branch: CFG.branch };
+    if (sha) body.sha = sha;
+    return gh('/repos/' + CFG.owner + '/' + CFG.repo + '/contents/' + encodeURI(path), {
+      method: 'PUT',
+      body: body
+    });
+  }
+
+  function deleteFile(path, message, sha) {
+    return gh('/repos/' + CFG.owner + '/' + CFG.repo + '/contents/' + encodeURI(path), {
+      method: 'DELETE',
+      body: { message: message, sha: sha, branch: CFG.branch }
+    });
+  }
+
+  /* ---------------- front-matter ---------------- */
+
+  function parseFrontMatter(text) {
+    var meta = { title: '', date: '', categories: [], tags: [] };
+    var m = String(text).match(/^\uFEFF?---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+    if (!m) return { meta: meta, body: text };
+
+    var yaml = m[1];
+    var body = m[2];
+    var lines = yaml.split(/\r?\n/);
+    var curKey = null;
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (!line.trim() || /^\s*#/.test(line)) continue;
+
+      var item = line.match(/^\s+-\s+(.+)$/);
+      if (item && curKey) {
+        if (!Array.isArray(meta[curKey])) meta[curKey] = [];
+        meta[curKey].push(stripQuotes(item[1].trim()));
+        continue;
+      }
+
+      var kv = line.match(/^([A-Za-z_][A-Za-z0-9_]*):\s*(.*)$/);
+      if (kv) {
+        var key = kv[1];
+        var val = kv[2].trim();
+        if (key === 'categories' || key === 'tags') {
+          if (val) {
+            meta[key] = val.replace(/^\[|\]$/g, '').split(',').map(function (s) {
+              return stripQuotes(s.trim());
+            }).filter(Boolean);
+            curKey = null;
+          } else {
+            meta[key] = [];
+            curKey = key;
+          }
+        } else {
+          meta[key] = stripQuotes(val);
+          curKey = key;
+        }
+      }
+    }
+    return { meta: meta, body: body };
+  }
+
+  function stripQuotes(s) {
+    return String(s).replace(/^["']|["']$/g, '');
+  }
+
+  function buildFrontMatter(meta, body) {
+    var out = '---\n';
+    out += 'title: ' + meta.title + '\n';
+    out += 'date: ' + meta.date + '\n';
+    if (meta.categories.length) {
+      out += 'categories:\n' + meta.categories.map(function (c) { return '  - ' + c; }).join('\n') + '\n';
+    }
+    if (meta.tags.length) {
+      out += 'tags:\n' + meta.tags.map(function (t) { return '  - ' + t; }).join('\n') + '\n';
+    }
+    out += '---\n\n';
+    return out + body.replace(/^\s+/, '');
+  }
+
+  /* ---------------- 渲染 ---------------- */
+
+  function renderPreview() {
+    var text = $('md-input').value;
+    var box = $('preview');
+    if (typeof marked === 'undefined') {
+      box.textContent = text;
+      return;
+    }
+    try {
+      box.innerHTML = marked.parse(text, { breaks: false, gfm: true });
+    } catch (e) {
+      box.textContent = text;
+    }
+  }
+
+  function renderPostList() {
+    var box = $('post-list');
+    box.innerHTML = '';
+    if (!state.posts.length) {
+      box.innerHTML = '<div class="list-empty">还没有文章，点右上角「新建文章」开始</div>';
+      return;
+    }
+    state.posts.forEach(function (p) {
+      var item = document.createElement('div');
+      item.className = 'post-item' + (state.editingPath === p.path ? ' active' : '');
+      var name = p.name.replace(/\.md$/i, '');
+      item.innerHTML = '<div class="t"></div><div class="d"></div>';
+      item.querySelector('.t').textContent = name;
+      item.querySelector('.d').textContent = name.replace(/^\d{4}-\d{2}-\d{2}-/, '');
+      item.addEventListener('click', function () { openPost(p.path); });
+      box.appendChild(item);
+    });
+  }
+
+  function setMeta(meta) {
+    $('f-title').value = meta.title || '';
+    $('f-date').value = meta.date || nowLocal();
+    $('f-categories').value = (meta.categories || []).join(', ');
+    $('f-tags').value = (meta.tags || []).join(', ');
+  }
+
+  function readMeta() {
+    return {
+      title: $('f-title').value.trim(),
+      date: $('f-date').value.trim() || nowLocal(),
+      categories: parseList($('f-categories').value),
+      tags: parseList($('f-tags').value)
+    };
+  }
+
+  function setStatus(path, info) {
+    $('status-path').textContent = path || '未选择文章';
+    if (info !== undefined) $('status-info').textContent = info;
+  }
+
+  function slugToPath(slug) {
+    var s = slug.trim().replace(/^\/+|\/+$/g, '').replace(/\s+/g, '-');
+    if (!/\.md$/i.test(s)) s += '.md';
+    return CFG.dir + '/' + s;
+  }
+
+  function pathSlug(path) {
+    return path.replace(CFG.dir + '/', '').replace(/\.md$/i, '');
+  }
+
+  /* ---------------- 动作 ---------------- */
+
+  function openPost(path) {
+    setStatus(path, '加载中…');
+    fetchPost(path).then(function (res) {
+      var parsed = parseFrontMatter(res.text);
+      state.editingPath = path;
+      state.editingSha = res.sha;
+      state.dirty = false;
+      $('f-slug').value = pathSlug(path);
+      $('f-slug').disabled = true;
+      setMeta(parsed.meta);
+      $('md-input').value = parsed.body;
+      renderPreview();
+      renderPostList();
+      $('btn-delete').classList.remove('hidden');
+      setStatus(path, '已加载');
+    }).catch(function (e) {
+      toast('加载失败：' + e.message, 'err');
+      setStatus(null, '加载失败');
+    });
+  }
+
+  function newPost() {
+    state.editingPath = null;
+    state.editingSha = null;
+    state.dirty = false;
+    $('f-slug').value = '';
+    $('f-slug').disabled = false;
+    setMeta({ title: '', date: nowLocal(), categories: [], tags: [] });
+    $('md-input').value = '';
+    renderPreview();
+    renderPostList();
+    $('btn-delete').classList.add('hidden');
+    setStatus(null, '新文章（尚未发布）');
+    $('f-slug').focus();
+  }
+
+  function savePost() {
+    var slug = $('f-slug').value.trim();
+    var meta = readMeta();
+    var body = $('md-input').value;
+
+    if (!slug) { toast('请填写文件名（英文）', 'err'); $('f-slug').focus(); return; }
+    if (!meta.title) { toast('请填写标题', 'err'); $('f-title').focus(); return; }
+    if (!body.trim()) { toast('正文还是空的', 'err'); $('md-input').focus(); return; }
+
+    var path = slugToPath(slug);
+    var text = buildFrontMatter(meta, body);
+    var isEdit = state.editingPath === path;
+    var message = (isEdit ? 'post: 更新 ' : 'post: 新增 ') + pathSlug(path);
+
+    $('btn-save').disabled = true;
+    setStatus(path, '提交中…');
+
+    var shaPromise = isEdit && state.editingSha
+      ? Promise.resolve(state.editingSha)
+      : getSha(path);
+
+    shaPromise
+      .then(function (sha) { return putFile(path, text, message, sha); })
+      .then(function () {
+        state.editingPath = path;
+        state.editingSha = null;
+        state.dirty = false;
+        $('f-slug').disabled = true;
+        $('btn-delete').classList.remove('hidden');
+        setStatus(path, '已提交，正在部署…');
+        toast('已发布，约 1 分钟后上线', 'ok');
+        return fetchPosts().then(function (list) {
+          state.posts = list;
+          renderPostList();
+        });
+      })
+      .catch(function (e) {
+        toast('发布失败：' + e.message, 'err');
+        setStatus(path, '发布失败');
+      })
+      .then(function () { $('btn-save').disabled = false; });
+  }
+
+  function deletePost() {
+    if (!state.editingPath || !state.editingSha) { toast('没有可删除的文章', 'err'); return; }
+    var path = state.editingPath;
+    confirmDialog('确定删除这篇文章？', pathSlug(path) + '.md 将被永久删除，此操作无法撤销。', function () {
+      setStatus(path, '删除中…');
+      deleteFile(path, 'post: 删除 ' + pathSlug(path), state.editingSha)
+        .then(function () {
+          toast('已删除', 'ok');
+          newPost();
+          return fetchPosts().then(function (list) { state.posts = list; renderPostList(); });
+        })
+        .catch(function (e) { toast('删除失败：' + e.message, 'err'); });
+    });
+  }
+
+  function refreshList() {
+    setStatus(state.editingPath, '刷新中…');
+    fetchPosts().then(function (list) {
+      state.posts = list;
+      renderPostList();
+      setStatus(state.editingPath, '共 ' + list.length + ' 篇文章');
+    }).catch(function (e) {
+      toast('获取列表失败：' + e.message, 'err');
+      $('post-list').innerHTML = '<div class="list-empty">加载失败</div>';
+    });
+  }
+
+  /* ---------------- 登录 ---------------- */
+
+  function showLogin(msg, isErr) {
+    $('login-view').classList.remove('hidden');
+    $('app-view').classList.add('hidden');
+    var box = $('login-msg');
+    if (msg) {
+      box.textContent = msg;
+      box.className = 'msg show ' + (isErr ? 'err' : 'ok');
+    } else {
+      box.className = 'msg';
+    }
+  }
+
+  function connect() {
+    var val = $('token-input').value.trim();
+    if (!val) { showLogin('请先粘贴 Token', true); return; }
+
+    $('btn-connect').disabled = true;
+    $('btn-connect').textContent = '验证中…';
+    state.token = val;
+
+    verifyToken().then(function (login) {
+      if (login.toLowerCase() !== CFG.owner.toLowerCase()) {
+        throw new Error('这个 Token 属于账号「' + login + '」，不是 ' + CFG.owner + '，无法用于发布。');
+      }
+      localStorage.setItem('ly_gh_token', val);
+      enterApp();
+    }).catch(function (e) {
+      state.token = '';
+      showLogin(e.message, true);
+    }).then(function () {
+      $('btn-connect').disabled = false;
+      $('btn-connect').textContent = '连接';
+    });
+  }
+
+  function enterApp() {
+    $('login-view').classList.add('hidden');
+    $('app-view').classList.remove('hidden');
+    refreshList();
+    renderPreview();
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+
+  $('btn-connect').addEventListener('click', connect);
+  $('token-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') connect();
+  });
+  $('btn-clear-token').addEventListener('click', function () {
+    localStorage.removeItem('ly_gh_token');
+    $('token-input').value = '';
+    showLogin('已清除本机保存的 Token', false);
+  });
+
+  $('btn-new').addEventListener('click', function () {
+    if (state.dirty && !window.confirm('当前有未发布的内容，确定要新建吗？')) return;
+    newPost();
+  });
+  $('btn-save').addEventListener('click', savePost);
+  $('btn-delete').addEventListener('click', deletePost);
+  $('btn-refresh').addEventListener('click', refreshList);
+
+  $('md-input').addEventListener('input', function () {
+    state.dirty = true;
+    renderPreview();
+  });
+
+  ['f-title', 'f-date', 'f-categories', 'f-tags', 'f-slug'].forEach(function (id) {
+    $(id).addEventListener('input', function () { state.dirty = true; });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      if (!$('app-view').classList.contains('hidden')) savePost();
+    }
+  });
+
+  window.addEventListener('beforeunload', function (e) {
+    if (state.dirty) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  /* ---------------- 启动 ---------------- */
+
+  (function init() {
+    var saved = localStorage.getItem('ly_gh_token');
+    if (saved) {
+      state.token = saved;
+      verifyToken().then(function (login) {
+        if (login.toLowerCase() === CFG.owner.toLowerCase()) {
+          enterApp();
+        } else {
+          localStorage.removeItem('ly_gh_token');
+          state.token = '';
+          showLogin('保存的 Token 不属于 ' + CFG.owner + '，请重新输入。', true);
+        }
+      }).catch(function (e) {
+        state.token = '';
+        showLogin(e.message, true);
+      });
+    } else {
+      showLogin('', false);
+    }
+  })();
+})();
+</script>
+</body>
+</html>

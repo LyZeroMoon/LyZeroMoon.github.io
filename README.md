@@ -42,6 +42,15 @@ git push
 
 推送后 GitHub Actions 会自动构建并发布，约 1 分钟后生效。
 
+## 在线写作后台
+
+浏览器打开 **https://lyzeromoon.github.io/admin/** 即可写文章：
+
+- 首次使用需粘贴一次 GitHub Token（存在本机浏览器 localStorage，不会上传）
+- 支持文章列表、Markdown 实时预览、分类标签编辑、发布与删除
+- 发布后会向仓库提交一次 commit，触发 Actions 自动部署
+- 只有持有 Token 的人才能发布，其他人打开该页面无法操作
+
 ## 项目结构
 
 ```
