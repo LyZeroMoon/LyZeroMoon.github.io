@@ -75,7 +75,10 @@ details code{background:#eef1f5;padding:1px 5px;border-radius:4px;font-size:12px
 .sidebar-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
 .sidebar-head span{font-size:12px;color:var(--muted);letter-spacing:.3px}
 .post-list{flex:1;overflow-y:auto;padding:6px}
-.post-item{padding:9px 11px;border-radius:8px;cursor:pointer;margin-bottom:2px;border:1px solid transparent}
+.post-item{padding:9px 30px 9px 11px;border-radius:8px;cursor:pointer;margin-bottom:2px;border:1px solid transparent;position:relative}
+.item-del{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:22px;height:22px;padding:0;border-radius:6px;line-height:1;background:transparent;color:#c2ccd6;font-size:17px;opacity:0;transition:opacity .15s,background .15s,color .15s}
+.post-item:hover .item-del{opacity:1}
+.item-del:hover{background:#fdeaea;color:var(--danger)}
 .post-item:hover{background:#f2f5f8}
 .post-item.active{background:#eaf1fa;border-color:#cfe0f5}
 .post-item .t{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -501,9 +504,13 @@ details code{background:#eef1f5;padding:1px 5px;border-radius:4px;font-size:12px
       var item = document.createElement('div');
       item.className = 'post-item' + (state.editingPath === p.path ? ' active' : '');
       var name = p.name.replace(/\.md$/i, '');
-      item.innerHTML = '<div class="t"></div><div class="d"></div>';
+      item.innerHTML = '<div class="t"></div><div class="d"></div><button class="item-del" title="删除这篇">&times;</button>';
       item.querySelector('.t').textContent = name;
       item.querySelector('.d').textContent = name.replace(/^\d{4}-\d{2}-\d{2}-/, '');
+      item.querySelector('.item-del').addEventListener('click', function (e) {
+        e.stopPropagation();
+        deleteByPath(p.path);
+      });
       item.addEventListener('click', function () { openPost(p.path); });
       box.appendChild(item);
     });
@@ -601,9 +608,9 @@ details code{background:#eef1f5;padding:1px 5px;border-radius:4px;font-size:12px
 
     shaPromise
       .then(function (sha) { return putFile(path, text, message, sha); })
-      .then(function () {
+      .then(function (res) {
         state.editingPath = path;
-        state.editingSha = null;
+        state.editingSha = (res && res.content && res.content.sha) || null;
         state.dirty = false;
         $('f-slug').disabled = true;
         $('btn-delete').classList.remove('hidden');
@@ -621,19 +628,29 @@ details code{background:#eef1f5;padding:1px 5px;border-radius:4px;font-size:12px
       .then(function () { $('btn-save').disabled = false; });
   }
 
-  function deletePost() {
-    if (!state.editingPath || !state.editingSha) { toast('没有可删除的文章', 'err'); return; }
-    var path = state.editingPath;
+  function deleteByPath(path) {
     confirmDialog('确定删除这篇文章？', pathSlug(path) + '.md 将被永久删除，此操作无法撤销。', function () {
       setStatus(path, '删除中…');
-      deleteFile(path, 'post: 删除 ' + pathSlug(path), state.editingSha)
+      var shaPromise = state.editingSha && state.editingPath === path
+        ? Promise.resolve(state.editingSha)
+        : getSha(path);
+      shaPromise
+        .then(function (sha) {
+          if (!sha) throw new Error('服务器上找不到这个文件，可能已被删除');
+          return deleteFile(path, 'post: 删除 ' + pathSlug(path), sha);
+        })
         .then(function () {
           toast('已删除', 'ok');
-          newPost();
+          if (state.editingPath === path) newPost();
           return fetchPosts().then(function (list) { state.posts = list; renderPostList(); });
         })
-        .catch(function (e) { toast('删除失败：' + e.message, 'err'); });
+        .catch(function (e) { toast('删除失败：' + e.message, 'err'); setStatus(path, '删除失败'); });
     });
+  }
+
+  function deletePost() {
+    if (!state.editingPath) { toast('请先从左侧选择一篇文章', 'err'); return; }
+    deleteByPath(state.editingPath);
   }
 
   function refreshList() {
