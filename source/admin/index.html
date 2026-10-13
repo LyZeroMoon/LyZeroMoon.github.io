@@ -131,6 +131,13 @@ details code{background:var(--surface-3);padding:1px 6px;border-radius:5px;font-
 .links a:hover{text-decoration:underline}
 .chk{display:flex;align-items:center;gap:9px;margin-top:15px;font-size:13px;color:var(--text-2);cursor:pointer;user-select:none}
 .chk input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer}
+.chk.confirm-code{
+  margin-top:18px;padding:11px 14px;border:1px solid var(--border);border-radius:10px;
+  background:var(--surface-2);color:var(--text);font-weight:500;transition:border-color .15s,background .15s,color .15s;
+}
+.chk.confirm-code:has(input:checked){
+  border-color:color-mix(in srgb,var(--ok) 45%,transparent);background:var(--ok-soft);color:var(--ok);
+}
 .code-box{
   font-family:var(--mono);font-size:17px;letter-spacing:1.6px;font-weight:600;
   background:var(--surface-3);border:1px dashed var(--border-strong);border-radius:12px;
@@ -502,12 +509,28 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
     <div class="auth-state hidden" id="st-code">
       <h1>请保存你的恢复码</h1>
-      <p class="sub">万一忘记密码，这是唯一的找回方式。请抄写下来或存进密码管理器，不要只留在这个页面。</p>
+      <p class="sub">
+        万一忘记密码，这是唯一的找回方式。系统只保存了它的<b>加密指纹</b>，<b>关掉页面后就再也无法显示</b>，
+        所以请现在就存下来。
+      </p>
       <div class="code-box" id="code-box"></div>
-      <div class="login-actions">
+      <div class="login-actions" style="margin-top:0">
         <button class="btn-ghost" id="btn-copy-code">复制</button>
-        <button class="btn-primary" id="btn-code-done">我已保存，进入后台</button>
+        <button class="btn-ghost" id="btn-download-code">下载为文件</button>
       </div>
+
+      <label class="chk confirm-code">
+        <input type="checkbox" id="chk-code-saved">
+        <span>我已经把它存进密码管理器 / 抄在纸上了</span>
+      </label>
+
+      <div class="login-actions">
+        <button class="btn-primary" id="btn-code-done" disabled>进入后台</button>
+      </div>
+
+      <p class="field-hint">
+        真的没存也不要紧：登录后在「账号 → 恢复码」里可以重新生成一张，旧的那张随即作废。
+      </p>
     </div>
 
     <div class="auth-state hidden" id="st-token">
@@ -697,7 +720,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
     <hr>
     <h4>恢复码</h4>
-    <p class="small">重新生成后，旧恢复码立刻作废。</p>
+    <p class="small">没存下来、或者想换一张新的？在这里重新生成即可，旧的那张立刻作废。需要输入上方填写的当前密码。</p>
     <p class="sec-msg" id="ac-rec-msg"></p>
     <button class="btn-ghost" id="btn-regen-recovery">重新生成恢复码</button>
 
@@ -1941,6 +1964,59 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     showState(stateName);
   }
 
+  function downloadText(filename, text) {
+    var a = document.createElement('a');
+    a.download = filename;
+    function fire(href) {
+      a.href = href;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+    try {
+      var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      fire(url);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      return true;
+    } catch (e) { /* 退化到 data: 链接 */ }
+    try {
+      fire('data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+      return true;
+    } catch (e2) {
+      return false;
+    }
+  }
+
+  function recoveryCodeFile(code) {
+    return [
+      'LyZeroMoon 博客后台 · 恢复码',
+      '════════════════════════════',
+      '',
+      '恢复码：' + formatCode(code),
+      '',
+      '用途',
+      '  忘记后台登录密码时，用它重置密码并重新取得写入权限。',
+      '',
+      '注意',
+      '  · 这是唯一能找回账号的凭据，请妥善保存',
+      '  · 不要提交到公开仓库，也不要发到网上',
+      '',
+      '后台地址：' + CFG.site + '/admin/',
+      '生成时间：' + nowLocal(),
+      ''
+    ].join('\n');
+  }
+
+  /* 展示恢复码：勾选「已保存」之前不放开「进入后台」，避免一不留神点过去 */
+  function presentRecoveryCode(code) {
+    pendingCode = code;
+    $('code-box').textContent = formatCode(code);
+    $('chk-code-saved').checked = false;
+    $('btn-code-done').disabled = true;
+    showLoginScreen('code');
+  }
+
   function enterApp() {
     $('login-view').classList.add('hidden');
     $('app-view').classList.remove('hidden');
@@ -1988,13 +2064,11 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       return buildAuthDoc(user, token, p1, code).then(function (doc) {
         return saveAuthDoc(doc, 'chore: 初始化后台账号').then(function () {
           authDoc = doc;
-          pendingCode = code;
-          $('code-box').textContent = formatCode(code);
           $('su-pass').value = '';
           $('su-pass2').value = '';
           $('su-token').value = '';
           if ($('li-remember').checked !== false) localStorage.setItem('ly_gh_token', token);
-          showState('code');
+          presentRecoveryCode(code);
         });
       });
     }).catch(function (e) {
@@ -2053,13 +2127,11 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       return buildAuthDoc(authDoc.username || CFG.owner, token, p1, newCode).then(function (doc) {
         return saveAuthDoc(doc, 'chore: 用恢复码重置后台密码').then(function () {
           authDoc = doc;
-          pendingCode = newCode;
           localStorage.setItem('ly_gh_token', token);
-          $('code-box').textContent = formatCode(newCode);
           $('rc-code').value = '';
           $('rc-pass').value = '';
           $('rc-pass2').value = '';
-          showState('code');
+          presentRecoveryCode(newCode);
         });
       });
     }).catch(function (e) {
@@ -2170,13 +2242,11 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       return buildAuthDoc(authDoc.username, val, pass, newCode).then(function (doc) {
         return saveAuthDoc(doc, 'chore: 更新 GitHub Token').then(function () {
           authDoc = doc;
-          pendingCode = newCode;
           localStorage.setItem('ly_gh_token', val);
           $('ac-token').value = '';
           $('ac-old').value = '';
           closeAccount();
-          $('code-box').textContent = formatCode(newCode);
-          showLoginScreen('code');
+          presentRecoveryCode(newCode);
         });
       });
     }).catch(function (e) {
@@ -2206,10 +2276,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         };
         return saveAuthDoc(doc, 'chore: 重新生成恢复码').then(function () {
           authDoc = doc;
-          pendingCode = newCode;
           closeAccount();
-          $('code-box').textContent = formatCode(newCode);
-          showLoginScreen('code');
+          presentRecoveryCode(newCode);
         });
       });
     }).catch(function (e) {
@@ -2299,13 +2367,35 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
   $('btn-copy-code').addEventListener('click', function () {
     if (!pendingCode) return;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(pendingCode).then(function () { toast('已复制', 'ok'); },
-        function () { toast('复制失败，请手动抄写', 'err'); });
+      navigator.clipboard.writeText(formatCode(pendingCode)).then(
+        function () { toast('已复制到剪贴板，记得找个地方存起来', 'ok'); },
+        function () { toast('浏览器不让复制，请手动抄写或点「下载为文件」', 'err'); }
+      );
     } else {
-      toast('请手动抄写：' + formatCode(pendingCode), 'err');
+      toast('这个浏览器不支持自动复制，请手动抄写或点「下载为文件」', 'err');
     }
   });
-  $('btn-code-done').addEventListener('click', function () { pendingCode = ''; enterApp(); });
+
+  $('btn-download-code').addEventListener('click', function () {
+    if (!pendingCode) return;
+    var d = new Date();
+    var stamp = '' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());
+    if (downloadText('博客后台恢复码-' + stamp + '.txt', recoveryCodeFile(pendingCode))) {
+      toast('已下载，请放到安全的地方', 'ok');
+    } else {
+      toast('下载失败，请手动抄写', 'err');
+    }
+  });
+
+  $('chk-code-saved').addEventListener('change', function () {
+    $('btn-code-done').disabled = !$('chk-code-saved').checked;
+  });
+
+  $('btn-code-done').addEventListener('click', function () {
+    if (!$('chk-code-saved').checked) { toast('请先确认已经保存好恢复码', 'err'); return; }
+    pendingCode = '';
+    enterApp();
+  });
 
   $('btn-connect').addEventListener('click', connectWithToken);
   $('token-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') connectWithToken(); });
