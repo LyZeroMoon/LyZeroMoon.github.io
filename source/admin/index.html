@@ -247,6 +247,50 @@ body.ov-mode .toolbar{display:none}
 body.images-mode .panes{display:none}
 body.ov-mode .panes{display:none}
 
+/* ---------- 分类 / 标签选择器 ---------- */
+.meta-item .lbl-note{font-weight:400;color:var(--text-3);margin-left:6px;letter-spacing:0}
+.picker{position:relative}
+.picker-box{
+  display:flex;flex-wrap:wrap;gap:5px;align-items:center;align-content:flex-start;
+  min-height:38px;padding:5px 9px;border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--surface);transition:border-color .15s,box-shadow .15s;
+}
+.picker-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.meta-item .picker-box input{
+  flex:1 1 120px;min-width:110px;width:auto;height:26px;border:none;background:none;outline:none;
+  padding:3px 2px;font-size:12.5px;color:var(--text);border-radius:0;
+}
+.meta-item .picker-box input:focus{box-shadow:none;border:none}
+.picker-box input::placeholder{color:var(--text-3)}
+.chip{
+  display:inline-flex;align-items:center;gap:4px;max-width:100%;
+  padding:3px 5px 3px 9px;border-radius:7px;background:var(--accent-soft);color:var(--accent);
+  font-size:12px;line-height:1.55;
+}
+.chip.is-new{background:var(--ok-soft);color:var(--ok)}
+.chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip-x{
+  width:15px;height:15px;padding:0;border:none;border-radius:4px;background:transparent;
+  color:inherit;opacity:.55;font-size:13px;line-height:1;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.chip-x:hover{opacity:1;background:rgba(128,128,128,.22)}
+.picker-menu{
+  position:absolute;left:0;right:0;top:calc(100% + 5px);z-index:30;
+  background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius);
+  box-shadow:var(--shadow-lg);max-height:228px;overflow-y:auto;padding:4px;
+}
+.picker-opt{
+  display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:7px;
+  cursor:pointer;font-size:12.5px;color:var(--text);
+}
+.picker-opt:hover,.picker-opt.on{background:var(--accent-soft);color:var(--accent)}
+.picker-opt .opt-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.picker-opt .opt-meta{font-size:11px;color:var(--text-3);flex-shrink:0}
+.picker-opt.new{color:var(--ok);font-weight:500}
+.picker-opt.new:hover,.picker-opt.new.on{background:var(--ok-soft);color:var(--ok)}
+.picker-empty{padding:9px 11px;font-size:12px;color:var(--text-3);line-height:1.65}
+
 .toolbar{
   display:flex;align-items:center;gap:4px;padding:7px 14px;border-bottom:1px solid var(--border);
   background:var(--surface);flex-shrink:0;flex-wrap:wrap;
@@ -710,12 +754,22 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
             <input type="text" id="f-date" placeholder="2026-10-13 17:30:00" spellcheck="false">
           </div>
           <div class="meta-item wide" data-scope="post">
-            <label for="f-categories">分类（逗号分隔）</label>
-            <input type="text" id="f-categories" placeholder="教程, 工具">
+            <label>分类<span class="lbl-note">就是「专栏」，决定文章归入哪个专栏</span></label>
+            <div class="picker" id="cat-picker">
+              <div class="picker-box" id="cat-box">
+                <input type="text" id="f-categories" placeholder="点这里选已有的，或输入后回车新建…" autocomplete="off" spellcheck="false">
+              </div>
+              <div class="picker-menu hidden" id="cat-menu"></div>
+            </div>
           </div>
           <div class="meta-item wide" data-scope="post">
-            <label for="f-tags">标签（逗号分隔）</label>
-            <input type="text" id="f-tags" placeholder="Hexo, GitHub Pages">
+            <label>标签<span class="lbl-note">可以多个，用来串起相关文章</span></label>
+            <div class="picker" id="tag-picker">
+              <div class="picker-box" id="tag-box">
+                <input type="text" id="f-tags" placeholder="点这里选已有的，或输入后回车新建…" autocomplete="off" spellcheck="false">
+              </div>
+              <div class="picker-menu hidden" id="tag-menu"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -913,6 +967,13 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     uploading: 0,
     /* 当前文章 front-matter 的原始解析结果，用于保留表单管不到的字段 */
     rawMeta: null,
+    /* 当前文章的分类与标签（分类 == 专栏，是同一个东西） */
+    postCats: [],
+    postTags: [],
+    /* 全站已有的分类 / 标签，供选择器提示：[{name, count}] */
+    taxonomy: { cats: [], tags: [] },
+    taxBusy: null,
+    menuIndex: -1,
     /* 图片管理 */
     images: [],
     imgQuery: '',
@@ -1382,6 +1443,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       title: meta.title || '',
       cat: (meta.categories && meta.categories[0]) || '',
       cats: (meta.categories || []).slice(),
+      tags: (meta.tags || []).slice(),
       date: (meta.date || '').slice(0, 10),
       at: Date.now()
     };
@@ -1448,17 +1510,274 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
   function setMeta(meta) {
     $('f-title').value = meta.title || '';
     $('f-date').value = meta.date || nowLocal();
-    $('f-categories').value = (meta.categories || []).join(', ');
-    $('f-tags').value = (meta.tags || []).join(', ');
+    state.postCats = (meta.categories || []).slice();
+    state.postTags = (meta.tags || []).slice();
+    closeAllPickerMenus();
+    renderChips('cat');
+    renderChips('tag');
   }
 
   function readMeta() {
     return {
       title: $('f-title').value.trim(),
       date: $('f-date').value.trim() || nowLocal(),
-      categories: parseList($('f-categories').value),
-      tags: parseList($('f-tags').value)
+      categories: state.postCats.slice(),
+      tags: state.postTags.slice()
     };
+  }
+
+  /* ================= 分类 / 标签选择器 =================
+     注意：本博客里「分类」和「专栏」是同一个东西 —— 专栏页遍历的是 site.categories，
+     columns.yml 只是给分类配简介、图标和颜色。所以这里只有一个分类控件。 */
+
+  function taxKindName(kind) { return kind === 'cat' ? '分类' : '标签'; }
+  function taxInput(kind) { return $(kind === 'cat' ? 'f-categories' : 'f-tags'); }
+  function taxBox(kind) { return $(kind + '-box'); }
+  function taxMenu(kind) { return $(kind + '-menu'); }
+  function taxPicker(kind) { return $(kind + '-picker'); }
+  function taxSelected(kind) { return kind === 'cat' ? state.postCats : state.postTags; }
+  function taxKnown(kind) { return kind === 'cat' ? state.taxonomy.cats : state.taxonomy.tags; }
+
+  function sortTax(map) {
+    return Object.keys(map).map(function (k) { return { name: k, count: map[k] }; })
+      .sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name, 'zh'); });
+  }
+
+  /* 从已缓存的文章元信息汇总出所有分类与标签 */
+  function buildTaxonomy() {
+    var cats = {}, tags = {};
+    Object.keys(state.metaCache).forEach(function (p) {
+      var m = state.metaCache[p] || {};
+      var list = (m.cats && m.cats.length) ? m.cats : (m.cat ? [m.cat] : []);
+      list.forEach(function (x) { cats[x] = (cats[x] || 0) + 1; });
+      (m.tags || []).forEach(function (x) { tags[x] = (tags[x] || 0) + 1; });
+    });
+    // 专栏配置里声明过、但还没有文章的分类也应该能选到
+    (state.columns || []).forEach(function (c) {
+      if (c.name && cats[c.name] === undefined) cats[c.name] = 0;
+    });
+    state.taxonomy = { cats: sortTax(cats), tags: sortTax(tags) };
+  }
+
+  /* 补齐本地缓存里缺的文章元信息，再把候选列表算出来（结果会缓存，第二次是瞬时的） */
+  function ensureTaxonomy() {
+    if (state.taxBusy) return state.taxBusy;
+    var cols = state.columns.length
+      ? Promise.resolve()
+      : fetchFile(CFG.columnsPath)
+        .then(function (r) { state.columns = parseColumnsYaml(r.text); })
+        .catch(function () { });
+    state.taxBusy = Promise.all([cols, fetchMissingMeta(null)])
+      .catch(function () { })
+      .then(function () {
+        state.taxBusy = null;
+        buildTaxonomy();
+        // 元信息补回来之后列表要重画一次，否则左边一直显示文件名而不是标题
+        renderPostList();
+      });
+    return state.taxBusy;
+  }
+
+  function renderChips(kind) {
+    var box = taxBox(kind);
+    if (!box) return;
+    var input = taxInput(kind);
+    Array.prototype.slice.call(box.querySelectorAll('.chip')).forEach(function (c) { c.remove(); });
+
+    var sel = taxSelected(kind);
+    sel.forEach(function (v) {
+      var known = taxKnown(kind).some(function (x) { return x.name === v; });
+      var chip = document.createElement('span');
+      chip.className = 'chip' + (known ? '' : ' is-new');
+      var label = document.createElement('span');
+      label.textContent = v;
+      label.title = known ? v : v + '（新的，发布后会出现在' + (kind === 'cat' ? '专栏页' : '标签页') + '）';
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'chip-x';
+      x.textContent = '×';
+      x.title = '移除';
+      x.addEventListener('mousedown', function (e) { e.preventDefault(); });
+      x.addEventListener('click', function () { removeChip(kind, v); });
+      chip.appendChild(label);
+      chip.appendChild(x);
+      box.insertBefore(chip, input);
+    });
+
+    input.placeholder = sel.length
+      ? '继续添加…'
+      : (kind === 'cat' ? '点这里选已有的，或输入后回车新建…' : '点这里选已有的，或输入后回车新建…');
+  }
+
+  function pickerOpt(opts) {
+    var d = document.createElement('div');
+    d.className = 'picker-opt' + (opts.cls ? ' ' + opts.cls : '');
+    var n = document.createElement('span');
+    n.className = 'opt-name';
+    n.textContent = opts.name;
+    d.appendChild(n);
+    if (opts.meta) {
+      var m = document.createElement('span');
+      m.className = 'opt-meta';
+      m.textContent = opts.meta;
+      d.appendChild(m);
+    }
+    d.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    d.addEventListener('click', opts.onPick);
+    return d;
+  }
+
+  function openPickerMenu(kind, query) {
+    var menu = taxMenu(kind);
+    if (!menu) return;
+    var raw = String(query == null ? '' : query).trim();
+    var q = raw.toLowerCase();
+    var all = taxKnown(kind);
+    var selected = taxSelected(kind);
+    var avail = all.filter(function (x) { return selected.indexOf(x.name) < 0; });
+
+    menu.innerHTML = '';
+    state.menuIndex = -1;
+
+    var isNew = raw && selected.indexOf(raw) < 0 &&
+      !all.some(function (x) { return x.name.toLowerCase() === q; });
+
+    if (isNew) {
+      menu.appendChild(pickerOpt({
+        name: '新建「' + raw + '」',
+        cls: 'new',
+        meta: kind === 'cat' ? '发布后进专栏页' : '',
+        onPick: function () { addChip(kind, raw); }
+      }));
+    }
+
+    avail.filter(function (x) { return !q || x.name.toLowerCase().indexOf(q) >= 0; })
+      .slice(0, 20)
+      .forEach(function (x) {
+        menu.appendChild(pickerOpt({
+          name: x.name,
+          meta: x.count ? x.count + ' 篇' : '还没用过',
+          onPick: function () { addChip(kind, x.name); }
+        }));
+      });
+
+    if (!menu.children.length) {
+      var empty = document.createElement('div');
+      empty.className = 'picker-empty';
+      empty.textContent = q
+        ? '没有匹配的' + taxKindName(kind) + '，按回车就新建「' + raw + '」'
+        : '还没有' + taxKindName(kind) + '，直接输入后按回车新建一个';
+      menu.appendChild(empty);
+    }
+    menu.classList.remove('hidden');
+  }
+
+  function closePickerMenu(kind) {
+    var menu = taxMenu(kind);
+    if (menu) menu.classList.add('hidden');
+  }
+
+  function closeAllPickerMenus() {
+    closePickerMenu('cat');
+    closePickerMenu('tag');
+  }
+
+  function markMetaDirty() {
+    state.dirty = true;
+    scheduleDraft();
+    $('status-info').textContent = '有未发布的改动';
+  }
+
+  function addChip(kind, val) {
+    val = String(val === undefined || val === null ? '' : val).trim().replace(/\s+/g, ' ');
+    var input = taxInput(kind);
+    input.value = '';
+    if (val) {
+      if (taxSelected(kind).indexOf(val) >= 0) {
+        toast(taxKindName(kind) + '「' + val + '」已经在列表里了', 'err');
+      } else {
+        taxSelected(kind).push(val);
+        renderChips(kind);
+        markMetaDirty();
+        toast('已添加' + taxKindName(kind) + '「' + val + '」', 'ok');
+      }
+    }
+    openPickerMenu(kind, '');
+    input.focus();
+  }
+
+  function removeChip(kind, val) {
+    var arr = taxSelected(kind);
+    var i = arr.indexOf(val);
+    if (i < 0) return;
+    arr.splice(i, 1);
+    renderChips(kind);
+    markMetaDirty();
+  }
+
+  function bindPicker(kind) {
+    var input = taxInput(kind);
+    var box = taxBox(kind);
+    var picker = taxPicker(kind);
+    if (!input || !box || !picker) return;
+
+    box.addEventListener('mousedown', function (e) {
+      if (e.target === box) { e.preventDefault(); input.focus(); }
+    });
+
+    input.addEventListener('focus', function () {
+      openPickerMenu(kind, input.value);
+      ensureTaxonomy().then(function () {
+        if (document.activeElement === input) openPickerMenu(kind, input.value);
+      });
+    });
+    input.addEventListener('input', function () { openPickerMenu(kind, input.value); });
+
+    input.addEventListener('keydown', function (e) {
+      var menu = taxMenu(kind);
+      var opts = menu ? Array.prototype.slice.call(menu.querySelectorAll('.picker-opt')) : [];
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (!opts.length) return;
+        e.preventDefault();
+        var step = e.key === 'ArrowDown' ? 1 : -1;
+        state.menuIndex = Math.max(0, Math.min(opts.length - 1,
+          (state.menuIndex < 0 ? (step > 0 ? -1 : opts.length) : state.menuIndex) + step));
+        opts.forEach(function (o, i) { o.classList.toggle('on', i === state.menuIndex); });
+        return;
+      }
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        if (e.key === 'Enter' && state.menuIndex >= 0 && opts[state.menuIndex]) {
+          opts[state.menuIndex].click();
+        } else {
+          addChip(kind, input.value);
+        }
+        return;
+      }
+      if (e.key === 'Escape') { closePickerMenu(kind); input.blur(); return; }
+      if (e.key === 'Backspace' && !input.value) {
+        var arr = taxSelected(kind);
+        if (arr.length) { e.preventDefault(); removeChip(kind, arr[arr.length - 1]); }
+      }
+    });
+
+    // 焦点离开整个控件时：把没提交的输入存下来，并收起菜单
+    picker.addEventListener('focusout', function () {
+      setTimeout(function () {
+        if (picker.contains(document.activeElement)) return;
+        var v = input.value.trim();
+        if (v) {
+          input.value = '';
+          if (taxSelected(kind).indexOf(v) < 0) {
+            taxSelected(kind).push(v);
+            renderChips(kind);
+            markMetaDirty();
+          }
+        }
+        closePickerMenu(kind);
+      }, 120);
+    });
   }
 
   function setStatus(path, info) {
@@ -1560,6 +1879,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         toast('已发布，约 1 分钟后上线', 'ok');
         return fetchPosts().then(function (list) {
           state.posts = list;
+          buildTaxonomy();
           renderPostList();
         });
       })
@@ -1946,8 +2266,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       slug: $('f-slug').value,
       title: $('f-title').value,
       date: $('f-date').value,
-      categories: $('f-categories').value,
-      tags: $('f-tags').value,
+      categories: state.postCats.slice(),
+      tags: state.postTags.slice(),
       body: $('md-input').value
     };
     if (!String(d.body).trim()) { clearDraft(); return; }
@@ -1983,8 +2303,10 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     $('f-slug').disabled = !!d.path;
     $('f-title').value = d.title || '';
     $('f-date').value = d.date || nowLocal();
-    $('f-categories').value = d.categories || '';
-    $('f-tags').value = d.tags || '';
+    state.postCats = Array.isArray(d.categories) ? d.categories.slice() : parseList(d.categories || '');
+    state.postTags = Array.isArray(d.tags) ? d.tags.slice() : parseList(d.tags || '');
+    renderChips('cat');
+    renderChips('tag');
     $('md-input').value = d.body || '';
     state.dirty = true;
     renderPreview();
@@ -2682,9 +3004,13 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     $('app-view').classList.remove('hidden');
     $('acct-user').textContent = (authDoc && authDoc.username) || 'Token 模式';
     loadMetaCache();
+    buildTaxonomy();
     setMode('posts');
     renderPreview();
-    refreshList().then(offerDraft);
+    refreshList().then(function () {
+      offerDraft();
+      ensureTaxonomy();
+    });
   }
 
   function isWrongPassword(e) {
@@ -3179,12 +3505,14 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     $('file-input').value = '';
   });
 
-  ['f-title', 'f-date', 'f-categories', 'f-tags', 'f-slug'].forEach(function (id) {
-    $(id).addEventListener('input', function () {
-      state.dirty = true;
-      scheduleDraft();
-      $('status-info').textContent = '有未发布的改动';
-    });
+  ['f-title', 'f-date', 'f-slug'].forEach(function (id) {
+    $(id).addEventListener('input', markMetaDirty);
+  });
+
+  bindPicker('cat');
+  bindPicker('tag');
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.closest && !e.target.closest('.picker')) closeAllPickerMenus();
   });
 
   // 分栏拖拽
