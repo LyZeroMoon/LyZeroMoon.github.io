@@ -1,0 +1,25 @@
+# 专栏配置
+#
+# 说明：
+#   name         必填，必须与文章 front-matter 里的 categories 名称完全一致
+#   description  专栏简介，显示在卡片上
+#   icon         图标 class，可选值见 https://fluid.ist/docs/icon/
+#   color        主题色，十六进制，注意要用引号包起来（# 在 YAML 里是注释符）
+#
+# 没有在这里配置的分类也会自动出现在专栏页，只是用默认简介和自动配色。
+# 想新增专栏：直接给文章加一个新的 categories 值，然后在这里补一条配置即可。
+
+- name: 教程
+  description: 从零开始的完整实践记录，每一步都写清楚为什么这么做。
+  icon: "iconfont icon-book"
+  color: "#378ADD"
+
+- name: 工具
+  description: 打磨开发工具链，把重复劳动交给机器。
+  icon: "iconfont icon-briefcase"
+  color: "#639922"
+
+- name: 前端
+  description: 浏览器、JavaScript 与工程化的日常实践。
+  icon: "iconfont icon-code"
+  color: "#7F77DD"

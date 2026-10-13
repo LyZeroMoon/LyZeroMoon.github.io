@@ -1,0 +1,196 @@
+<%
+page.layout = 'columns'
+page.title = page.title || '专栏'
+page.subtitle = page.subtitle || '按主题整理的系列文章'
+page.banner_img = page.banner_img || theme.page.banner_img
+page.banner_img_height = page.banner_img_height || theme.page.banner_img_height
+page.banner_mask_alpha = page.banner_mask_alpha || theme.page.banner_mask_alpha
+
+var columnMeta = (site.data && site.data.columns) || []
+var metaMap = {}
+columnMeta.forEach(function (c) { if (c && c.name) metaMap[c.name] = c })
+
+var palette = ['#378ADD', '#639922', '#7F77DD', '#D85A30', '#D4537E', '#1D9E75', '#BA7517', '#185FA5']
+var cats = site.categories.filter(function (c) { return c.length > 0 }).sort('name').toArray()
+%>
+
+<style>
+  .columns-intro {
+    margin: 0 0 22px;
+    color: #718096;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .columns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 18px;
+    margin-bottom: 32px;
+  }
+  .column-card {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #e8ecf0;
+    border-radius: 12px;
+    padding: 20px 20px 16px;
+    text-decoration: none !important;
+    color: inherit;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    overflow: hidden;
+  }
+  .column-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 26px rgba(16, 24, 40, .1);
+    border-color: #cfd8e3;
+  }
+  .column-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .column-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 19px;
+  }
+  .column-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    line-height: 1.3;
+  }
+  .column-count {
+    font-size: 12px;
+    color: #8a94a0;
+    margin-top: 2px;
+  }
+  .column-desc {
+    font-size: 13px;
+    color: #667180;
+    line-height: 1.65;
+    margin: 0 0 14px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .column-posts {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 0;
+    border-top: 1px dashed #e8ecf0;
+    padding-top: 12px;
+    flex-grow: 1;
+  }
+  .column-posts li {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    margin: 0 0 7px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .column-posts li:last-child { margin-bottom: 0; }
+  .column-posts .d {
+    flex-shrink: 0;
+    font-size: 11.5px;
+    color: #9aa4b0;
+    font-variant-numeric: tabular-nums;
+  }
+  .column-posts .t {
+    color: #3c4858;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .column-card:hover .column-posts .t { color: #0366d6; }
+  .column-foot {
+    font-size: 12.5px;
+    padding-top: 2px;
+    opacity: .78;
+  }
+  .columns-empty {
+    text-align: center;
+    color: #9aa4b0;
+    padding: 60px 20px;
+    font-size: 14px;
+  }
+
+  [data-color-scheme="dark"] .columns-intro { color: #a7a9ad; }
+  [data-color-scheme="dark"] .column-card {
+    background: #252d38;
+    border-color: #33404f;
+  }
+  [data-color-scheme="dark"] .column-card:hover {
+    border-color: #4a5a6d;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, .3);
+  }
+  [data-color-scheme="dark"] .column-name { color: #d5d8dc; }
+  [data-color-scheme="dark"] .column-count,
+  [data-color-scheme="dark"] .column-posts .d { color: #8b949e; }
+  [data-color-scheme="dark"] .column-desc { color: #9aa4b0; }
+  [data-color-scheme="dark"] .column-posts,
+  [data-color-scheme="dark"] .column-posts li { border-color: #33404f; }
+  [data-color-scheme="dark"] .column-posts .t { color: #c4c6c9; }
+  [data-color-scheme="dark"] .column-card:hover .column-posts .t { color: #58a6ff; }
+
+  @media (max-width: 576px) {
+    .columns-grid { grid-template-columns: 1fr; gap: 14px; }
+    .column-card { padding: 17px 17px 14px; }
+  }
+</style>
+
+<p class="columns-intro">
+  按主题整理的系列文章。点开任意一个专栏，可以看到该主题下的全部文章。
+</p>
+
+<% if (cats.length === 0) { %>
+  <div class="columns-empty">还没有任何专栏，去写第一篇文章吧。</div>
+<% } else { %>
+<div class="columns-grid">
+  <% cats.forEach(function (cat, idx) { %>
+    <%
+    var meta = metaMap[cat.name] || {}
+    var color = meta.color || palette[idx % palette.length]
+    var icon = meta.icon || 'iconfont icon-books'
+    var desc = meta.description || ('围绕「' + cat.name + '」的系列文章，持续更新中。')
+    var recent = cat.posts.sort('-date').limit(4).toArray()
+    %>
+    <a class="column-card" href="<%= url_for(cat.path) %>">
+      <div class="column-top">
+        <span class="column-badge" style="background: <%= color %>1f; color: <%= color %>;">
+          <i class="<%= icon %>"></i>
+        </span>
+        <div>
+          <div class="column-name"><%= cat.name %></div>
+          <div class="column-count"><%= cat.length %> 篇文章</div>
+        </div>
+      </div>
+
+      <p class="column-desc"><%= desc %></p>
+
+      <ul class="column-posts">
+        <% recent.forEach(function (post) { %>
+          <li>
+            <span class="d"><%= date(post.date, 'MM-DD') %></span>
+            <span class="t"><%= post.title %></span>
+          </li>
+        <% }) %>
+      </ul>
+
+      <div class="column-foot" style="color: <%= color %>;">
+        <% if (cat.length > recent.length) { %>还有 <%= cat.length - recent.length %> 篇 · <% } %>查看全部 →
+      </div>
+    </a>
+  <% }) %>
+</div>
+<% } %>
+
+<%- inject_point('pageComments') %>
