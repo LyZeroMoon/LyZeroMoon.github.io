@@ -1168,9 +1168,11 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
           var msg = (data && data.message) || ('HTTP ' + res.status);
           if (res.status === 401) msg = 'Token 无效或已过期，请在账号设置里更新。';
           if (res.status === 403) msg = 'Token 权限不足（需要 repo 权限）。' + msg;
-          if (res.status === 404) msg = '找不到资源，请确认 Token 有该仓库的访问权限。';
+          if (res.status === 404) msg = '找不到资源：文件或目录不存在。若路径没问题，请检查 Token 是否对该仓库有权限。';
           if (res.status === 409 || res.status === 422) msg = '文件已被改动或体积超限，请刷新后重试。' + msg;
-          throw new Error(msg);
+          var err = new Error(msg);
+          err.status = res.status;
+          throw err;
         }
         return data;
       });
@@ -2146,6 +2148,12 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         if (!Array.isArray(list)) throw new Error('返回格式异常');
         return list.filter(function (f) { return f.type === 'file' && IMG_EXT.test(f.name); })
           .sort(function (a, b) { return b.name.localeCompare(a.name); });
+      })
+      .catch(function (e) {
+        // 还没传过图片时，这个目录可能压根不存在（git 不跟踪空目录），
+        // 按「空目录」处理即可，不要报成权限错误吓人。
+        if (e && e.status === 404) return [];
+        throw e;
       });
   }
 
@@ -2199,8 +2207,9 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
     var total = state.images.reduce(function (s, f) { return s + (f.size || 0); }, 0);
     var selCount = Object.keys(state.selImages).length;
-    $('img-stat').textContent = state.images.length + ' 张 · ' + humanSize(total) +
-      (q ? ' · 匹配 ' + list.length : '');
+    $('img-stat').textContent = state.images.length
+      ? (state.images.length + ' 张 · ' + humanSize(total) + (q ? ' · 匹配 ' + list.length : ''))
+      : '还没有图片';
 
     var delSel = $('btn-img-del-sel');
     delSel.classList.toggle('hidden', selCount === 0);
