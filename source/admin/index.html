@@ -169,7 +169,7 @@ details code{background:var(--surface-3);padding:1px 6px;border-radius:5px;font-
 .brand-text b{font-size:14px;font-weight:650}
 .brand-text span{font-size:11px;color:var(--text-3)}
 .tabs{display:flex;gap:3px;background:var(--surface-3);padding:3px;border-radius:10px;flex-shrink:0}
-.tabs button{background:transparent;color:var(--text-2);padding:6px 15px;border-radius:8px;font-size:13px;font-weight:500}
+.tabs button{background:transparent;color:var(--text-2);padding:6px 13px;border-radius:8px;font-size:13px;font-weight:500;white-space:nowrap}
 .tabs button:hover{color:var(--text)}
 .tabs button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm);font-weight:600}
 .topbar-actions{display:flex;gap:8px;align-items:center;margin-left:auto;flex-shrink:0}
@@ -192,6 +192,8 @@ details code{background:var(--surface-3);padding:1px 6px;border-radius:5px;font-
 }
 body.about-mode .sidebar{display:none}
 body.columns-mode .sidebar{display:none}
+body.images-mode .sidebar{display:none}
+body.ov-mode .sidebar{display:none}
 .sidebar-head{padding:12px 12px 10px;border-bottom:1px solid var(--border)}
 .search{position:relative}
 .search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--text-3);pointer-events:none}
@@ -238,6 +240,12 @@ body.columns-mode .sidebar{display:none}
 body.about-mode .meta-item[data-scope="post"]{display:none}
 body.about-mode .meta-grid{grid-template-columns:repeat(2,1fr)}
 body.columns-mode .meta-bar{display:none}
+body.images-mode .meta-bar{display:none}
+body.ov-mode .meta-bar{display:none}
+body.images-mode .toolbar{display:none}
+body.ov-mode .toolbar{display:none}
+body.images-mode .panes{display:none}
+body.ov-mode .panes{display:none}
 
 .toolbar{
   display:flex;align-items:center;gap:4px;padding:7px 14px;border-bottom:1px solid var(--border);
@@ -353,6 +361,94 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 .col-empty{
   max-width:860px;padding:44px 20px;text-align:center;color:var(--text-3);font-size:13px;
   border:1px dashed var(--border-strong);border-radius:13px;line-height:2;
+}
+
+/* ---------- 图片管理 ---------- */
+.images-pane,.ov-pane{flex:1;overflow-y:auto;padding:24px 26px 60px;background:var(--surface)}
+.pane-toolbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;
+  max-width:1040px;padding-bottom:14px;border-bottom:1px solid var(--border);
+}
+.pane-toolbar .sp{flex:1}
+.pane-toolbar .stat{font-size:12.5px;color:var(--text-3)}
+.pane-toolbar .stat b{color:var(--text);font-weight:600}
+.img-search{
+  display:flex;align-items:center;gap:7px;padding:0 11px;height:34px;border:1px solid var(--border);
+  border-radius:var(--radius);background:var(--surface-2);min-width:190px;
+  transition:border-color .15s,box-shadow .15s;
+}
+.img-search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.img-search svg{width:15px;height:15px;flex-shrink:0;color:var(--text-3)}
+.img-search input{
+  border:none;background:none;outline:none;padding:0;height:100%;width:100%;
+  font-size:12.5px;color:var(--text);
+}
+.img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(166px,1fr));gap:14px;max-width:1040px}
+.img-card{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:13px;overflow:hidden;
+  box-shadow:var(--shadow-sm);transition:border-color .15s,box-shadow .15s,transform .15s;position:relative;
+}
+.img-card:hover{border-color:var(--border-strong);box-shadow:var(--shadow)}
+.img-card.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.img-thumb{
+  display:block;width:100%;height:116px;object-fit:contain;background:var(--surface-3);
+  border-bottom:1px solid var(--border);cursor:zoom-in;
+}
+.img-ph{display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:11.5px;cursor:default}
+.img-check{
+  position:absolute;top:8px;left:8px;width:21px;height:21px;padding:0;border-radius:7px;
+  background:var(--surface);border:1px solid var(--border-strong);color:transparent;
+  font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;opacity:0;transition:opacity .15s,background .15s,color .15s,border-color .15s;
+}
+.img-card:hover .img-check,.img-card.sel .img-check{opacity:1}
+.img-check:hover{border-color:var(--accent)}
+.img-check.on{background:var(--accent);border-color:var(--accent);color:#fff;opacity:1}
+.img-meta{padding:9px 11px 10px}
+.img-name{
+  font-family:var(--mono);font-size:11px;color:var(--text-2);line-height:1.5;word-break:break-all;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:33px;
+}
+.img-sub{font-size:11px;color:var(--text-3);margin-top:4px;display:flex;gap:9px;flex-wrap:wrap}
+.img-acts{display:flex;gap:6px;margin-top:9px}
+.img-acts button{
+  flex:1;padding:5px 0;font-size:11.5px;border-radius:8px;background:var(--surface-3);
+  border:1px solid var(--border);color:var(--text-2);cursor:pointer;transition:all .13s;
+}
+.img-acts button:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.img-acts button.del:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-soft)}
+
+/* ---------- 概览 ---------- */
+.ov-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(146px,1fr));gap:12px;max-width:860px;margin-bottom:24px}
+.ov-stat{background:var(--surface-2);border:1px solid var(--border);border-radius:13px;padding:15px 17px;box-shadow:var(--shadow-sm)}
+.ov-stat .num{font-size:25px;font-weight:650;letter-spacing:-.6px;line-height:1.15}
+.ov-stat .cap{font-size:12px;color:var(--text-3);margin-top:4px}
+.ov-sec{max-width:860px;margin-bottom:24px}
+.ov-sec>h3{
+  font-size:12px;font-weight:650;color:var(--text-3);margin-bottom:11px;
+  text-transform:uppercase;letter-spacing:.6px;
+}
+.ov-bars{display:flex;flex-direction:column;gap:9px}
+.ov-bar{display:grid;grid-template-columns:104px 1fr 40px;gap:12px;align-items:center;font-size:12.5px}
+.ov-bar .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-2)}
+.ov-bar .track{height:9px;border-radius:5px;background:var(--surface-3);overflow:hidden}
+.ov-bar .fill{height:100%;border-radius:5px;background:var(--accent);transition:width .35s}
+.ov-bar .n{text-align:right;color:var(--text-3);font-size:11.5px}
+.ov-list{
+  display:flex;flex-direction:column;gap:1px;background:var(--surface-2);
+  border:1px solid var(--border);border-radius:13px;overflow:hidden;
+}
+.ov-row{
+  display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;font-size:13px;
+  transition:background .13s;
+}
+.ov-row+.ov-row{border-top:1px solid var(--border)}
+.ov-row:hover{background:var(--surface-3)}
+.ov-row .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov-row .d{font-size:11.5px;color:var(--text-3);flex-shrink:0}
+.ov-row .cat{
+  font-size:11px;padding:2px 8px;border-radius:20px;background:var(--accent-soft);color:var(--accent);
+  flex-shrink:0;
 }
 
 /* ---------- 状态栏 ---------- */
@@ -561,6 +657,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       <button id="tab-posts" class="on">文章</button>
       <button id="tab-about">关于页</button>
       <button id="tab-columns">专栏</button>
+      <button id="tab-images">图片</button>
+      <button id="tab-ov">概览</button>
     </nav>
 
     <div class="topbar-actions">
@@ -641,6 +739,9 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         <button class="tool-btn" data-md="image" title="插入图片 / 上传"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="4" width="14.4" height="12" rx="2"></rect><circle cx="7" cy="8" r="1.3"></circle><path d="m3.4 14.2 3.9-3.6 2.9 2.5 2.4-2 4.1 3.9"></path></svg></button>
         <button class="tool-btn" data-md="table" title="表格"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="4.5" width="14.4" height="11" rx="1.8"></rect><path d="M2.8 8.6h14.4M8.6 4.5v11M2.8 12.4h14.4"></path></svg></button>
         <button class="tool-btn" data-md="hr" title="分隔线"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3.5 10h13"></path><path d="M6.5 6.2h7M6.5 13.8h7" opacity=".35"></path></svg></button>
+        <span class="tool-sep"></span>
+        <button class="tool-btn" data-md="math" title="插入数学公式"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 15.5 8 4.5l4.5 11M4.9 12h6.2"></path><path d="M13.8 8.5h3.4M15.5 6.8v3.4"></path></svg></button>
+        <button class="tool-btn" data-md="mermaid" title="插入 Mermaid 流程图"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="6" height="4" rx="1.2"></rect><rect x="11.5" y="12.5" width="6" height="4" rx="1.2"></rect><rect x="2.5" y="12.5" width="6" height="4" rx="1.2"></rect><path d="M5.5 7.5v5M8.5 14.5h3"></path></svg></button>
 
         <span class="tool-gap"></span>
         <span class="tool-label" id="tool-hint">支持粘贴 / 拖入图片</span>
@@ -682,6 +783,41 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
           <span id="col-status">配置保存在 source/_data/columns.yml</span>
           <span class="sp"></span>
           <button class="btn-primary" id="btn-save-cols">发布专栏配置</button>
+        </div>
+      </div>
+
+      <div class="images-pane hidden" id="images-pane">
+        <div class="pane-toolbar">
+          <div class="img-search">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <circle cx="9" cy="9" r="5.5"></circle><path d="M13.2 13.2 17 17"></path>
+            </svg>
+            <input type="search" id="img-q" placeholder="搜索文件名…" autocomplete="off">
+          </div>
+          <span class="stat" id="img-stat">加载中…</span>
+          <span class="sp"></span>
+          <button class="btn-ghost hidden" id="btn-img-del-sel">删除选中</button>
+          <button class="btn-ghost" id="btn-img-upload">上传图片</button>
+          <button class="btn-ghost" id="btn-img-refresh">刷新</button>
+          <input type="file" id="img-file" accept="image/*" multiple hidden>
+        </div>
+        <div class="img-grid" id="img-grid"></div>
+      </div>
+
+      <div class="ov-pane hidden" id="ov-pane">
+        <div class="pane-toolbar">
+          <span class="stat">站点全貌 · 数据来自线上仓库，发布后自动更新</span>
+          <span class="sp"></span>
+          <button class="btn-ghost" id="btn-ov-refresh">刷新</button>
+        </div>
+        <div class="ov-stats" id="ov-stats"></div>
+        <div class="ov-sec">
+          <h3>专栏分布</h3>
+          <div class="ov-bars" id="ov-bars"></div>
+        </div>
+        <div class="ov-sec">
+          <h3>最近更新</h3>
+          <div class="ov-list" id="ov-recent"></div>
         </div>
       </div>
 
@@ -774,7 +910,13 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     columnsRawCats: [],
     metaCache: {},
     draftTimer: null,
-    uploading: 0
+    uploading: 0,
+    /* 当前文章 front-matter 的原始解析结果，用于保留表单管不到的字段 */
+    rawMeta: null,
+    /* 图片管理 */
+    images: [],
+    imgQuery: '',
+    selImages: {}
   };
 
   var authDoc = null;
@@ -1128,6 +1270,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     return String(s).replace(/^["']|["']$/g, '');
   }
 
+  var FORM_KEYS = ['title', 'date', 'categories', 'tags'];
+
   function buildFrontMatter(meta, body) {
     var out = '---\n';
     out += 'title: ' + meta.title + '\n';
@@ -1138,6 +1282,21 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     if (meta.tags.length) {
       out += 'tags:\n' + meta.tags.map(function (t) { return '  - ' + t; }).join('\n') + '\n';
     }
+
+    // 表单里没有对应控件的其余 front-matter 字段原样写回。
+    // 否则像 comment: false、permalink 这类手写的字段会在后台保存时被静默丢弃。
+    var raw = state.rawMeta || {};
+    Object.keys(raw).forEach(function (k) {
+      if (FORM_KEYS.indexOf(k) >= 0) return;
+      var v = raw[k];
+      if (!isPresent(v)) return;
+      if (Array.isArray(v)) {
+        out += k + ':\n' + v.map(function (x) { return '  - ' + x; }).join('\n') + '\n';
+      } else {
+        out += k + ': ' + v + '\n';
+      }
+    });
+
     out += '---\n\n';
     return out + body.replace(/^\s+/, '');
   }
@@ -1220,6 +1379,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     state.metaCache[path] = {
       title: meta.title || '',
       cat: (meta.categories && meta.categories[0]) || '',
+      cats: (meta.categories || []).slice(),
       date: (meta.date || '').slice(0, 10),
       at: Date.now()
     };
@@ -1325,6 +1485,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       state.editingSha = res.sha;
       state.lastPostPath = path;
       state.dirty = false;
+      state.rawMeta = parsed.meta;
       rememberMeta(path, parsed.meta);
       $('f-slug').value = pathSlug(path);
       $('f-slug').disabled = true;
@@ -1345,6 +1506,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     state.editingPath = null;
     state.editingSha = null;
     state.dirty = false;
+    state.rawMeta = null;
     $('f-slug').value = '';
     $('f-slug').disabled = false;
     setMeta({ title: '', date: nowLocal(), categories: [], tags: [] });
@@ -1453,19 +1615,30 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
   function setMode(mode) {
     state.mode = mode;
-    document.body.classList.toggle('about-mode', mode === 'about');
-    document.body.classList.toggle('columns-mode', mode === 'columns');
+    ['about', 'columns', 'images', 'ov'].forEach(function (m) {
+      document.body.classList.toggle(m + '-mode', mode === m);
+    });
     $('tab-posts').classList.toggle('on', mode === 'posts');
     $('tab-about').classList.toggle('on', mode === 'about');
     $('tab-columns').classList.toggle('on', mode === 'columns');
+    $('tab-images').classList.toggle('on', mode === 'images');
+    $('tab-ov').classList.toggle('on', mode === 'ov');
 
-    $('btn-new').classList.toggle('hidden', mode !== 'posts');
-    $('btn-delete').classList.toggle('hidden', mode !== 'posts' || !state.editingPath);
-    $('toolbar').classList.toggle('hidden', mode === 'columns');
-    $('panes').classList.toggle('hidden', mode === 'columns');
+    var isPost = mode === 'posts';
+    var isPlain = mode === 'columns' || mode === 'images' || mode === 'ov';
+
+    $('btn-new').classList.toggle('hidden', !isPost);
+    $('btn-delete').classList.toggle('hidden', !isPost || !state.editingPath);
+    $('btn-save').classList.toggle('hidden', mode === 'images' || mode === 'ov');
+    $('toolbar').classList.toggle('hidden', isPlain);
+    $('panes').classList.toggle('hidden', isPlain);
     $('columns-pane').classList.toggle('hidden', mode !== 'columns');
+    $('images-pane').classList.toggle('hidden', mode !== 'images');
+    $('ov-pane').classList.toggle('hidden', mode !== 'ov');
 
-    $('md-input').placeholder = mode === 'about' ? '在这里写「关于」页的正文…' : '在这里写正文…';
+    if (!isPlain) {
+      $('md-input').placeholder = mode === 'about' ? '在这里写「关于」页的正文…' : '在这里写正文…';
+    }
     renderPostList();
   }
 
@@ -1887,6 +2060,19 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     table: function () {
       insertAtCursor('| 列 1 | 列 2 |\n| --- | --- |\n| 内容 | 内容 |\n');
     },
+    math: function () {
+      var ta = $('md-input');
+      var sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+      if (sel) surround('$', '$', sel);
+      else {
+        insertAtCursor('$$\n\n$$\n', 3, 0);
+        toast('公式用 LaTeX 语法书写，例如 E = mc^2', 'ok');
+      }
+    },
+    mermaid: function () {
+      insertAtCursor('```mermaid\ngraph LR\n  A[开始] --> B{判断}\n  B -->|是| C[执行]\n  B -->|否| D[结束]\n```\n');
+      toast('已插入流程图，写代码块就行，发布时会自动加载渲染脚本', 'ok');
+    },
     hr: function () { insertAtCursor('---\n'); }
   };
 
@@ -1947,6 +2133,471 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       fr.onerror = function () { reject(new Error('读取文件失败')); };
       fr.readAsDataURL(file);
     });
+  }
+
+  /* ================= 图片管理 ================= */
+
+  var IMG_EXT = /\.(png|jpe?g|gif|webp|svg|avif|bmp|ico)$/i;
+  var PALETTE = ['#2f6fed', '#0f9d63', '#a9720f', '#8b5cf6', '#d94b4b', '#0e8a9e'];
+
+  function fetchImages() {
+    return gh('/repos/' + CFG.owner + '/' + CFG.repo + '/contents/' + CFG.imageDir + '?ref=' + CFG.branch)
+      .then(function (list) {
+        if (!Array.isArray(list)) throw new Error('返回格式异常');
+        return list.filter(function (f) { return f.type === 'file' && IMG_EXT.test(f.name); })
+          .sort(function (a, b) { return b.name.localeCompare(a.name); });
+      });
+  }
+
+  function imgUrl(name) {
+    return CFG.imageUrl + '/' + encodeURIComponent(name);
+  }
+
+  function imgDate(name) {
+    var m = String(name).match(/^(\d{4})(\d{2})(\d{2})/);
+    return m ? (m[1] + '-' + m[2] + '-' + m[3]) : '';
+  }
+
+  function openImages() {
+    setMode('images');
+    refreshImages();
+  }
+
+  function refreshImages() {
+    $('img-stat').textContent = '加载中…';
+    setStatus(CFG.imageDir, '加载图片列表…');
+    return fetchImages().then(function (list) {
+      state.images = list;
+      state.selImages = {};
+      renderImages();
+      setStatus(CFG.imageDir, state.images.length + ' 张图片');
+    }).catch(function (e) {
+      state.images = [];
+      renderImages();
+      $('img-stat').textContent = '读取失败';
+      toast('图片列表加载失败：' + e.message, 'err');
+      setStatus(CFG.imageDir, '加载失败');
+    });
+  }
+
+  function imgBtn(label, danger, fn) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    if (danger) b.className = 'del';
+    b.textContent = label;
+    b.addEventListener('click', fn);
+    return b;
+  }
+
+  function renderImages() {
+    var box = $('img-grid');
+    if (!box) return;
+    var q = state.imgQuery.trim().toLowerCase();
+    var list = state.images.filter(function (f) {
+      return !q || f.name.toLowerCase().indexOf(q) >= 0;
+    });
+
+    var total = state.images.reduce(function (s, f) { return s + (f.size || 0); }, 0);
+    var selCount = Object.keys(state.selImages).length;
+    $('img-stat').textContent = state.images.length + ' 张 · ' + humanSize(total) +
+      (q ? ' · 匹配 ' + list.length : '');
+
+    var delSel = $('btn-img-del-sel');
+    delSel.classList.toggle('hidden', selCount === 0);
+    delSel.textContent = '删除选中 (' + selCount + ')';
+
+    box.innerHTML = '';
+    if (!list.length) {
+      var empty = document.createElement('div');
+      empty.className = 'col-empty';
+      empty.textContent = state.images.length
+        ? '没有匹配「' + state.imgQuery + '」的图片'
+        : '图片目录还是空的。在文章里粘贴或拖入图片，或点右上角「上传图片」，都会存进 source/images/。';
+      box.appendChild(empty);
+      return;
+    }
+
+    list.forEach(function (f) {
+      var selected = !!state.selImages[f.name];
+      var card = document.createElement('div');
+      card.className = 'img-card' + (selected ? ' sel' : '');
+
+      var img = document.createElement('img');
+      img.className = 'img-thumb';
+      img.loading = 'lazy';
+      img.alt = f.name;
+      img.src = imgUrl(f.name);
+      img.title = '点击查看原图';
+      img.addEventListener('click', function () { window.open(imgUrl(f.name), '_blank'); });
+      img.addEventListener('error', function () {
+        var ph = document.createElement('div');
+        ph.className = 'img-thumb img-ph';
+        ph.textContent = 'CDN 同步中…';
+        if (img.parentNode) img.parentNode.replaceChild(ph, img);
+      });
+
+      var check = document.createElement('button');
+      check.type = 'button';
+      check.className = 'img-check' + (selected ? ' on' : '');
+      check.title = '选择';
+      check.textContent = '\u2713';
+      check.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (state.selImages[f.name]) delete state.selImages[f.name];
+        else state.selImages[f.name] = true;
+        renderImages();
+      });
+
+      var nm = document.createElement('div');
+      nm.className = 'img-name';
+      nm.textContent = f.name;
+      nm.title = f.name;
+
+      var sub = document.createElement('div');
+      sub.className = 'img-sub';
+      var d = imgDate(f.name);
+      if (d) {
+        var dEl = document.createElement('span');
+        dEl.textContent = d;
+        sub.appendChild(dEl);
+      }
+      var sEl = document.createElement('span');
+      sEl.textContent = humanSize(f.size || 0);
+      sub.appendChild(sEl);
+
+      var acts = document.createElement('div');
+      acts.className = 'img-acts';
+      acts.appendChild(imgBtn('插入', false, function () { insertImageMd(f); }));
+      acts.appendChild(imgBtn('复制', false, function () {
+        copyText('![' + f.name.replace(/\.[^.]+$/, '') + '](' + imgUrl(f.name) + ')', 'Markdown 已复制');
+      }));
+      acts.appendChild(imgBtn('删除', true, function () { deleteImage(f); }));
+
+      var meta = document.createElement('div');
+      meta.className = 'img-meta';
+      meta.appendChild(nm);
+      meta.appendChild(sub);
+      meta.appendChild(acts);
+
+      card.appendChild(img);
+      card.appendChild(check);
+      card.appendChild(meta);
+      box.appendChild(card);
+    });
+  }
+
+  function insertImageMd(f) {
+    var md = '![' + f.name.replace(/\.[^.]+$/, '') + '](' + imgUrl(f.name) + ')';
+    if (state.mode !== 'posts') {
+      copyText(md, '当前不在文章编辑页，Markdown 已复制到剪贴板');
+      return;
+    }
+    insertAtCursor(md + '\n');
+    toast('已插入到光标处', 'ok');
+  }
+
+  function copyText(text, okMsg) {
+    var done = function (ok) {
+      toast(ok ? (okMsg || '已复制') : '复制失败，请手动选中文字', ok ? 'ok' : 'err');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(fallbackCopy(text)); });
+    } else {
+      done(fallbackCopy(text));
+    }
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  function removeImageFromState(name) {
+    state.images = state.images.filter(function (x) { return x.name !== name; });
+    delete state.selImages[name];
+  }
+
+  function ghDeleteImage(name, sha) {
+    return gh('/repos/' + CFG.owner + '/' + CFG.repo + '/contents/' + encodeURI(CFG.imageDir + '/' + name), {
+      method: 'DELETE',
+      body: { message: 'asset: 删除图片 ' + name, sha: sha, branch: CFG.branch }
+    });
+  }
+
+  function deleteImage(f) {
+    if (!window.confirm('删除图片 ' + f.name + '？\n\n引用它的文章会显示成裂图，此操作不可撤销。')) return;
+    setStatus(CFG.imageDir, '删除中…');
+    ghDeleteImage(f.name, f.sha).then(function () {
+      removeImageFromState(f.name);
+      renderImages();
+      setStatus(CFG.imageDir, '已删除 ' + f.name);
+      toast('已删除 ' + f.name, 'ok');
+    }).catch(function (e) {
+      setStatus(CFG.imageDir, '删除失败');
+      toast('删除失败：' + e.message, 'err');
+    });
+  }
+
+  function deleteSelectedImages() {
+    var names = Object.keys(state.selImages);
+    if (!names.length) return;
+    if (!window.confirm('删除选中的 ' + names.length + ' 张图片？\n\n引用它们的文章会显示成裂图，此操作不可撤销。')) return;
+
+    var targets = state.images.filter(function (f) { return state.selImages[f.name]; });
+    var btn = $('btn-img-del-sel');
+    var done = 0, failed = 0, i = 0;
+    btn.disabled = true;
+
+    var step = function () {
+      if (i >= targets.length) {
+        btn.disabled = false;
+        renderImages();
+        setStatus(CFG.imageDir, done + ' 张已删除' + (failed ? '，' + failed + ' 张失败' : ''));
+        toast(failed ? ('删除完成：成功 ' + done + '，失败 ' + failed) : ('已删除 ' + done + ' 张图片'),
+          failed ? 'err' : 'ok');
+        return;
+      }
+      var f = targets[i++];
+      ghDeleteImage(f.name, f.sha).then(function () {
+        done++;
+        removeImageFromState(f.name);
+      }).catch(function () {
+        failed++;
+      }).then(function () {
+        setStatus(CFG.imageDir, '删除中 ' + (done + failed) + '/' + targets.length + '…');
+        step();
+      });
+    };
+    step();
+  }
+
+  function uploadToLibrary(files) {
+    var arr = Array.prototype.slice.call(files);
+    if (!arr.length) return;
+    var done = 0, failed = 0, i = 0;
+
+    var step = function () {
+      if (i >= arr.length) {
+        renderImages();
+        setStatus(CFG.imageDir, done + ' 张已上传');
+        toast('上传完成：成功 ' + done + (failed ? '，失败 ' + failed : ''), failed ? 'err' : 'ok');
+        refreshImages();
+        return;
+      }
+      var file = arr[i++];
+      if (!/^image\//.test(file.type)) { failed++; toast(file.name + ' 不是图片，已跳过', 'err'); step(); return; }
+      if (file.size > CFG.maxImageBytes) {
+        failed++;
+        toast(file.name + ' 有 ' + humanSize(file.size) + '，超过 4MB 上限，已跳过', 'err');
+        step();
+        return;
+      }
+      var name = imageFileName(file);
+      fileToB64(file).then(function (b64) {
+        return gh('/repos/' + CFG.owner + '/' + CFG.repo + '/contents/' + encodeURI(CFG.imageDir + '/' + name), {
+          method: 'PUT',
+          body: { message: 'asset: 上传图片 ' + name, content: b64, branch: CFG.branch }
+        });
+      }).then(function () {
+        done++;
+        state.images.unshift({ name: name, path: CFG.imageDir + '/' + name, size: file.size, type: 'file', sha: '' });
+      }).catch(function (e) {
+        failed++;
+        toast(file.name + ' 上传失败：' + e.message, 'err');
+      }).then(function () {
+        setStatus(CFG.imageDir, '上传中 ' + (done + failed) + '/' + arr.length + '…');
+        renderImages();
+        step();
+      });
+    };
+    step();
+  }
+
+  /* ================= 站点概览 ================= */
+
+  function openOverview() {
+    setMode('ov');
+    $('ov-stats').innerHTML = '<div class="ov-stat"><div class="num">…</div><div class="cap">正在统计</div></div>';
+    $('ov-bars').innerHTML = '';
+    $('ov-recent').innerHTML = '';
+    setStatus(CFG.dir, '统计中…');
+
+    var jobs = [
+      fetchPosts().then(function (list) { state.posts = list; }).catch(function () { }),
+      fetchImages().then(function (list) { state.images = list; }).catch(function () { }),
+      fetchFile(CFG.columnsPath).then(function (res) {
+        state.columns = parseColumnsYaml(res.text);
+      }).catch(function () { }),
+      loadWordStats()
+    ];
+
+    Promise.all(jobs).then(function () {
+      return fetchMissingMeta(function (done, total) {
+        setStatus(CFG.dir, '读取文章信息 ' + done + '/' + total + '…');
+      });
+    }).then(function () {
+      renderOverview();
+      setStatus(CFG.dir, state.posts.length + ' 篇文章');
+    }).catch(function (e) {
+      renderOverview();
+      toast('概览加载不完整：' + e.message, 'err');
+    });
+  }
+
+  var wordStats = null;
+
+  function loadWordStats() {
+    return fetch('/local-search.xml?t=' + Date.now()).then(function (r) {
+      return r.ok ? r.text() : '';
+    }).then(function (xml) {
+      if (!xml) return;
+      var docs = xml.match(/<entry>[\s\S]*?<\/entry>/g) || [];
+      var total = 0;
+      docs.forEach(function (d) {
+        var c = d.match(/<content>[\s\S]*?<\/content>/);
+        if (!c) return;
+        var text = c[0].replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/g, ' ');
+        var cjk = text.match(/[\u4e00-\u9fff]/g);
+        total += (cjk ? cjk.length : 0) + (text.match(/[A-Za-z0-9_'-]+/g) || []).length;
+      });
+      wordStats = { total: total, posts: docs.length };
+    }).catch(function () { });
+  }
+
+  /* 只补齐本地缓存里没有的文章元信息，限流 4 并发 */
+  function fetchMissingMeta(onProgress) {
+    var todo = state.posts.filter(function (p) { return !state.metaCache[p.path]; });
+    if (!todo.length) return Promise.resolve();
+    var done = 0, i = 0;
+    var worker = function () {
+      if (i >= todo.length) return Promise.resolve();
+      var p = todo[i++];
+      return fetchFile(p.path).then(function (res) {
+        rememberMeta(p.path, parseFrontMatter(res.text).meta);
+      }).catch(function () { }).then(function () {
+        done++;
+        if (onProgress) onProgress(done, todo.length);
+        return worker();
+      });
+    };
+    var workers = [];
+    for (var k = 0; k < Math.min(4, todo.length); k++) workers.push(worker());
+    return Promise.all(workers);
+  }
+
+  function catColor(name, idx) {
+    var hit = (state.columns || []).filter(function (c) { return c.name === name; })[0];
+    if (hit && hit.color) return hit.color;
+    return PALETTE[idx % PALETTE.length];
+  }
+
+  function renderOverview() {
+    var posts = state.posts || [];
+    var cats = {};
+    posts.forEach(function (p) {
+      var m = state.metaCache[p.path] || {};
+      var list = (m.cats && m.cats.length) ? m.cats : (m.cat ? [m.cat] : []);
+      if (!list.length) list = ['未分类'];
+      list.forEach(function (c) { cats[c] = (cats[c] || 0) + 1; });
+    });
+    var names = Object.keys(cats).sort(function (a, b) { return cats[b] - cats[a]; });
+    var imgBytes = state.images.reduce(function (s, f) { return s + (f.size || 0); }, 0);
+
+    var tiles = [
+      { num: String(posts.length), cap: '篇文章' },
+      { num: wordStats ? (wordStats.total >= 10000
+        ? (Math.round(wordStats.total / 1000) + 'k')
+        : String(wordStats.total)) : '—', cap: '总字数（约）' },
+      { num: String(names.length), cap: '个分类' },
+      { num: String(state.images.length), cap: '张图片' },
+      { num: humanSize(imgBytes), cap: '图片占用' }
+    ];
+
+    var statsBox = $('ov-stats');
+    statsBox.innerHTML = '';
+    tiles.forEach(function (t) {
+      var d = document.createElement('div');
+      d.className = 'ov-stat';
+      var n = document.createElement('div');
+      n.className = 'num';
+      n.textContent = t.num;
+      var c = document.createElement('div');
+      c.className = 'cap';
+      c.textContent = t.cap;
+      d.appendChild(n);
+      d.appendChild(c);
+      statsBox.appendChild(d);
+    });
+
+    var barsBox = $('ov-bars');
+    barsBox.innerHTML = '';
+    if (!names.length) {
+      barsBox.innerHTML = '<div class="ov-row"><span class="t">还没有文章</span></div>';
+    } else {
+      var max = cats[names[0]] || 1;
+      names.forEach(function (nm, i) {
+        var row = document.createElement('div');
+        row.className = 'ov-bar';
+        var label = document.createElement('div');
+        label.className = 'nm';
+        label.textContent = nm;
+        label.title = nm;
+        var track = document.createElement('div');
+        track.className = 'track';
+        var fill = document.createElement('div');
+        fill.className = 'fill';
+        fill.style.width = Math.max(7, Math.round(cats[nm] / max * 100)) + '%';
+        fill.style.background = catColor(nm, i);
+        track.appendChild(fill);
+        var n = document.createElement('div');
+        n.className = 'n';
+        n.textContent = cats[nm];
+        row.appendChild(label);
+        row.appendChild(track);
+        row.appendChild(n);
+        barsBox.appendChild(row);
+      });
+    }
+
+    var listBox = $('ov-recent');
+    listBox.innerHTML = '';
+    var recent = posts.slice(0, 8);
+    if (!recent.length) {
+      listBox.innerHTML = '<div class="ov-row"><span class="t">还没有文章</span></div>';
+    } else {
+      recent.forEach(function (p) {
+        var m = state.metaCache[p.path] || {};
+        var row = document.createElement('div');
+        row.className = 'ov-row';
+        var t = document.createElement('div');
+        t.className = 't';
+        t.textContent = m.title || pathSlug(p.path);
+        row.appendChild(t);
+        if (m.cat) {
+          var c = document.createElement('span');
+          c.className = 'cat';
+          c.textContent = m.cat;
+          row.appendChild(c);
+        }
+        var d = document.createElement('span');
+        d.className = 'd';
+        d.textContent = m.date || (p.name.match(/^\d{4}-\d{2}-\d{2}/) || [''])[0];
+        row.appendChild(d);
+        row.addEventListener('click', function () {
+          setMode('posts');
+          openPost(p.path);
+        });
+        listBox.appendChild(row);
+      });
+    }
   }
 
   /* ================= 登录 / 账号 ================= */
@@ -2425,6 +3076,16 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     if (state.dirty && !window.confirm('当前页面有未发布的改动，确定要切到「专栏」吗？')) return;
     openColumns();
   });
+  $('tab-images').addEventListener('click', function () {
+    if (state.mode === 'images') return;
+    if (state.dirty && !window.confirm('当前页面有未发布的改动，确定要切到「图片」吗？')) return;
+    openImages();
+  });
+  $('tab-ov').addEventListener('click', function () {
+    if (state.mode === 'ov') return;
+    if (state.dirty && !window.confirm('当前页面有未发布的改动，确定要切到「概览」吗？')) return;
+    openOverview();
+  });
 
   $('btn-theme').addEventListener('click', toggleTheme);
 
@@ -2462,6 +3123,19 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
   $('btn-add-col').addEventListener('click', function () { addColumn(''); });
   $('btn-save-cols').addEventListener('click', saveColumns);
+
+  $('img-q').addEventListener('input', function () {
+    state.imgQuery = $('img-q').value;
+    renderImages();
+  });
+  $('btn-img-refresh').addEventListener('click', refreshImages);
+  $('btn-img-del-sel').addEventListener('click', deleteSelectedImages);
+  $('btn-img-upload').addEventListener('click', function () { $('img-file').click(); });
+  $('img-file').addEventListener('change', function () {
+    uploadToLibrary(this.files);
+    this.value = '';
+  });
+  $('btn-ov-refresh').addEventListener('click', openOverview);
 
   $('btn-draft-restore').addEventListener('click', restoreDraft);
   $('btn-draft-discard').addEventListener('click', function () { clearDraft(); toast('草稿已丢弃', 'ok'); });

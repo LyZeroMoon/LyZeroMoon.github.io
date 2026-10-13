@@ -99,6 +99,30 @@ ignore:
 ## Themes: https://hexo.io/themes/
 theme: fluid
 
+# Markdown
+## 使用 markdown-it 渲染器 + KaTeX 插件，以支持 LaTeX 数学公式
+## https://github.com/hexojs/hexo-renderer-markdown-it
+markdown:
+  preset: 'default'
+  render:
+    html: true
+    xhtmlOut: false
+    breaks: true
+    linkify: true
+    typographer: false
+  plugins:
+    - '@traptitech/markdown-it-katex'
+  anchors:
+    level: 1
+    collisionSuffix: ''
+    # 还原原 marked 渲染器的标题锚点：<a class="headerlink" href="#id"></a>
+    permalink: true
+    permalinkClass: 'headerlink'
+    permalinkSide: 'left'
+    permalinkSymbol: ''
+    case: 0
+    separator: '-'
+
 # Search
 ## https://github.com/next-theme/hexo-generator-searchdb
 search:
@@ -106,6 +130,28 @@ search:
   field: post
   content: true
   format: html
+
+# Feed / RSS
+## https://github.com/hexojs/hexo-generator-feed
+feed:
+  type: atom
+  path: atom.xml
+  limit: 20
+  hub:
+  content: true
+  content_limit: 200
+  content_limit_delim: ' '
+  order_by: -date
+  icon: /img/favicon.png
+  autodiscovery: true
+
+# Sitemap
+## https://github.com/hexojs/hexo-generator-sitemap
+sitemap:
+  path: sitemap.xml
+  rel: false
+  tags: true
+  categories: true
 
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
