@@ -741,17 +741,17 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     <main class="editor">
       <div class="meta-bar">
         <div class="meta-grid">
-          <div class="meta-item" data-scope="post">
-            <label for="f-slug">文件名（英文，决定 URL）</label>
-            <input type="text" id="f-slug" placeholder="my-new-post" spellcheck="false">
-          </div>
           <div class="meta-item wide">
-            <label for="f-title">标题</label>
+            <label for="f-title">标题<span class="lbl-note">链接地址会自动跟着生成</span></label>
             <input type="text" id="f-title" placeholder="文章标题">
           </div>
           <div class="meta-item">
             <label for="f-date">日期</label>
             <input type="text" id="f-date" placeholder="2026-10-13 17:30:00" spellcheck="false">
+          </div>
+          <div class="meta-item" data-scope="post">
+            <label for="f-slug">链接地址</label>
+            <input type="text" id="f-slug" placeholder="留空自动生成" spellcheck="false">
           </div>
           <div class="meta-item wide" data-scope="post">
             <label>分类<span class="lbl-note">就是「专栏」，决定文章归入哪个专栏</span></label>
@@ -970,6 +970,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     /* 当前文章的分类与标签（分类 == 专栏，是同一个东西） */
     postCats: [],
     postTags: [],
+    /* 用户是否手动改过链接地址；没改过就跟着标题自动生成 */
+    slugTouched: false,
     /* 全站已有的分类 / 标签，供选择器提示：[{name, count}] */
     taxonomy: { cats: [], tags: [] },
     taxBusy: null,
@@ -1281,6 +1283,61 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       method: 'DELETE',
       body: { message: message, sha: sha, branch: CFG.branch }
     });
+  }
+
+  /* 发布只是「提交」——之后 GitHub 要重新装依赖、跑 hexo generate、
+     推 gh-pages、再做一次 Pages 发布，这些都得花时间。
+     这里轮询 Actions 把真实进度显示到状态栏，
+     免得用户对着「约 1 分钟后上线」干等、不知道到底成没成。 */
+  function watchDeploy(commitSha, filePath) {
+    if (!commitSha) { setStatus(filePath, '已提交，正在部署…'); return; }
+    var tries = 0;
+    var MAX_TRIES = 40;
+
+    function say(msg) {
+      // 只在用户还停在这篇文章 / 这个页面上时才去改状态栏
+      if (state.editingPath !== filePath) return;
+      if (state.mode !== 'posts' && state.mode !== 'about') return;
+      setStatus(filePath, msg);
+    }
+    function stop(msg) { say(msg); }
+
+    function poll() {
+      tries++;
+      gh('/repos/' + CFG.owner + '/' + CFG.repo +
+        '/actions/runs?per_page=10&head_sha=' + commitSha)
+        .then(function (data) {
+          var runs = (data && data.workflow_runs) || [];
+          var run = runs.filter(function (r) {
+            return String(r.path || '').indexOf('deploy.yml') >= 0;
+          })[0];
+
+          if (!run) {
+            say('已提交，等待构建启动…');
+          } else if (run.status !== 'completed') {
+            var t0 = new Date(run.run_started_at || run.created_at).getTime();
+            say('构建中… 已 ' + Math.max(0, Math.round((Date.now() - t0) / 1000)) + ' 秒');
+          } else if (run.conclusion === 'success') {
+            say('已上线');
+            toast('构建完成，站点已更新', 'ok');
+            return;
+          } else {
+            say('构建失败（' + run.conclusion + '）');
+            toast('构建失败了，去 GitHub 的 Actions 页面看看日志', 'err');
+            return;
+          }
+
+          if (tries < MAX_TRIES) setTimeout(poll, 5000);
+          else stop('构建还在跑，稍后刷新看看');
+        })
+        .catch(function (e) {
+          var s = e && e.status;
+          if (s === 401 || s === 403 || s === 404) { stop('已提交，正在部署…'); return; }
+          if (tries < MAX_TRIES) setTimeout(poll, 6000);
+          else stop('已提交，但读不到构建状态');
+        });
+    }
+    setTimeout(poll, 3500);
   }
 
   /* ================= front-matter ================= */
@@ -1795,6 +1852,39 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     return path.replace(CFG.dir + '/', '').replace(/\.md$/i, '');
   }
 
+  /* 文件名和 URL 里真正会出问题的字符 */
+  var SLUG_BAD_ASCII = /[<>:"/\\|?*#%&{}\[\]()^`$!'@=~;,+]/g;
+  var SLUG_BAD_CJK = /[、，。：；！？…—·～【】《》〈〉「」『』（）〔〕“”‘’]/g;
+
+  /* 由标题推导链接地址。
+     中文原样保留 —— Hexo 会把它转成百分号编码，而现代浏览器地址栏
+     会正常显示中文，比硬凑一个拼音或英文更可读。 */
+  function autoSlugFromTitle(title) {
+    var t = String(title || '').trim();
+    if (!t) return '';
+    t = t.replace(SLUG_BAD_CJK, '').replace(SLUG_BAD_ASCII, '');
+    t = t.replace(/[\s\u3000]+/g, '-').replace(/\./g, '');
+    t = t.replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '');
+    if (/[A-Za-z]/.test(t)) t = t.toLowerCase();
+    return t.slice(0, 60).replace(/-+$/g, '');
+  }
+
+  /* 输入框空着的时候，把「将要自动生成的地址」显示在占位符里，
+     这样用户清空它也不至于不知道自己最终会得到什么地址 */
+  function refreshSlugHint() {
+    var auto = autoSlugFromTitle($('f-title').value);
+    $('f-slug').placeholder = auto ? ('留空则用 ' + auto) : '留空自动生成';
+  }
+
+  /* 手动填的地址也要过一遍，返回错误说明或空串 */
+  function slugProblem(s) {
+    if (/[<>:"/\\|?*]/.test(s)) return '链接地址里不能有 < > : " / \\ | ? *';
+    if (/[\u0000-\u001f]/.test(s)) return '链接地址里有控制字符';
+    if (/^\s|\s$/.test(s)) return '链接地址首尾不能有空格';
+    if (/\.$/.test(s)) return '链接地址不能以点结尾';
+    return '';
+  }
+
   /* ================= 文章动作 ================= */
 
   function openPost(path) {
@@ -1810,6 +1900,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       rememberMeta(path, parsed.meta);
       $('f-slug').value = pathSlug(path);
       $('f-slug').disabled = true;
+      state.slugTouched = true;
       setMeta(parsed.meta);
       $('md-input').value = parsed.body;
       renderPreview();
@@ -1830,6 +1921,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     state.rawMeta = null;
     $('f-slug').value = '';
     $('f-slug').disabled = false;
+    state.slugTouched = false;
+    refreshSlugHint();
     setMeta({ title: '', date: nowLocal(), categories: [], tags: [] });
     $('md-input').value = '';
     renderPreview();
@@ -1843,14 +1936,23 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     if (state.mode === 'about') { saveAbout(); return; }
     if (state.mode === 'columns') { saveColumns(); return; }
 
-    var slug = $('f-slug').value.trim();
     var meta = readMeta();
     var body = $('md-input').value;
 
-    if (!slug) { toast('请填写文件名（英文）', 'err'); $('f-slug').focus(); return; }
-    if (!meta.title) { toast('请填写标题', 'err'); $('f-title').focus(); return; }
+    if (!meta.title) { toast('请先填标题', 'err'); $('f-title').focus(); return; }
     if (!body.trim()) { toast('正文还是空的', 'err'); $('md-input').focus(); return; }
-    if (/[^\w.\-]/.test(slug)) { toast('文件名只能用英文、数字、- 和 _', 'err'); $('f-slug').focus(); return; }
+
+    // 链接地址留空就按标题自动生成，不必逼用户现编一个英文名
+    var slug = $('f-slug').value.trim() || autoSlugFromTitle(meta.title);
+    if (!slug) {
+      toast('标题里没有能用作地址的字，请手动填一个', 'err');
+      $('f-slug').disabled = false;
+      $('f-slug').focus();
+      return;
+    }
+    var prob = slugProblem(slug);
+    if (prob) { toast(prob, 'err'); $('f-slug').disabled = false; $('f-slug').focus(); return; }
+    $('f-slug').value = slug;
 
     var path = slugToPath(slug);
     var text = buildFrontMatter(meta, body);
@@ -1875,8 +1977,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         clearDraft();
         $('f-slug').disabled = true;
         $('btn-delete').classList.remove('hidden');
-        setStatus(path, '已提交，正在部署…');
-        toast('已发布，约 1 分钟后上线', 'ok');
+        toast('已发布，正在构建…', 'ok');
+        watchDeploy(res && res.commit && res.commit.sha, path);
         return fetchPosts().then(function (list) {
           state.posts = list;
           buildTaxonomy();
@@ -2018,8 +2120,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         state.aboutMeta = meta;
         state.dirty = false;
         clearDraft();
-        setStatus(CFG.aboutPath, '已提交，正在部署…');
-        toast('关于页已发布，约 1 分钟后上线', 'ok');
+        toast('关于页已发布，正在构建…', 'ok');
+        watchDeploy(res && res.commit && res.commit.sha, CFG.aboutPath);
       })
       .catch(function (e) {
         toast('发布失败：' + e.message, 'err');
@@ -2234,7 +2336,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         state.columnsSha = (res && res.content && res.content.sha) || null;
         state.dirty = false;
         $('col-status').textContent = '已发布 · ' + named.length + ' 个专栏';
-        toast('专栏配置已发布，约 1 分钟后上线', 'ok');
+        toast('专栏配置已发布，正在构建…', 'ok');
         renderColList();
         renderColCats();
       })
@@ -2264,6 +2366,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       mode: state.mode,
       path: state.editingPath,
       slug: $('f-slug').value,
+      slugTouched: state.slugTouched,
       title: $('f-title').value,
       date: $('f-date').value,
       categories: state.postCats.slice(),
@@ -2301,6 +2404,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     state.editingSha = null;
     $('f-slug').value = d.slug || '';
     $('f-slug').disabled = !!d.path;
+    state.slugTouched = d.slugTouched === undefined ? !!d.path : !!d.slugTouched;
     $('f-title').value = d.title || '';
     $('f-date').value = d.date || nowLocal();
     state.postCats = Array.isArray(d.categories) ? d.categories.slice() : parseList(d.categories || '');
@@ -2437,7 +2541,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       });
     }).then(function () {
       insertAtCursor('![' + alt + '](' + url + ')\n');
-      toast('图片已上传并插入' + (file.size > CFG.warnImageBytes ? '（约 1 分钟后 CDN 生效）' : ''), 'ok');
+      toast('图片已上传并插入' + (file.size > CFG.warnImageBytes ? '（要等这次构建跑完才能访问）' : ''), 'ok');
       setStatus(state.editingPath || path, '图片已上传');
     }).catch(function (e) {
       toast('图片上传失败：' + e.message, 'err');
@@ -3505,8 +3609,22 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     $('file-input').value = '';
   });
 
-  ['f-title', 'f-date', 'f-slug'].forEach(function (id) {
-    $(id).addEventListener('input', markMetaDirty);
+  $('f-date').addEventListener('input', markMetaDirty);
+
+  $('f-title').addEventListener('input', function () {
+    // 新文章、且用户没手动改过地址时，跟着标题自动生成
+    if (!state.slugTouched && !state.editingPath) {
+      $('f-slug').value = autoSlugFromTitle($('f-title').value);
+    }
+    refreshSlugHint();
+    markMetaDirty();
+  });
+
+  $('f-slug').addEventListener('input', function () {
+    // 清空它，就等于恢复「跟随标题自动生成」
+    state.slugTouched = $('f-slug').value.trim() !== '';
+    refreshSlugHint();
+    markMetaDirty();
   });
 
   bindPicker('cat');
