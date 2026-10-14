@@ -1,0 +1,157 @@
+<%
+page.layout = 'notes'
+page.title = page.title || '笔记'
+page.subtitle = page.subtitle || '概念、速查与方法，按主题整理'
+page.banner_img = page.banner_img || theme.page.banner_img
+page.banner_img_height = page.banner_img_height || theme.page.banner_img_height
+page.banner_mask_alpha = page.banner_mask_alpha || theme.page.banner_mask_alpha
+
+function asList(v) {
+  if (!v) return []
+  if (Array.isArray(v)) return v
+  if (typeof v.toArray === 'function') return v.toArray()
+  return [v]
+}
+
+var all = site.pages.toArray().filter(function (p) {
+  var s = String(p.source || '')
+  return /^notes\//.test(s) && s !== 'notes/index.md'
+})
+
+var groups = {}
+var order = []
+all.forEach(function (n) {
+  var cats = asList(n.categories).map(String).filter(Boolean)
+  if (!cats.length) cats = ['未分类']
+  cats.forEach(function (c) {
+    if (!groups[c]) { groups[c] = []; order.push(c) }
+    groups[c].push(n)
+  })
+})
+order.sort(function (a, b) {
+  if (a === '未分类') return 1
+  if (b === '未分类') return -1
+  return a.localeCompare(b, 'zh')
+})
+%>
+
+<style>
+  .notes-intro {
+    margin: 0 0 26px;
+    color: #718096;
+    font-size: 14px;
+    line-height: 1.75;
+  }
+  .notes-intro b { color: #4a5568; }
+  .notes-group { margin-bottom: 30px; }
+  .notes-group h2 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    color: #8a94a0;
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #edf1f5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .notes-group h2 .n {
+    font-weight: 400;
+    color: #b6bec8;
+    letter-spacing: 0;
+  }
+  .notes-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+  }
+  .note-card {
+    display: block;
+    padding: 14px 16px;
+    border: 1px solid #e8ecf0;
+    border-radius: 11px;
+    background: #fff;
+    text-decoration: none !important;
+    transition: border-color .16s, box-shadow .16s, transform .16s;
+  }
+  .note-card:hover {
+    border-color: #b9d3f5;
+    box-shadow: 0 4px 14px rgba(31, 68, 122, .07);
+    transform: translateY(-1px);
+  }
+  .note-card .t {
+    display: block;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #2c3e50;
+    line-height: 1.45;
+  }
+  .note-card:hover .t { color: #0366d6; }
+  .note-card .d {
+    display: block;
+    margin-top: 6px;
+    font-size: 12.5px;
+    color: #7b8794;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .note-card .g {
+    display: block;
+    margin-top: 9px;
+    font-size: 11.5px;
+    color: #9aa4b0;
+  }
+  .notes-empty {
+    text-align: center;
+    color: #9aa4b0;
+    padding: 60px 20px;
+    font-size: 14px;
+    line-height: 2;
+  }
+  [data-color-scheme="dark"] .notes-intro { color: #a7a9ad; }
+  [data-color-scheme="dark"] .notes-intro b { color: #d6d8db; }
+  [data-color-scheme="dark"] .notes-group h2 { color: #8b949e; border-color: #30363d; }
+  [data-color-scheme="dark"] .note-card { background: #252d38; border-color: #33404f; }
+  [data-color-scheme="dark"] .note-card:hover { border-color: #4a6b96; }
+  [data-color-scheme="dark"] .note-card .t { color: #d6d8db; }
+  [data-color-scheme="dark"] .note-card:hover .t { color: #6cb6ff; }
+  [data-color-scheme="dark"] .note-card .d { color: #8b949e; }
+</style>
+
+<div class="notes-intro">
+  这里放的是<b>不按时间排的参考内容</b> —— 概念定义、公式速查、方法总结。
+  它们和文章区的区别是：没有日期、不进归档，写作时用
+  <code>[[笔记名]]</code> 互相引用，页面底部会列出谁提到过它。
+</div>
+
+<% if (!all.length) { %>
+  <div class="notes-empty">
+    还没有笔记。<br>
+    打开 <a href="/admin/">写作后台</a> 的「笔记」标签就可以开始写。
+  </div>
+<% } else { %>
+  <% order.forEach(function (name) { %>
+    <% var list = groups[name].slice().sort(function (a, b) { return String(a.title).localeCompare(String(b.title), 'zh') }) %>
+    <section class="notes-group">
+      <h2><%= name %><span class="n"><%= list.length %></span></h2>
+      <div class="notes-list">
+        <% list.forEach(function (n) { %>
+          <% var tags = asList(n.tags).map(String).filter(Boolean) %>
+          <a class="note-card" href="<%= url_for(String(n.path || '').replace(/index\.html$/, '')) %>">
+            <span class="t"><%= n.title %></span>
+            <% if (n.description) { %>
+              <span class="d"><%= n.description %></span>
+            <% } %>
+            <% if (tags.length) { %>
+              <span class="g"><%= tags.map(function (t) { return '#' + t }).join('  ') %></span>
+            <% } %>
+          </a>
+        <% }) %>
+      </div>
+    </section>
+  <% }) %>
+<% } %>

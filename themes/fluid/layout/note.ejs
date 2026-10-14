@@ -1,0 +1,57 @@
+<%
+page.banner_img = page.banner_img || theme.post.banner_img
+page.banner_img_height = page.banner_img_height || theme.post.banner_img_height
+page.banner_mask_alpha = page.banner_mask_alpha || theme.post.banner_mask_alpha
+
+function asList(v) {
+  if (!v) return []
+  if (Array.isArray(v)) return v
+  if (typeof v.toArray === 'function') return v.toArray()
+  return [v]
+}
+var cats = asList(page.categories).map(String)
+var tags = asList(page.tags).map(String)
+%>
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="col-lg-8 nopadding-x-md m-auto">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content note-page mx-auto">
+            <h1 id="seo-header"><%= page.title %></h1>
+            <% if (page.subtitle) { %>
+              <p class="note-sub"><%= page.subtitle %></p>
+            <% } %>
+
+            <% if (cats.length || tags.length || page.updated) { %>
+              <div class="note-meta">
+                <% cats.forEach(function (c) { %>
+                  <span class="note-chip note-chip-cat"><%= c %></span>
+                <% }) %>
+                <% tags.forEach(function (t) { %>
+                  <span class="note-chip">#<%= t %></span>
+                <% }) %>
+                <% if (page.updated) { %>
+                  <span class="note-updated">最后更新 <%= date(page.updated, 'YYYY-MM-DD') %></span>
+                <% } %>
+              </div>
+            <% } %>
+
+            <div class="markdown-body">
+              <%- inject_point('postMarkdownBegin') %>
+              <%- page.content %>
+              <%- inject_point('postMarkdownEnd') %>
+            </div>
+
+            <%- wiki_backlinks() %>
+
+            <%- inject_point('postComments') %>
+          </article>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- partial('_partials/markdown-plugins') %>

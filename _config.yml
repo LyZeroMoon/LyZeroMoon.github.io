@@ -127,7 +127,8 @@ markdown:
 ## https://github.com/next-theme/hexo-generator-searchdb
 search:
   path: local-search.xml
-  field: post
+  # all = 文章 + 页面（含笔记）。笔记也要能被搜到，所以不能用 post。
+  field: all
   content: true
   format: html
 

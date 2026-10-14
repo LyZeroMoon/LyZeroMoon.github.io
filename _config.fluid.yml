@@ -238,6 +238,7 @@ custom_js:
 # 指定自定义 .css 文件路径，用法和 custom_js 相同
 # The usage is the same as custom_js
 custom_css:
+  - /css/kb.css
 
 # 网页访问统计
 # Analysis of website visitors
@@ -383,6 +384,7 @@ navbar:
   menu:
     - { key: "home", link: "/", icon: "iconfont icon-home-fill" }
     - { key: "columns", name: "专栏", link: "/columns/", icon: "iconfont icon-books" }
+    - { key: "notes", name: "笔记", link: "/notes/", icon: "iconfont icon-note" }
     - { key: "archive", link: "/archives/", icon: "iconfont icon-archive-fill" }
     - { key: "category", link: "/categories/", icon: "iconfont icon-category-fill" }
     - { key: "tag", link: "/tags/", icon: "iconfont icon-tags-fill" }

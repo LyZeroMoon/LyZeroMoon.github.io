@@ -237,8 +237,10 @@ body.ov-mode .sidebar{display:none}
 .meta-item label{font-size:11px;color:var(--text-3);font-weight:600;letter-spacing:.2px}
 .meta-item input{padding:7px 11px;font-size:12.5px;background:var(--surface)}
 .meta-item.wide{grid-column:span 2}
-body.about-mode .meta-item[data-scope="post"]{display:none}
 body.about-mode .meta-grid{grid-template-columns:repeat(2,1fr)}
+body:not(.posts-mode) .meta-item[data-scope="post"]{display:none}
+body:not(.notes-mode) .meta-item[data-scope="note"]{display:none}
+body:not(.posts-mode):not(.notes-mode) .meta-item[data-scope="doc"]{display:none}
 body.columns-mode .meta-bar{display:none}
 body.images-mode .meta-bar{display:none}
 body.ov-mode .meta-bar{display:none}
@@ -699,6 +701,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
     <nav class="tabs">
       <button id="tab-posts" class="on">文章</button>
+      <button id="tab-notes">笔记</button>
       <button id="tab-about">关于页</button>
       <button id="tab-columns">专栏</button>
       <button id="tab-images">图片</button>
@@ -745,16 +748,20 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
             <label for="f-title">标题<span class="lbl-note">链接地址会自动跟着生成</span></label>
             <input type="text" id="f-title" placeholder="文章标题">
           </div>
-          <div class="meta-item">
+          <div class="meta-item" data-scope="post">
             <label for="f-date">日期</label>
             <input type="text" id="f-date" placeholder="2026-10-13 17:30:00" spellcheck="false">
           </div>
-          <div class="meta-item" data-scope="post">
+          <div class="meta-item" data-scope="doc">
             <label for="f-slug">链接地址</label>
             <input type="text" id="f-slug" placeholder="留空自动生成" spellcheck="false">
           </div>
-          <div class="meta-item wide" data-scope="post">
-            <label>分类<span class="lbl-note">就是「专栏」，决定文章归入哪个专栏</span></label>
+          <div class="meta-item wide" data-scope="note">
+            <label for="f-desc">简介<span class="lbl-note">一句话说明，显示在笔记列表里</span></label>
+            <input type="text" id="f-desc" placeholder="例如：把常见序列的能量与功率一次列清">
+          </div>
+          <div class="meta-item wide" data-scope="doc">
+            <label>分类<span class="lbl-note">文章的专栏，也是笔记的主题归类</span></label>
             <div class="picker" id="cat-picker">
               <div class="picker-box" id="cat-box">
                 <input type="text" id="f-categories" placeholder="点这里选已有的，或输入后回车新建…" autocomplete="off" spellcheck="false">
@@ -762,8 +769,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
               <div class="picker-menu hidden" id="cat-menu"></div>
             </div>
           </div>
-          <div class="meta-item wide" data-scope="post">
-            <label>标签<span class="lbl-note">可以多个，用来串起相关文章</span></label>
+          <div class="meta-item wide" data-scope="doc">
+            <label>标签<span class="lbl-note">可以多个，用来串起相关内容</span></label>
             <div class="picker" id="tag-picker">
               <div class="picker-box" id="tag-box">
                 <input type="text" id="f-tags" placeholder="点这里选已有的，或输入后回车新建…" autocomplete="off" spellcheck="false">
@@ -936,6 +943,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     repo: 'LyZeroMoon.github.io',
     branch: 'main',
     dir: 'source/_posts',
+    notesDir: 'source/notes',
     authPath: 'source/admin/auth.json',
     aboutPath: 'source/about/index.md',
     columnsPath: 'source/_data/columns.yml',
@@ -959,6 +967,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     aboutMeta: null,
     aboutSha: null,
     lastPostPath: null,
+    /* 文章与笔记各自记住上次打开的，切回来时不会串 */
+    lastPath: { posts: null, notes: null },
     columns: [],
     columnsSha: null,
     columnsRawCats: [],
@@ -1246,12 +1256,21 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     return gh('/user').then(function (u) { return u.login; });
   }
 
-  function fetchPosts() {
-    return gh('/repos/' + CFG.owner + '/' + CFG.repo + '/contents/' + CFG.dir + '?ref=' + CFG.branch)
+  /* 文章在 _posts，笔记在 notes，两套内容共用同一套编辑器 */
+  function dirOf(mode) { return mode === 'notes' ? CFG.notesDir : CFG.dir; }
+
+  function fetchPosts(dir) {
+    dir = dir || dirOf(state.mode);
+    return gh('/repos/' + CFG.owner + '/' + CFG.repo + '/contents/' + dir + '?ref=' + CFG.branch)
       .then(function (list) {
         if (!Array.isArray(list)) throw new Error('返回格式异常');
         return list
-          .filter(function (f) { return f.type === 'file' && /\.md$/i.test(f.name); })
+          .filter(function (f) {
+            if (f.type !== 'file' || !/\.md$/i.test(f.name)) return false;
+            // notes/index.md 是笔记索引页，不列进可编辑的笔记里
+            if (dir === CFG.notesDir && /^index\.md$/i.test(f.name)) return false;
+            return true;
+          })
           .sort(function (a, b) { return b.name.localeCompare(a.name); });
       });
   }
@@ -1443,6 +1462,40 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     return out + body.replace(/^\s+/, '');
   }
 
+  var NOTE_KEYS = ['title', 'layout', 'permalink', 'updated', 'description', 'categories', 'tags', 'date'];
+
+  /* 笔记的 front-matter：没有 date（不进时间线），带 layout 与 permalink 让它有干净的地址 */
+  function buildNoteFrontMatter(meta, body, slug) {
+    var out = '---\n';
+    out += 'title: ' + meta.title + '\n';
+    out += 'layout: note\n';
+    out += 'permalink: /notes/' + slug + '/\n';
+    if (meta.description) out += 'description: ' + meta.description + '\n';
+    out += 'updated: ' + nowLocal() + '\n';
+    if (meta.categories.length) {
+      out += 'categories:\n' + meta.categories.map(function (c) { return '  - ' + c; }).join('\n') + '\n';
+    }
+    if (meta.tags.length) {
+      out += 'tags:\n' + meta.tags.map(function (t) { return '  - ' + t; }).join('\n') + '\n';
+    }
+
+    // 表单管不到的其它字段（subtitle、comment…）原样保留
+    var raw = state.rawMeta || {};
+    Object.keys(raw).forEach(function (k) {
+      if (NOTE_KEYS.indexOf(k) >= 0) return;
+      var v = raw[k];
+      if (!isPresent(v)) return;
+      if (Array.isArray(v)) {
+        out += k + ':\n' + v.map(function (x) { return '  - ' + x; }).join('\n') + '\n';
+      } else {
+        out += k + ': ' + v + '\n';
+      }
+    });
+
+    out += '---\n\n';
+    return out + body.replace(/^\s+/, '');
+  }
+
   function isPresent(v) {
     if (v === undefined || v === null) return false;
     if (Array.isArray(v)) return v.length > 0;
@@ -1539,7 +1592,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       var cat = cached && cached.cat ? cached.cat : '';
 
       var item = document.createElement('div');
-      var isActive = state.mode === 'posts' && state.editingPath === p.path;
+      var isActive = state.editingPath === p.path;
       item.className = 'post-item' + (isActive ? ' active' : '');
       item.innerHTML =
         '<div class="t"></div>' +
@@ -1567,6 +1620,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
   function setMeta(meta) {
     $('f-title').value = meta.title || '';
     $('f-date').value = meta.date || nowLocal();
+    $('f-desc').value = meta.description || '';
     state.postCats = (meta.categories || []).slice();
     state.postTags = (meta.tags || []).slice();
     closeAllPickerMenus();
@@ -1578,6 +1632,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     return {
       title: $('f-title').value.trim(),
       date: $('f-date').value.trim() || nowLocal(),
+      description: $('f-desc').value.trim(),
       categories: state.postCats.slice(),
       tags: state.postTags.slice()
     };
@@ -1842,14 +1897,18 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     if (info !== undefined) $('status-info').textContent = info;
   }
 
-  function slugToPath(slug) {
+  function slugToPath(slug, dir) {
+    dir = dir || dirOf(state.mode);
     var s = slug.trim().replace(/^\/+|\/+$/g, '').replace(/\s+/g, '-');
     if (!/\.md$/i.test(s)) s += '.md';
-    return CFG.dir + '/' + s;
+    return dir + '/' + s;
   }
 
   function pathSlug(path) {
-    return path.replace(CFG.dir + '/', '').replace(/\.md$/i, '');
+    return String(path)
+      .replace(CFG.notesDir + '/', '')
+      .replace(CFG.dir + '/', '')
+      .replace(/\.md$/i, '');
   }
 
   /* 文件名和 URL 里真正会出问题的字符 */
@@ -1888,13 +1947,15 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
   /* ================= 文章动作 ================= */
 
   function openPost(path) {
-    setMode('posts');
+    // 在笔记模式下打开笔记时不要跳回文章模式
+    if (state.mode !== 'notes') setMode('posts');
     setStatus(path, '加载中…');
     fetchFile(path).then(function (res) {
       var parsed = parseFrontMatter(res.text);
       state.editingPath = path;
       state.editingSha = res.sha;
       state.lastPostPath = path;
+      state.lastPath[state.mode === 'notes' ? 'notes' : 'posts'] = path;
       state.dirty = false;
       state.rawMeta = parsed.meta;
       rememberMeta(path, parsed.meta);
@@ -1914,7 +1975,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
   }
 
   function newPost() {
-    setMode('posts');
+    var isNote = state.mode === 'notes';
+    setMode(isNote ? 'notes' : 'posts');
     state.editingPath = null;
     state.editingSha = null;
     state.dirty = false;
@@ -1923,19 +1985,40 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     $('f-slug').disabled = false;
     state.slugTouched = false;
     refreshSlugHint();
-    setMeta({ title: '', date: nowLocal(), categories: [], tags: [] });
+    setMeta({ title: '', date: nowLocal(), categories: [], tags: [], description: '' });
     $('md-input').value = '';
     renderPreview();
     renderPostList();
     $('btn-delete').classList.add('hidden');
-    setStatus(null, '新文章（尚未发布）');
-    $('f-slug').focus();
+    setStatus(null, isNote ? '新笔记（尚未发布）' : '新文章（尚未发布）');
+    $('f-title').focus();
+  }
+
+  /* 切到「笔记」：列出 source/notes 下的笔记，没有就开一条新的 */
+  function openNotes() {
+    setMode('notes');
+    state.editingPath = null;
+    state.editingSha = null;
+    state.dirty = false;
+    state.rawMeta = null;
+    setStatus(null, '加载中…');
+    refreshList().then(function () {
+      var back = state.lastPath.notes;
+      if (back && state.posts.some(function (p) { return p.path === back; })) {
+        openPost(back);
+      } else if (state.posts.length) {
+        openPost(state.posts[0].path);
+      } else {
+        newPost();
+      }
+    });
   }
 
   function savePost() {
     if (state.mode === 'about') { saveAbout(); return; }
     if (state.mode === 'columns') { saveColumns(); return; }
 
+    var isNote = state.mode === 'notes';
     var meta = readMeta();
     var body = $('md-input').value;
 
@@ -1955,9 +2038,9 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     $('f-slug').value = slug;
 
     var path = slugToPath(slug);
-    var text = buildFrontMatter(meta, body);
+    var text = isNote ? buildNoteFrontMatter(meta, body, slug) : buildFrontMatter(meta, body);
     var isEdit = state.editingPath === path;
-    var message = (isEdit ? 'post: 更新 ' : 'post: 新增 ') + pathSlug(path);
+    var message = (isNote ? 'note' : 'post') + (isEdit ? ': 更新 ' : ': 新增 ') + pathSlug(path);
 
     $('btn-save').disabled = true;
     setStatus(path, '提交中…');
@@ -2022,12 +2105,15 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
   function refreshList() {
     setStatus(state.editingPath, '刷新中…');
+    var mode = state.mode;
     return fetchPosts().then(function (list) {
       state.posts = list;
       renderPostList();
       renderColCats();
-      if (state.mode === 'posts') {
+      if (mode === 'posts') {
         setStatus(state.editingPath, '共 ' + list.length + ' 篇文章');
+      } else if (mode === 'notes') {
+        setStatus(state.editingPath, '共 ' + list.length + ' 条笔记');
       }
     }).catch(function (e) {
       toast('获取列表失败：' + e.message, 'err');
@@ -2039,20 +2125,18 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
   function setMode(mode) {
     state.mode = mode;
-    ['about', 'columns', 'images', 'ov'].forEach(function (m) {
+    ['posts', 'notes', 'about', 'columns', 'images', 'ov'].forEach(function (m) {
       document.body.classList.toggle(m + '-mode', mode === m);
+      var tab = $('tab-' + m);
+      if (tab) tab.classList.toggle('on', mode === m);
     });
-    $('tab-posts').classList.toggle('on', mode === 'posts');
-    $('tab-about').classList.toggle('on', mode === 'about');
-    $('tab-columns').classList.toggle('on', mode === 'columns');
-    $('tab-images').classList.toggle('on', mode === 'images');
-    $('tab-ov').classList.toggle('on', mode === 'ov');
 
-    var isPost = mode === 'posts';
+    var canEdit = mode === 'posts' || mode === 'notes';
     var isPlain = mode === 'columns' || mode === 'images' || mode === 'ov';
 
-    $('btn-new').classList.toggle('hidden', !isPost);
-    $('btn-delete').classList.toggle('hidden', !isPost || !state.editingPath);
+    $('btn-new').classList.toggle('hidden', !canEdit);
+    $('btn-new').textContent = mode === 'notes' ? '新建笔记' : '新建文章';
+    $('btn-delete').classList.toggle('hidden', !canEdit || !state.editingPath);
     $('btn-save').classList.toggle('hidden', mode === 'images' || mode === 'ov');
     $('toolbar').classList.toggle('hidden', isPlain);
     $('panes').classList.toggle('hidden', isPlain);
@@ -2061,8 +2145,15 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     $('ov-pane').classList.toggle('hidden', mode !== 'ov');
 
     if (!isPlain) {
-      $('md-input').placeholder = mode === 'about' ? '在这里写「关于」页的正文…' : '在这里写正文…';
+      $('md-input').placeholder =
+        mode === 'about' ? '在这里写「关于」页的正文…' :
+        mode === 'notes' ? '在这里写这条笔记的正文。用 [[另一条笔记]] 互相引用。' :
+        '在这里写正文…';
     }
+
+    var q = $('q');
+    if (q) q.placeholder = mode === 'notes' ? '搜索笔记…' : '搜索文章…';
+
     renderPostList();
   }
 
@@ -2371,6 +2462,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       date: $('f-date').value,
       categories: state.postCats.slice(),
       tags: state.postTags.slice(),
+      description: $('f-desc').value,
       body: $('md-input').value
     };
     if (!String(d.body).trim()) { clearDraft(); return; }
@@ -2399,7 +2491,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
   function restoreDraft() {
     var d = readDraft();
     if (!d) { $('draft-bar').classList.add('hidden'); return; }
-    setMode(d.mode === 'about' ? 'about' : 'posts');
+    setMode(d.mode === 'about' ? 'about' : d.mode === 'notes' ? 'notes' : 'posts');
     state.editingPath = d.path || null;
     state.editingSha = null;
     $('f-slug').value = d.slug || '';
@@ -2407,6 +2499,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     state.slugTouched = d.slugTouched === undefined ? !!d.path : !!d.slugTouched;
     $('f-title').value = d.title || '';
     $('f-date').value = d.date || nowLocal();
+    $('f-desc').value = d.description || '';
     state.postCats = Array.isArray(d.categories) ? d.categories.slice() : parseList(d.categories || '');
     state.postTags = Array.isArray(d.tags) ? d.tags.slice() : parseList(d.tags || '');
     renderChips('cat');
@@ -3498,12 +3591,20 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
   $('tab-posts').addEventListener('click', function () {
     if (state.mode === 'posts') return;
     if (state.dirty && !window.confirm('当前页面有未发布的改动，确定要切走吗？')) return;
-    var back = state.lastPostPath;
     setMode('posts');
     state.editingPath = null;
     state.editingSha = null;
-    if (back) openPost(back);
-    else newPost();
+    state.rawMeta = null;
+    refreshList().then(function () {
+      var back = state.lastPath.posts;
+      if (back && state.posts.some(function (p) { return p.path === back; })) openPost(back);
+      else newPost();
+    });
+  });
+  $('tab-notes').addEventListener('click', function () {
+    if (state.mode === 'notes') return;
+    if (state.dirty && !window.confirm('当前页面有未发布的改动，确定要切到「笔记」吗？')) return;
+    openNotes();
   });
   $('tab-about').addEventListener('click', function () {
     if (state.mode === 'about') return;
@@ -3610,6 +3711,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
   });
 
   $('f-date').addEventListener('input', markMetaDirty);
+  $('f-desc').addEventListener('input', markMetaDirty);
 
   $('f-title').addEventListener('input', function () {
     // 新文章、且用户没手动改过地址时，跟着标题自动生成
