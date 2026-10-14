@@ -962,8 +962,9 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         </div>
 
         <div class="res-tip">
-          小于 25MB 的文件直接传进仓库，页面上点一下就能下载、还能在线看 PDF；
-          更大的书（或已经在网盘里的）用「添加链接」填外部地址，展示效果一模一样。
+          38MB 以内的文件可以直接传进仓库，页面上点一下就能下载、还能在线看 PDF。
+          这是浏览器直传的实测上限（由 GitHub 接口决定，跟仓库大小无关）；
+          更大的书用「添加链接」填网盘地址，展示效果一模一样。
         </div>
 
         <div class="res-admin-body" id="res-admin-body"></div>
@@ -1086,11 +1087,17 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     kdfIterations: 600000,
     maxImageBytes: 4 * 1024 * 1024,
     warnImageBytes: 1024 * 1024,
-    /* 资源库：单文件超过 maxResBytes 就不要再塞进仓库了，改填外部链接。
-       GitHub 对单文件硬上限是 100MB，但仓库会永久保留每个历史版本，
-       所以这里把线压到 25MB，够放大部分电子书。 */
-    maxResBytes: 25 * 1024 * 1024,
-    warnResBytes: 8 * 1024 * 1024
+    /* 资源库：单文件超过 maxResBytes 就别再从浏览器传了，改填外部链接。
+       这个数字不是拍脑袋来的，是实测出来的（2026-10-14，本仓库）：
+         20 / 26 / 30 / 32 / 34 / 36 / 38 MB → 201 成功
+         39 MB → 502 Server Error
+         40 MB 以上 → 422 "the file is too large to be processed"
+       墙体在 40,000,000 字节附近，是 GitHub REST API 网关对**请求体**的限制，
+       跟仓库本身无关（用本地 git push 能到 100MB，超 50MB 只是警告）。
+       取实测通过的最大值，留一点点余量。 */
+    maxResBytes: 38 * 1024 * 1024,
+    /* 超过这个数就能传，但会提醒一句「仓库会永久变大」 */
+    warnResBytes: 20 * 1024 * 1024
   };
 
   var state = {
@@ -3258,7 +3265,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       });
   }
 
-  function saveResources(message) {
+  function saveResources(message, note) {
     var d = resStore();
     var payload = {
       version: 1,
@@ -3298,7 +3305,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         state.resLoaded = true;
         resMarkDirty(false);
         renderResources();
-        toast('已发布，正在构建…', 'ok');
+        toast('已发布，正在构建…' + (note ? '（' + note + '）' : ''), 'ok');
         watchDeploy(r && r.commit && r.commit.sha, CFG.resPath);
       })
       .catch(function (e) {
@@ -3810,8 +3817,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       picking = false;
       if (!f) return;
       if (f.size > CFG.maxResBytes) {
-        toast('这个文件 ' + humanSize(f.size) + '，超过 ' + humanSize(CFG.maxResBytes) +
-          ' 就不适合放仓库了，请填外部链接', 'err');
+        toast('「' + f.name + '」有 ' + humanSize(f.size) + '，超过浏览器直传上限 ' +
+          humanSize(CFG.maxResBytes) + '。' + resTooLargeTip(), 'err');
         return;
       }
       var targetFolder = folderIn.value;
@@ -3822,9 +3829,9 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         sizeIn.value = (f.size / 1048576).toFixed(1);
         if (!fmtIn.value.trim()) fmtIn.value = r.format;
         if (!titleIn.value.trim()) titleIn.value = resBase(r.file).replace(/\.[^.]+$/, '');
-        toast('文件已上传到仓库：' + r.file, 'ok');
+        toast('文件已上传到仓库：' + r.file + resBigFileNote(f.size), 'ok');
       }).catch(function (e) {
-        toast('上传失败：' + e.message, 'err');
+        toast('上传失败：' + resUploadErrMsg(e), 'err');
       }).then(function () {
         upBtn.disabled = false;
         upBtn.textContent = '上传…';
@@ -3925,6 +3932,27 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     return attempt();
   }
 
+  /* 超限时统一给同一套出路，别让用户猜「那我要怎么办」 */
+  function resTooLargeTip() {
+    return '改两条路：用「添加链接」填网盘地址（页面上展示效果一样），' +
+      '或者在本地用 git push 传进仓库（那条路能到 100MB）。';
+  }
+
+  /* 大文件能传，但要如实说清代价：git 会永久保留，删了仓库也不会变小 */
+  function resBigFileNote(size) {
+    return Number(size) > CFG.warnResBytes
+      ? '（' + humanSize(size) + '，会永久占用仓库空间 —— git 会保留每个历史版本，以后删掉也不会让仓库变小）'
+      : '';
+  }
+
+  function resUploadErrMsg(e) {
+    var s = e && e.status;
+    if (s === 413 || s === 422 || s === 502) {
+      return 'GitHub 的接口没能处理这个文件（HTTP ' + s + '），通常是体积超出直传能力。' + resTooLargeTip();
+    }
+    return (e && e.message) ? e.message : String(e);
+  }
+
   function resUploadFile(dirPath, file) {
     var safe = resSafeName(file.name);
     var repoPath;
@@ -3950,7 +3978,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       else ok.push(f);
     });
     if (skipped.length) {
-      toast(skipped.length + ' 个文件超过 ' + humanSize(CFG.maxResBytes) + '，已跳过（请改用外部链接）', 'err');
+      toast(skipped.length + ' 个文件超过浏览器直传上限 ' + humanSize(CFG.maxResBytes) + '，已跳过。' +
+        resTooLargeTip(), 'err');
     }
     if (!ok.length) return;
 
@@ -3963,8 +3992,12 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         $('btn-res-upload').disabled = false;
         if (failed) toast(failed + ' 个文件上传失败', 'err');
         if (added.length) {
+          var bytes = added.reduce(function (s, it) { return s + (Number(it.size) || 0); }, 0);
+          var heavy = added.filter(function (it) { return Number(it.size) > CFG.warnResBytes; }).length;
+          var note = added.length + ' 个文件，共 ' + humanSize(bytes) +
+            (heavy ? '，其中 ' + heavy + ' 个偏大、会永久占用仓库空间' : '');
           // 上传和写清单分两次提交，但连着做完，免得「传了却看不到」
-          saveResources('res: 上传 ' + added.length + ' 个文件');
+          saveResources('res: 上传 ' + added.length + ' 个文件', note);
         }
         return;
       }
@@ -3989,7 +4022,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         done++;
       }).catch(function (e) {
         failed++;
-        toast('「' + f.name + '」上传失败：' + e.message, 'err');
+        toast('「' + f.name + '」上传失败：' + resUploadErrMsg(e), 'err');
       }).then(step);
     }
     step();
