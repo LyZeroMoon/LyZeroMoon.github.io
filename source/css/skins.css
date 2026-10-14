@@ -1,0 +1,941 @@
+/*!
+ * UI 皮肤（Skins）
+ * ---------------------------------------------------------------------------
+ * 原理：Fluid 主题把配色全部收敛成 main.css 里 `:root` 上的 22 个 CSS 自定义
+ * 属性（--body-bg-color / --board-bg-color / --navbar-bg-color ...），页面所有
+ * 子布局都靠 var() 取值。所以「换皮」= 在更高的特异性下重新赋值这组变量，
+ * 不用去改主题的任何一个类。
+ *
+ * 本文件由 _config.fluid.yml 的 custom_css 加载，排在 main.css 之后，
+ * 所以同名属性的覆盖天然生效（Fluid 自己也是这么留的口子）。
+ *
+ * 皮肤通过 <html data-ui="xxx"> 选中，属性由两处写入：
+ *   1. layout/_partials/head.ejs 里的内联脚本（首屏前，防闪烁）
+ *   2. /js/skins.js（右上角切换器点击时）
+ *
+ * 明暗两态要写三处，少一处就会有「切了暗色皮肤没跟上」的问题：
+ *   :root[data-ui="x"]                                    → 明色
+ *   :root[data-ui="x"]:not([data-user-color-scheme])       → 自动暗色（JS 未执行前）
+ *   @media not print { :root[data-ui="x"][data-user-color-scheme="dark"] }  → 手动/系统暗色
+ * 后两条对应 main.css 里的同款写法，只是我们多带了一层 data-ui，特异性更高。
+ *
+ * 注意：不要覆盖 --color-mode。主题靠它做 prefers-color-scheme 探测
+ * （js/color-schema.js 的 getSchemaFromCSSMediaQuery）。
+ *
+ * 想加一套新皮肤：复制一节，改 id/颜色，再去 source/_data/ui.json 的 skins
+ * 数组里追加一条同名记录（后台的「外观」页读的就是那份清单）。
+ * ---------------------------------------------------------------------------
+ */
+
+/* ==========================================================================
+   通用：换皮瞬间的过渡
+   只在切换的 400ms 内挂上 .ui-animating，平时不干预主题自身的过渡设定。
+   ========================================================================== */
+
+:root.ui-animating,
+:root.ui-animating body,
+:root.ui-animating #board,
+:root.ui-animating .top-nav-collapse,
+:root.ui-animating .navbar-col-show,
+:root.ui-animating .navbar .dropdown-collapse {
+  transition: background-color 0.4s ease, background-image 0.4s ease,
+              color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* ==========================================================================
+   墨韵 ink —— 暖纸底、衬线字、朱砂点缀
+   ========================================================================== */
+
+:root[data-ui="ink"] {
+  --font-family-sans-serif: Georgia, "Times New Roman", "Songti SC", "Noto Serif SC",
+    "Source Han Serif SC", "SimSun", serif;
+
+  --body-bg-color: #f3eee4;
+  --board-bg-color: #fffdf8;
+  --text-color: #3d372e;
+  --sec-text-color: #8a7d69;
+  --post-text-color: #37312a;
+  --post-heading-color: #1e1a15;
+  --post-link-color: #a8402c;
+  --link-hover-color: #c9553c;
+  --link-hover-bg-color: #f0e5d3;
+  --line-color: #e3d8c4;
+  --navbar-bg-color: #2b2620;
+  --navbar-text-color: #f0e9dc;
+  --subtitle-color: #f0e9dc;
+  --scrollbar-color: #d5c8b2;
+  --scrollbar-hover-color: #b9a88c;
+  --button-bg-color: transparent;
+  --button-hover-bg-color: #ece1cd;
+  --highlight-bg-color: #f8f3e8;
+  --inlinecode-bg-color: rgba(168, 64, 44, 0.09);
+  --fold-title-color: #3d372e;
+  --fold-border-color: #e3d8c4;
+}
+
+:root[data-ui="ink"]:not([data-user-color-scheme]) {
+  --body-bg-color: #151310;
+  --board-bg-color: #1e1b16;
+  --text-color: #cec5b4;
+  --sec-text-color: #988d7b;
+  --post-text-color: #cec5b4;
+  --post-heading-color: #ebe2d2;
+  --post-link-color: #e0906f;
+  --link-hover-color: #f2a883;
+  --link-hover-bg-color: #2b2620;
+  --line-color: #3b342b;
+  --navbar-bg-color: #1a1713;
+  --navbar-text-color: #d9cfbd;
+  --subtitle-color: #d9cfbd;
+  --scrollbar-color: #4d4437;
+  --scrollbar-hover-color: #6d6152;
+  --button-bg-color: transparent;
+  --button-hover-bg-color: #302a22;
+  --highlight-bg-color: #221e18;
+  --inlinecode-bg-color: rgba(224, 144, 111, 0.14);
+  --fold-title-color: #cec5b4;
+  --fold-border-color: #3b342b;
+}
+
+@media not print {
+  :root[data-ui="ink"][data-user-color-scheme="dark"] {
+    --body-bg-color: #151310;
+    --board-bg-color: #1e1b16;
+    --text-color: #cec5b4;
+    --sec-text-color: #988d7b;
+    --post-text-color: #cec5b4;
+    --post-heading-color: #ebe2d2;
+    --post-link-color: #e0906f;
+    --link-hover-color: #f2a883;
+    --link-hover-bg-color: #2b2620;
+    --line-color: #3b342b;
+    --navbar-bg-color: #1a1713;
+    --navbar-text-color: #d9cfbd;
+    --subtitle-color: #d9cfbd;
+    --scrollbar-color: #4d4437;
+    --scrollbar-hover-color: #6d6152;
+    --button-bg-color: transparent;
+    --button-hover-bg-color: #302a22;
+    --highlight-bg-color: #221e18;
+    --inlinecode-bg-color: rgba(224, 144, 111, 0.14);
+    --fold-title-color: #cec5b4;
+    --fold-border-color: #3b342b;
+  }
+}
+
+:root[data-ui="ink"] .markdown-body {
+  line-height: 1.9;
+  letter-spacing: 0.012em;
+}
+
+:root[data-ui="ink"] .markdown-body h1,
+:root[data-ui="ink"] .markdown-body h2,
+:root[data-ui="ink"] .markdown-body h3 {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+:root[data-ui="ink"] .markdown-body h2 {
+  border-bottom: 1px solid var(--line-color);
+  padding-bottom: 0.3em;
+}
+
+:root[data-ui="ink"] .markdown-body a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+:root[data-ui="ink"] .markdown-body blockquote {
+  border-left: 3px solid #b99b6b;
+  border-radius: 0 3px 3px 0;
+  background-color: rgba(185, 155, 107, 0.09);
+  color: var(--sec-text-color);
+  padding: 0.7em 1.1em;
+}
+
+:root[data-ui="ink"] .markdown-body pre,
+:root[data-ui="ink"] .markdown-body img {
+  border-radius: 3px;
+}
+
+:root[data-ui="ink"] .markdown-body pre {
+  border: 1px solid var(--line-color);
+}
+
+:root[data-ui="ink"] #board {
+  border-radius: 3px;
+  box-shadow: 0 2px 16px rgba(80, 64, 40, 0.1);
+}
+
+/* ==========================================================================
+   深海 midnight —— 深蓝夜色，为长时间阅读而调
+   ========================================================================== */
+
+:root[data-ui="midnight"] {
+  --font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  --body-bg-color: #eef3f9;
+  --board-bg-color: #ffffff;
+  --text-color: #2b3a4a;
+  --sec-text-color: #6b7f93;
+  --post-text-color: #24313f;
+  --post-heading-color: #10202e;
+  --post-link-color: #1c6fb8;
+  --link-hover-color: #2f97e8;
+  --link-hover-bg-color: #e8f1fa;
+  --line-color: #dbe5ef;
+  --navbar-bg-color: #16324a;
+  --navbar-text-color: #e8f1fa;
+  --subtitle-color: #e8f1fa;
+  --scrollbar-color: #b9c9d8;
+  --scrollbar-hover-color: #94a9bd;
+  --button-bg-color: transparent;
+  --button-hover-bg-color: #e4edf6;
+  --highlight-bg-color: #f2f7fb;
+  --inlinecode-bg-color: rgba(28, 111, 184, 0.1);
+  --fold-title-color: #2b3a4a;
+  --fold-border-color: #dbe5ef;
+}
+
+:root[data-ui="midnight"]:not([data-user-color-scheme]) {
+  --body-bg-color: #0b1420;
+  --board-bg-color: #131f2e;
+  --text-color: #b6c6d8;
+  --sec-text-color: #7f94a8;
+  --post-text-color: #b6c6d8;
+  --post-heading-color: #e3edf7;
+  --post-link-color: #58aef0;
+  --link-hover-color: #7cc3ff;
+  --link-hover-bg-color: #1c2c3f;
+  --line-color: #24374b;
+  --navbar-bg-color: #0f1e2c;
+  --navbar-text-color: #cbdbeb;
+  --subtitle-color: #cbdbeb;
+  --scrollbar-color: #2c4560;
+  --scrollbar-hover-color: #41617f;
+  --button-bg-color: transparent;
+  --button-hover-bg-color: #1f3448;
+  --highlight-bg-color: #16232f;
+  --inlinecode-bg-color: rgba(88, 174, 240, 0.14);
+  --fold-title-color: #b6c6d8;
+  --fold-border-color: #24374b;
+}
+
+@media not print {
+  :root[data-ui="midnight"][data-user-color-scheme="dark"] {
+    --body-bg-color: #0b1420;
+    --board-bg-color: #131f2e;
+    --text-color: #b6c6d8;
+    --sec-text-color: #7f94a8;
+    --post-text-color: #b6c6d8;
+    --post-heading-color: #e3edf7;
+    --post-link-color: #58aef0;
+    --link-hover-color: #7cc3ff;
+    --link-hover-bg-color: #1c2c3f;
+    --line-color: #24374b;
+    --navbar-bg-color: #0f1e2c;
+    --navbar-text-color: #cbdbeb;
+    --subtitle-color: #cbdbeb;
+    --scrollbar-color: #2c4560;
+    --scrollbar-hover-color: #41617f;
+    --button-bg-color: transparent;
+    --button-hover-bg-color: #1f3448;
+    --highlight-bg-color: #16232f;
+    --inlinecode-bg-color: rgba(88, 174, 240, 0.14);
+    --fold-title-color: #b6c6d8;
+    --fold-border-color: #24374b;
+  }
+}
+
+:root[data-ui="midnight"] .markdown-body {
+  line-height: 1.85;
+}
+
+:root[data-ui="midnight"] .markdown-body h1,
+:root[data-ui="midnight"] .markdown-body h2,
+:root[data-ui="midnight"] .markdown-body h3 {
+  font-weight: 600;
+}
+
+:root[data-ui="midnight"] .markdown-body h2 {
+  border-bottom: 1px solid var(--line-color);
+  padding-bottom: 0.3em;
+}
+
+:root[data-ui="midnight"] .markdown-body pre,
+:root[data-ui="midnight"] .markdown-body img,
+:root[data-ui="midnight"] .markdown-body blockquote {
+  border-radius: 8px;
+}
+
+:root[data-ui="midnight"] .markdown-body blockquote {
+  border-left: 4px solid var(--post-link-color);
+  background-color: var(--link-hover-bg-color);
+  color: var(--sec-text-color);
+  padding: 0.7em 1.1em;
+}
+
+:root[data-ui="midnight"] #board {
+  box-shadow: 0 14px 40px rgba(16, 42, 67, 0.14);
+}
+
+/* ==========================================================================
+   玻璃 glass —— 毛玻璃卡片 + 渐变背景
+   ========================================================================== */
+
+:root[data-ui="glass"] {
+  --font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  --body-bg-color: #eef3ff;
+  --board-bg-color: rgba(255, 255, 255, 0.66);
+  --text-color: #29344a;
+  --sec-text-color: #6b7893;
+  --post-text-color: #26304a;
+  --post-heading-color: #131b30;
+  --post-link-color: #3b5bdb;
+  --link-hover-color: #5b7cfa;
+  --link-hover-bg-color: rgba(91, 124, 250, 0.12);
+  --line-color: rgba(120, 140, 190, 0.24);
+  --navbar-bg-color: rgba(255, 255, 255, 0.72);
+  --navbar-text-color: #26304a;
+  --subtitle-color: #ffffff;
+  --scrollbar-color: #c3cde4;
+  --scrollbar-hover-color: #a3b0d0;
+  --button-bg-color: transparent;
+  --button-hover-bg-color: rgba(91, 124, 250, 0.12);
+  --highlight-bg-color: rgba(240, 244, 255, 0.75);
+  --inlinecode-bg-color: rgba(91, 124, 250, 0.12);
+  --fold-title-color: #29344a;
+  --fold-border-color: rgba(120, 140, 190, 0.24);
+}
+
+:root[data-ui="glass"] body {
+  background-image: linear-gradient(140deg, #e8f0ff 0%, #f3ecff 45%, #e6f7fb 100%);
+  background-attachment: fixed;
+}
+
+:root[data-ui="glass"]:not([data-user-color-scheme]) {
+  --board-bg-color: rgba(30, 36, 56, 0.62);
+  --text-color: #c2cbe0;
+  --sec-text-color: #8b96b0;
+  --post-text-color: #c2cbe0;
+  --post-heading-color: #eef2fb;
+  --post-link-color: #8fa8ff;
+  --link-hover-color: #a8bcff;
+  --link-hover-bg-color: rgba(143, 168, 255, 0.16);
+  --line-color: rgba(120, 140, 190, 0.22);
+  --navbar-bg-color: rgba(18, 23, 38, 0.7);
+  --navbar-text-color: #dbe3f5;
+  --subtitle-color: #dbe3f5;
+  --scrollbar-color: #33405e;
+  --scrollbar-hover-color: #4a5a80;
+  --button-bg-color: transparent;
+  --button-hover-bg-color: rgba(143, 168, 255, 0.14);
+  --highlight-bg-color: rgba(24, 30, 48, 0.6);
+  --inlinecode-bg-color: rgba(143, 168, 255, 0.16);
+  --fold-title-color: #c2cbe0;
+  --fold-border-color: rgba(120, 140, 190, 0.22);
+  --body-bg-color: #0e1220;
+}
+
+:root[data-ui="glass"]:not([data-user-color-scheme]) body {
+  background-image: linear-gradient(140deg, #0b1020 0%, #16112a 45%, #0a1c24 100%);
+}
+
+@media not print {
+  :root[data-ui="glass"][data-user-color-scheme="dark"] {
+    --board-bg-color: rgba(30, 36, 56, 0.62);
+    --text-color: #c2cbe0;
+    --sec-text-color: #8b96b0;
+    --post-text-color: #c2cbe0;
+    --post-heading-color: #eef2fb;
+    --post-link-color: #8fa8ff;
+    --link-hover-color: #a8bcff;
+    --link-hover-bg-color: rgba(143, 168, 255, 0.16);
+    --line-color: rgba(120, 140, 190, 0.22);
+    --navbar-bg-color: rgba(18, 23, 38, 0.7);
+    --navbar-text-color: #dbe3f5;
+    --subtitle-color: #dbe3f5;
+    --scrollbar-color: #33405e;
+    --scrollbar-hover-color: #4a5a80;
+    --button-bg-color: transparent;
+    --button-hover-bg-color: rgba(143, 168, 255, 0.14);
+    --highlight-bg-color: rgba(24, 30, 48, 0.6);
+    --inlinecode-bg-color: rgba(143, 168, 255, 0.16);
+    --fold-title-color: #c2cbe0;
+    --fold-border-color: rgba(120, 140, 190, 0.22);
+    --body-bg-color: #0e1220;
+  }
+
+  :root[data-ui="glass"][data-user-color-scheme="dark"] body {
+    background-image: linear-gradient(140deg, #0b1020 0%, #16112a 45%, #0a1c24 100%);
+  }
+}
+
+:root[data-ui="glass"] #board,
+:root[data-ui="glass"] .modal-dialog .modal-content {
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(31, 68, 122, 0.12), 0 2px 8px rgba(31, 68, 122, 0.06);
+}
+
+:root[data-ui="glass"] .top-nav-collapse,
+:root[data-ui="glass"] .navbar-col-show,
+:root[data-ui="glass"] .navbar .dropdown-collapse {
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+}
+
+:root[data-ui="glass"] .navbar .dropdown-menu {
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  border-radius: 12px;
+}
+
+:root[data-ui="glass"]:not([data-user-color-scheme]) #board,
+:root[data-ui="glass"]:not([data-user-color-scheme]) .modal-dialog .modal-content {
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+@media not print {
+  :root[data-ui="glass"][data-user-color-scheme="dark"] #board,
+  :root[data-ui="glass"][data-user-color-scheme="dark"] .modal-dialog .modal-content {
+    border-color: rgba(255, 255, 255, 0.09);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+}
+
+:root[data-ui="glass"] .markdown-body {
+  line-height: 1.85;
+}
+
+:root[data-ui="glass"] .markdown-body pre,
+:root[data-ui="glass"] .markdown-body img,
+:root[data-ui="glass"] .markdown-body blockquote,
+:root[data-ui="glass"] .markdown-body table {
+  border-radius: 12px;
+}
+
+:root[data-ui="glass"] .markdown-body blockquote {
+  background-color: var(--link-hover-bg-color);
+  border-left: 4px solid var(--post-link-color);
+  color: var(--sec-text-color);
+  padding: 0.7em 1.1em;
+}
+
+:root[data-ui="glass"] .markdown-body table {
+  overflow: hidden;
+}
+
+/* 玻璃皮肤下面板自己也得是玻璃的，否则在渐变背景上是一块死白 */
+:root[data-ui="glass"] .ui-panel {
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  background-color: rgba(255, 255, 255, 0.78);
+}
+
+:root[data-ui="glass"]:not([data-user-color-scheme]) .ui-panel {
+  background-color: rgba(22, 27, 43, 0.82);
+}
+
+@media not print {
+  :root[data-ui="glass"][data-user-color-scheme="dark"] .ui-panel {
+    background-color: rgba(22, 27, 43, 0.82);
+  }
+}
+
+/* ==========================================================================
+   樱雾 sakura —— 粉紫柔和，轻盈通透
+   ========================================================================== */
+
+:root[data-ui="sakura"] {
+  --font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  --body-bg-color: #fdf2f6;
+  --board-bg-color: #fffbfd;
+  --text-color: #4a3a44;
+  --sec-text-color: #9c8494;
+  --post-text-color: #443540;
+  --post-heading-color: #2c1f28;
+  --post-link-color: #c2477f;
+  --link-hover-color: #e05a97;
+  --link-hover-bg-color: #fbe4ee;
+  --line-color: #f2dde7;
+  --navbar-bg-color: #7a4a63;
+  --navbar-text-color: #fdf2f6;
+  --subtitle-color: #fdf2f6;
+  --scrollbar-color: #e5c6d5;
+  --scrollbar-hover-color: #cfa8bb;
+  --button-bg-color: transparent;
+  --button-hover-bg-color: #fae6ef;
+  --highlight-bg-color: #fdf5f9;
+  --inlinecode-bg-color: rgba(194, 71, 127, 0.09);
+  --fold-title-color: #4a3a44;
+  --fold-border-color: #f2dde7;
+}
+
+:root[data-ui="sakura"]:not([data-user-color-scheme]) {
+  --body-bg-color: #161016;
+  --board-bg-color: #201821;
+  --text-color: #d4c4ce;
+  --sec-text-color: #9d8894;
+  --post-text-color: #d4c4ce;
+  --post-heading-color: #f0e2ea;
+  --post-link-color: #ec7fae;
+  --link-hover-color: #f79cc3;
+  --link-hover-bg-color: #2b1f29;
+  --line-color: #3a2b36;
+  --navbar-bg-color: #1b1319;
+  --navbar-text-color: #e2d3dc;
+  --subtitle-color: #e2d3dc;
+  --scrollbar-color: #4d3a46;
+  --scrollbar-hover-color: #6d5262;
+  --button-bg-color: transparent;
+  --button-hover-bg-color: #2f2230;
+  --highlight-bg-color: #211a22;
+  --inlinecode-bg-color: rgba(236, 127, 174, 0.14);
+  --fold-title-color: #d4c4ce;
+  --fold-border-color: #3a2b36;
+}
+
+@media not print {
+  :root[data-ui="sakura"][data-user-color-scheme="dark"] {
+    --body-bg-color: #161016;
+    --board-bg-color: #201821;
+    --text-color: #d4c4ce;
+    --sec-text-color: #9d8894;
+    --post-text-color: #d4c4ce;
+    --post-heading-color: #f0e2ea;
+    --post-link-color: #ec7fae;
+    --link-hover-color: #f79cc3;
+    --link-hover-bg-color: #2b1f29;
+    --line-color: #3a2b36;
+    --navbar-bg-color: #1b1319;
+    --navbar-text-color: #e2d3dc;
+    --subtitle-color: #e2d3dc;
+    --scrollbar-color: #4d3a46;
+    --scrollbar-hover-color: #6d5262;
+    --button-bg-color: transparent;
+    --button-hover-bg-color: #2f2230;
+    --highlight-bg-color: #211a22;
+    --inlinecode-bg-color: rgba(236, 127, 174, 0.14);
+    --fold-title-color: #d4c4ce;
+    --fold-border-color: #3a2b36;
+  }
+}
+
+:root[data-ui="sakura"] .markdown-body {
+  line-height: 1.85;
+}
+
+:root[data-ui="sakura"] .markdown-body h1,
+:root[data-ui="sakura"] .markdown-body h2,
+:root[data-ui="sakura"] .markdown-body h3 {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+:root[data-ui="sakura"] .markdown-body h2 {
+  border-bottom: 1px solid var(--line-color);
+  padding-bottom: 0.3em;
+}
+
+:root[data-ui="sakura"] .markdown-body pre,
+:root[data-ui="sakura"] .markdown-body img,
+:root[data-ui="sakura"] .markdown-body blockquote {
+  border-radius: 14px;
+}
+
+:root[data-ui="sakura"] .markdown-body blockquote {
+  border-left: 4px solid #e79bc0;
+  background-color: var(--link-hover-bg-color);
+  color: var(--sec-text-color);
+  padding: 0.7em 1.1em;
+}
+
+:root[data-ui="sakura"] #board {
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(160, 90, 125, 0.13);
+}
+
+/* ==========================================================================
+   终端 terminal —— 等宽字体与磷光绿，极客风
+   ========================================================================== */
+
+:root[data-ui="terminal"] {
+  --font-family-sans-serif: "JetBrains Mono", "Cascadia Code", "SF Mono", "Sarasa Mono SC",
+    Menlo, Consolas, "DejaVu Sans Mono", "Microsoft YaHei Mono", monospace;
+
+  --body-bg-color: #eef4ef;
+  --board-bg-color: #f8fbf8;
+  --text-color: #23342a;
+  --sec-text-color: #5d7566;
+  --post-text-color: #1e2e25;
+  --post-heading-color: #0f1c14;
+  --post-link-color: #0e7a4a;
+  --link-hover-color: #16a34a;
+  --link-hover-bg-color: #dff2e6;
+  --line-color: #cfe0d5;
+  --navbar-bg-color: #16241c;
+  --navbar-text-color: #b8f0cd;
+  --subtitle-color: #b8f0cd;
+  --scrollbar-color: #b9cfc1;
+  --scrollbar-hover-color: #94b3a1;
+  --button-bg-color: transparent;
+  --button-hover-bg-color: #e0efe6;
+  --highlight-bg-color: #f2f8f3;
+  --inlinecode-bg-color: rgba(14, 122, 74, 0.1);
+  --fold-title-color: #23342a;
+  --fold-border-color: #cfe0d5;
+}
+
+:root[data-ui="terminal"]:not([data-user-color-scheme]) {
+  --body-bg-color: #08100b;
+  --board-bg-color: #0d1710;
+  --text-color: #a9d8b8;
+  --sec-text-color: #6e9c7e;
+  --post-text-color: #a9d8b8;
+  --post-heading-color: #d2f5dd;
+  --post-link-color: #3ddc84;
+  --link-hover-color: #6ff0a5;
+  --link-hover-bg-color: #13301e;
+  --line-color: #1d3527;
+  --navbar-bg-color: #0a140d;
+  --navbar-text-color: #b8f0cd;
+  --subtitle-color: #b8f0cd;
+  --scrollbar-color: #1e3a28;
+  --scrollbar-hover-color: #2d5639;
+  --button-bg-color: transparent;
+  --button-hover-bg-color: #16321f;
+  --highlight-bg-color: #0b1a11;
+  --inlinecode-bg-color: rgba(61, 220, 132, 0.14);
+  --fold-title-color: #a9d8b8;
+  --fold-border-color: #1d3527;
+}
+
+@media not print {
+  :root[data-ui="terminal"][data-user-color-scheme="dark"] {
+    --body-bg-color: #08100b;
+    --board-bg-color: #0d1710;
+    --text-color: #a9d8b8;
+    --sec-text-color: #6e9c7e;
+    --post-text-color: #a9d8b8;
+    --post-heading-color: #d2f5dd;
+    --post-link-color: #3ddc84;
+    --link-hover-color: #6ff0a5;
+    --link-hover-bg-color: #13301e;
+    --line-color: #1d3527;
+    --navbar-bg-color: #0a140d;
+    --navbar-text-color: #b8f0cd;
+    --subtitle-color: #b8f0cd;
+    --scrollbar-color: #1e3a28;
+    --scrollbar-hover-color: #2d5639;
+    --button-bg-color: transparent;
+    --button-hover-bg-color: #16321f;
+    --highlight-bg-color: #0b1a11;
+    --inlinecode-bg-color: rgba(61, 220, 132, 0.14);
+    --fold-title-color: #a9d8b8;
+    --fold-border-color: #1d3527;
+  }
+}
+
+:root[data-ui="terminal"] .markdown-body {
+  line-height: 1.8;
+  font-size: 0.95rem;
+}
+
+:root[data-ui="terminal"] .markdown-body h1,
+:root[data-ui="terminal"] .markdown-body h2,
+:root[data-ui="terminal"] .markdown-body h3,
+:root[data-ui="terminal"] .markdown-body h4 {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+:root[data-ui="terminal"] .markdown-body h2 {
+  border-bottom: 1px dashed var(--line-color);
+  padding-bottom: 0.3em;
+}
+
+:root[data-ui="terminal"] .markdown-body a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+:root[data-ui="terminal"] .markdown-body pre,
+:root[data-ui="terminal"] .markdown-body code,
+:root[data-ui="terminal"] .markdown-body img,
+:root[data-ui="terminal"] .markdown-body blockquote {
+  border-radius: 2px;
+}
+
+:root[data-ui="terminal"] .markdown-body pre {
+  border: 1px solid var(--line-color);
+}
+
+:root[data-ui="terminal"] .markdown-body blockquote {
+  border-left: 3px solid #3ddc84;
+  background-color: var(--link-hover-bg-color);
+  color: var(--sec-text-color);
+  padding: 0.7em 1.1em;
+}
+
+:root[data-ui="terminal"] #board {
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--line-color);
+}
+
+/* ==========================================================================
+   右上角的皮肤切换器
+   ---------------------------------------------------------------------------
+   样式全部走主题变量，这样它在任何皮肤下都自动是协调的。
+   ========================================================================== */
+
+#ui-toggle-btn {
+  cursor: pointer;
+}
+
+#ui-toggle-btn .iconfont {
+  transition: transform 0.3s ease, color 0.2s ease-in-out;
+}
+
+#ui-toggle-btn:hover .iconfont {
+  transform: rotate(-18deg);
+}
+
+/* 刻意不复用主题的 .mask：那个类是 position:absolute 且给搜索弹窗用的，套上来会打架 */
+.ui-mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1080;
+  background-color: rgba(0, 0, 0, 0.32);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4.5rem 1rem 2rem;
+  overflow-y: auto;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s ease, visibility 0.22s ease;
+}
+
+/* 桌面端从右上角的按钮下方展开，跟入口对得上；窄屏才居中 */
+@media (min-width: 992px) {
+  .ui-mask {
+    justify-content: flex-end;
+    padding-right: 2.25rem;
+  }
+}
+
+.ui-mask.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Bootstrap 4 已经删掉了 .hidden（换成 .d-none），面板自己带一个，不欠外部依赖 */
+.ui-hidden {
+  display: none !important;
+}
+
+body.ui-lock {
+  overflow: hidden;
+}
+
+.ui-panel {
+  width: 100%;
+  max-width: 25rem;
+  background-color: var(--board-bg-color);
+  color: var(--text-color);
+  border-radius: 14px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  padding: 1.15rem 1.15rem 0.9rem;
+  transform: translateY(-12px) scale(0.985);
+  transition: transform 0.24s cubic-bezier(0.22, 0.9, 0.3, 1);
+}
+
+.ui-mask.show .ui-panel {
+  transform: none;
+}
+
+.ui-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.ui-panel-head h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--post-heading-color, var(--text-color));
+}
+
+.ui-panel-head .ui-close {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--sec-text-color);
+  line-height: 1;
+  padding: 0.35rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.ui-panel-head .ui-close:hover {
+  color: var(--link-hover-color);
+  background-color: var(--button-hover-bg-color);
+}
+
+.ui-list {
+  display: grid;
+  gap: 0.45rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.ui-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line-color);
+  background-color: transparent;
+  color: inherit;
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.12s ease;
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.ui-item:hover {
+  border-color: var(--link-hover-color);
+  background-color: var(--button-hover-bg-color);
+}
+
+.ui-item:active {
+  transform: scale(0.99);
+}
+
+.ui-item.on {
+  border-color: var(--post-link-color);
+  box-shadow: inset 0 0 0 1px var(--post-link-color);
+}
+
+.ui-swatch {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9px;
+  overflow: hidden;
+  border: 1px solid var(--line-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.ui-swatch i {
+  display: block;
+  flex: 1;
+}
+
+.ui-meta {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.ui-name {
+  display: block;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.ui-desc {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--sec-text-color);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-tick {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  color: var(--post-link-color);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.ui-item.on .ui-tick {
+  opacity: 1;
+}
+
+.ui-item:focus-visible,
+.ui-close:focus-visible,
+.ui-panel-foot button:focus-visible {
+  outline: 2px solid var(--link-hover-color);
+  outline-offset: 2px;
+}
+
+.ui-panel-foot {
+  margin-top: 0.85rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--line-color);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--sec-text-color);
+}
+
+.ui-panel-foot button {
+  margin-left: auto;
+  border: 1px solid var(--line-color);
+  background-color: transparent;
+  color: var(--text-color);
+  border-radius: 8px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.ui-panel-foot button:hover {
+  border-color: var(--link-hover-color);
+  background-color: var(--button-hover-bg-color);
+}
+
+/* 移动端网格菜单里的皮肤入口 */
+#mobile-ui-toggle-btn .mobile-grid-item {
+  cursor: pointer;
+}
+
+@media (max-width: 575.98px) {
+  .ui-mask {
+    padding: 1rem;
+    align-items: center;
+  }
+
+  .ui-panel {
+    max-width: 100%;
+  }
+}

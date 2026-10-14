@@ -96,6 +96,7 @@ Token 会用密码派生的密钥（PBKDF2-SHA256 600k 迭代 + AES-256-GCM）�
 | front-matter 保真 | 后台只接管标题 / 日期 / 分类 / 标签，其余字段（`comment`、`permalink` 等）原样保留 |
 | 草稿保护 | 编辑内容自动暂存在本地，误关页面后重开会提示恢复 |
 | 深色模式 | 右上角切换，默认跟随系统 |
+| 界面风格（皮肤） | 顶部「外观」标签，挑一套作默认、决定访客能否自己换。站点自带 6 套皮肤，访客用右上角的画笔按钮切换 |
 | 快捷键 | `Ctrl+S` 发布、`Ctrl+B` 加粗、`Ctrl+I` 斜体、`Ctrl+K` 插链接、`Esc` 关弹窗 |
 
 后台本身是纯静态页面，发布动作直接调用 GitHub Contents API 提交 commit，触发 Actions 自动部署。
@@ -359,6 +360,52 @@ graph LR
   就算某个条目的 `path` 指向了没声明的目录，页面也会自动补出那一级，不会把条目藏起来。
 - 加新字段不用改代码：前台只读它认识的字段，后台保存时也只写认识的，未知字段会被丢掉。
 
+## 界面风格（皮肤）
+
+站点自带 6 套配色，访客点右上角的**画笔按钮**就能换。选择记在浏览器本地（`localStorage`），只影响他自己。
+
+| 皮肤 | 风格 |
+| --- | --- |
+| 经典 | Fluid 原味，零覆盖 |
+| 墨韵 | 暖纸底、衬线字、朱砂点缀 |
+| 深海 | 深蓝夜色，为长时间阅读而调 |
+| 玻璃 | 毛玻璃卡片 + 渐变背景 |
+| 樱雾 | 粉紫柔和，轻盈通透 |
+| 终端 | 等宽字体与磷光绿，极客风 |
+
+**默认给谁看**由站主决定：后台顶部「外观」标签 → 选一套 → 「发布外观设置」。
+
+- 没挑过的访客看到「默认」那一套；挑过的访客下次来还是他自己那套（面板里有「恢复默认」可以回到站点默认）
+- 不想让访客换，把「允许访客自己切换风格」关掉 —— 导航栏上的画笔按钮整个消失
+- 每套皮肤都能单独停用。停用只是从切换器里藏起来，配置还在，随时开回来
+- 「经典」是兜底皮肤，锁着不能停用：它是唯一的零覆盖方案，别的皮肤出问题时还有退路
+
+### 怎么实现的
+
+Fluid 把配色收敛在 `main.css` 的 `:root` 上 —— 22 个 CSS 自定义属性（`--body-bg-color`、`--board-bg-color`、`--navbar-bg-color` …），所有子布局都靠 `var()` 取值。
+
+所以**换皮肤 = 用更高的特异性重新赋值这组变量**，一个主题类都不用改。`source/css/skins.css` 里每套皮肤要写三处：
+
+```css
+:root[data-ui="ink"] { … }                                   /* 明色 */
+:root[data-ui="ink"]:not([data-user-color-scheme]) { … }      /* 自动暗色 */
+@media not print {
+  :root[data-ui="ink"][data-user-color-scheme="dark"] { … }    /* 手动 / 系统暗色 */
+}
+```
+
+漏掉后两条就会出现「切了暗色皮肤没跟上」。皮肤靠 `<html data-ui="…">` 选中，写入它的是两处：`themes/fluid/layout/_partials/head.ejs` 里的**内联脚本**（排在样式表之前，防首屏闪烁）和 `source/js/skins.js`（点击切换时）。
+
+> 别去覆盖 `--color-mode`：主题靠它做 `prefers-color-scheme` 探测。
+
+想加一套皮肤：复制 `skins.css` 里任意一节改配色，再到 `source/_data/ui.json` 的 `skins` 数组追加一条同名记录（后台读的就是这份清单）。
+
+### 顺带修掉的一个问题
+
+`kb.css`（双向链接 / 笔记页）和 `resources.css`（资源页）原本是硬编码颜色，还各写了一整套 `[data-color-scheme="dark"]` 暗色规则 —— 但主题注入的属性叫 **`data-user-color-scheme`**，那批规则**从来没生效过**（也就是说资源页在暗色下一直是亮色硬编码）。
+
+现在这两个文件统一改走主题变量，层次色用 `color-mix()` 现算，于是暗色模式修好了、6 套皮肤也自动跟随，资源页那 55 条失效规则直接删掉。
+
 ## 评论
 
 文章评论用 **giscus**，数据存在仓库的 GitHub Discussions 里，不需要数据库和服务器，读者用 GitHub 账号登录即可发言。
@@ -390,11 +437,14 @@ graph LR
 │   ├── resources/         # 资源库页面 + 上传进来的电子书本体
 │   ├── _data/columns.yml  # 专栏页配置（后台「专栏」标签可视化编辑）
 │   ├── _data/resources.json # 资源库清单（后台「资源」标签可视化编辑）
+│   ├── _data/ui.json      # 界面风格清单与默认值（后台「外观」标签可视化编辑）
 │   ├── about/             # 关于页（后台「关于页」标签可在线编辑）
 │   ├── admin/             # 在线写作后台（单文件 SPA，含加密账号系统）
 │   ├── css/kb.css         # 知识库样式（双向链接、笔记页、反向链接）
 │   ├── css/resources.css  # 资源库样式（只由资源页引入）
+│   ├── css/skins.css      # 6 套界面皮肤 + 切换面板样式（全站加载）
 │   ├── js/resources.js    # 资源库页面的交互（只由资源页引入）
+│   ├── js/skins.js        # 右上角皮肤切换面板（全站加载）
 │   ├── columns/           # 专栏页
 │   ├── images/            # 后台插入的图片（后台「图片」标签可管理）
 │   ├── categories/        # 分类页
@@ -418,6 +468,9 @@ graph LR
 | 资源库页面外观 | `source/css/resources.css` |
 | 资源库页面交互、视图与排序 | `source/js/resources.js` |
 | 资源库上传的大小上限 | `source/admin/index.html` 的 `CFG.maxResBytes`（默认 38MB，实测的浏览器直传上限） |
+| 默认皮肤、访客能不能自己换 | `source/_data/ui.json`，或用后台「外观」标签 |
+| 每套皮肤的具体配色与风格 | `source/css/skins.css` |
+| 皮肤入口、首屏防闪烁脚本 | `themes/fluid/layout/_partials/head.ejs`、`.../header/navigation.ejs` |
 | 导航菜单、首页标语、社交图标 | `_config.fluid.yml` |
 | 主题配色、暗色模式 | `_config.fluid.yml` 的 `color` / `dark_mode` 段 |
 | 代码块样式、行号、复制按钮 | `_config.fluid.yml` 的 `code` 段 |

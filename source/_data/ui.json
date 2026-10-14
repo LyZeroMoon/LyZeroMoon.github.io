@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "default": "default",
+  "allowSwitch": true,
+  "skins": [
+    {
+      "id": "default",
+      "name": "经典",
+      "desc": "Fluid 原味，干净克制",
+      "accent": "#2f4154",
+      "accent2": "#f6f8fa",
+      "builtin": true
+    },
+    {
+      "id": "ink",
+      "name": "墨韵",
+      "desc": "暖纸底、衬线字、朱砂点缀",
+      "accent": "#2b2620",
+      "accent2": "#f3eee4"
+    },
+    {
+      "id": "midnight",
+      "name": "深海",
+      "desc": "深蓝夜色，为长时间阅读而调",
+      "accent": "#16324a",
+      "accent2": "#eef3f9"
+    },
+    {
+      "id": "glass",
+      "name": "玻璃",
+      "desc": "毛玻璃卡片 + 渐变背景",
+      "accent": "#5b7cfa",
+      "accent2": "#eef2ff"
+    },
+    {
+      "id": "sakura",
+      "name": "樱雾",
+      "desc": "粉紫柔和，轻盈通透",
+      "accent": "#7a4a63",
+      "accent2": "#fdf2f6"
+    },
+    {
+      "id": "terminal",
+      "name": "终端",
+      "desc": "等宽字体与磷光绿，极客风",
+      "accent": "#0f1a14",
+      "accent2": "#e8f5ec"
+    }
+  ]
+}

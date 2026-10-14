@@ -1,12 +1,29 @@
 /* ============================================================
    资源库：文件管理器式浏览页
    只由 themes/fluid/layout/resources.ejs 引入（页面级注入，不进全站）
+
+   配色一律走 Fluid 的 CSS 变量（--board-bg-color / --line-color /
+   --post-link-color …），需要「比底色深一点」的地方用 color-mix 现算。
+   这样明暗模式和界面皮肤都是自动跟随的，不用再各写一套。
+
+   历史包袱：这里原来有 55 条 [data-color-scheme="dark"] 规则，
+   但主题注入的属性叫 data-user-color-scheme —— 那批规则从来没生效过，
+   所以资源页在暗色下其实一直是亮色硬编码。改成变量后一并解决了。
    ============================================================ */
 
+:root {
+  /* 在底色上叠一点点文字色 = 微妙的层次，明暗两态都成立 */
+  --res-tint: color-mix(in srgb, var(--text-color) 5%, var(--board-bg-color));
+  --res-tint-2: color-mix(in srgb, var(--text-color) 9%, var(--board-bg-color));
+  /* 主色的淡版本，用于选中态、悬停态 */
+  --res-accent-soft: color-mix(in srgb, var(--post-link-color) 13%, transparent);
+  --res-accent-line: color-mix(in srgb, var(--post-link-color) 42%, transparent);
+}
+
 .res-app {
-  border: 1px solid #e6ebf1;
+  border: 1px solid var(--line-color);
   border-radius: 14px;
-  background: #fff;
+  background: var(--board-bg-color);
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(16, 32, 56, .04), 0 8px 26px -18px rgba(16, 32, 56, .18);
 }
@@ -19,8 +36,8 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: linear-gradient(#fbfcfe, #f6f8fb);
-  border-bottom: 1px solid #e9eef4;
+  background: var(--res-tint);
+  border-bottom: 1px solid var(--line-color);
 }
 
 .res-crumbs {
@@ -33,7 +50,7 @@
   line-height: 1.6;
 }
 .res-crumbs .sep {
-  color: #c3ccd6;
+  color: var(--sec-text-color);
   padding: 0 3px;
   user-select: none;
 }
@@ -46,7 +63,7 @@
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #5b6672;
+  color: var(--sec-text-color);
   font-size: 13.5px;
   font-family: inherit;
   cursor: pointer;
@@ -56,17 +73,17 @@
   transition: background .14s, color .14s;
 }
 .res-crumb:hover {
-  background: #e9effa;
-  color: #0366d6;
+  background: var(--res-accent-soft);
+  color: var(--post-link-color);
 }
 .res-crumb.now {
-  color: #2c3e50;
+  color: var(--text-color);
   font-weight: 600;
   cursor: default;
 }
 .res-crumb.now:hover {
   background: transparent;
-  color: #2c3e50;
+  color: var(--text-color);
 }
 .res-crumb svg {
   width: 13px;
@@ -88,20 +105,20 @@
   gap: 6px;
   height: 32px;
   padding: 0 11px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--line-color);
   border-radius: 9px;
-  background: #fff;
+  background: var(--board-bg-color);
   transition: border-color .15s, box-shadow .15s;
 }
 .res-search:focus-within {
-  border-color: #8fb6ea;
-  box-shadow: 0 0 0 3px rgba(47, 111, 237, .12);
+  border-color: var(--res-accent-line);
+  box-shadow: 0 0 0 3px var(--res-accent-soft);
 }
 .res-search svg {
   width: 14px;
   height: 14px;
   flex: 0 0 14px;
-  color: #9aa4b0;
+  color: var(--sec-text-color);
 }
 .res-search input {
   width: 130px;
@@ -110,17 +127,17 @@
   background: transparent;
   font-size: 13px;
   font-family: inherit;
-  color: #3c4858;
+  color: var(--text-color);
 }
-.res-search input::placeholder { color: #aab3bd; }
+.res-search input::placeholder { color: var(--sec-text-color); opacity: .8; }
 
 .res-sort {
   height: 32px;
   padding: 0 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--line-color);
   border-radius: 9px;
-  background: #fff;
-  color: #5b6672;
+  background: var(--board-bg-color);
+  color: var(--sec-text-color);
   font-size: 13px;
   font-family: inherit;
   cursor: pointer;
@@ -129,9 +146,9 @@
 .res-view {
   display: flex;
   padding: 2px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--line-color);
   border-radius: 9px;
-  background: #fff;
+  background: var(--board-bg-color);
 }
 .res-view button {
   display: flex;
@@ -142,15 +159,15 @@
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #98a2ae;
+  color: var(--sec-text-color);
   cursor: pointer;
   transition: background .14s, color .14s;
 }
 .res-view button svg { width: 14px; height: 14px; }
-.res-view button:hover { color: #5b6672; }
+.res-view button:hover { color: var(--text-color); }
 .res-view button.on {
-  background: #e9effa;
-  color: #2f6fed;
+  background: var(--res-accent-soft);
+  color: var(--post-link-color);
 }
 
 /* ---------- 当前文件夹说明条 ---------- */
@@ -161,17 +178,17 @@
   gap: 10px;
   flex-wrap: wrap;
   padding: 11px 16px;
-  background: #f7fafd;
-  border-bottom: 1px solid #eef2f7;
+  background: var(--res-tint);
+  border-bottom: 1px solid var(--line-color);
   font-size: 12.5px;
   line-height: 1.7;
-  color: #7b8794;
+  color: var(--sec-text-color);
 }
 .res-note .t {
   font-weight: 600;
-  color: #4a5568;
+  color: var(--text-color);
 }
-.res-note .sp { margin-left: auto; color: #9aa4b0; }
+.res-note .sp { margin-left: auto; color: var(--sec-text-color); }
 
 /* ---------- 主体 ---------- */
 
@@ -188,12 +205,12 @@
   font-size: 11.5px;
   font-weight: 600;
   letter-spacing: .08em;
-  color: #9aa4b0;
+  color: var(--sec-text-color);
 }
 .res-sec .n {
   font-weight: 400;
   letter-spacing: 0;
-  color: #bcc4cd;
+  opacity: .7;
 }
 .res-sec + .res-sec,
 .res-grid + .res-sec,
@@ -203,7 +220,7 @@
   margin: 0;
   padding: 40px 10px;
   text-align: center;
-  color: #9aa4b0;
+  color: var(--sec-text-color);
   font-size: 13.5px;
 }
 
@@ -222,9 +239,9 @@
   align-items: flex-start;
   width: 100%;
   padding: 13px 14px;
-  border: 1px solid #e8ecf0;
+  border: 1px solid var(--line-color);
   border-radius: 12px;
-  background: #fff;
+  background: var(--board-bg-color);
   text-align: left;
   text-decoration: none;
   color: inherit;
@@ -234,13 +251,13 @@
 }
 .res-card:hover { text-decoration: none; color: inherit; }
 .res-card:hover {
-  border-color: #b9d3f5;
-  background: #fbfdff;
+  border-color: var(--res-accent-line);
+  background: var(--res-tint);
   box-shadow: 0 4px 14px rgba(31, 68, 122, .07);
   transform: translateY(-1px);
 }
 .res-card:focus-visible {
-  outline: 2px solid #8fb6ea;
+  outline: 2px solid var(--post-link-color);
   outline-offset: 2px;
 }
 
@@ -253,13 +270,13 @@
   height: 40px;
   flex: 0 0 40px;
   border-radius: 10px;
-  background: #eef1f5;
-  color: #7b8794;
+  background: var(--res-tint-2);
+  color: var(--sec-text-color);
 }
 .res-ico svg { width: 21px; height: 21px; }
 .res-ico.folder {
-  background: #eef3fd;
-  color: #2f6fed;
+  background: var(--res-accent-soft);
+  color: var(--post-link-color);
 }
 .res-ico .ext {
   font-size: 10.5px;
@@ -267,19 +284,39 @@
   letter-spacing: .03em;
 }
 
-/* 按格式上色，让人扫一眼就知道是什么书 */
-.res-ico[data-fmt="PDF"]  { background: #fdeceb; color: #c0392b; }
-.res-ico[data-fmt="EPUB"] { background: #e9f7ef; color: #1a7f4b; }
+/* 按格式上色，让人扫一眼就知道是什么书。
+   color-mix 的写法让同一个色号在明色下是「浅底深字」、暗色下自动变成
+   「深底亮字」，不用再维护两套。 */
+.res-ico[data-fmt="PDF"] {
+  background: color-mix(in srgb, #c0392b 13%, var(--board-bg-color));
+  color: color-mix(in srgb, #c0392b 70%, var(--text-color));
+}
+.res-ico[data-fmt="EPUB"] {
+  background: color-mix(in srgb, #1a7f4b 13%, var(--board-bg-color));
+  color: color-mix(in srgb, #1a7f4b 70%, var(--text-color));
+}
 .res-ico[data-fmt="MOBI"],
 .res-ico[data-fmt="AZW3"],
-.res-ico[data-fmt="AZW"]  { background: #fdf3e3; color: #a9720f; }
+.res-ico[data-fmt="AZW"] {
+  background: color-mix(in srgb, #a9720f 14%, var(--board-bg-color));
+  color: color-mix(in srgb, #a9720f 70%, var(--text-color));
+}
 .res-ico[data-fmt="DJVU"],
-.res-ico[data-fmt="EPUB+"]{ background: #eef2fd; color: #4b5cc4; }
+.res-ico[data-fmt="EPUB+"] {
+  background: color-mix(in srgb, #4b5cc4 13%, var(--board-bg-color));
+  color: color-mix(in srgb, #4b5cc4 70%, var(--text-color));
+}
 .res-ico[data-fmt="ZIP"],
 .res-ico[data-fmt="RAR"],
-.res-ico[data-fmt="7Z"]   { background: #f2eefb; color: #7c5cd6; }
+.res-ico[data-fmt="7Z"] {
+  background: color-mix(in srgb, #7c5cd6 13%, var(--board-bg-color));
+  color: color-mix(in srgb, #7c5cd6 70%, var(--text-color));
+}
 .res-ico[data-fmt="TXT"],
-.res-ico[data-fmt="MD"]   { background: #eaf6f8; color: #0e8a9e; }
+.res-ico[data-fmt="MD"] {
+  background: color-mix(in srgb, #0e8a9e 13%, var(--board-bg-color));
+  color: color-mix(in srgb, #0e8a9e 70%, var(--text-color));
+}
 
 .res-info {
   min-width: 0;
@@ -290,7 +327,7 @@
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-color);
   line-height: 1.5;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -298,13 +335,13 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
-.res-card:hover .res-name { color: #0366d6; }
+.res-card:hover .res-name { color: var(--post-link-color); }
 
 .res-sub {
   display: block;
   margin-top: 4px;
   font-size: 12.5px;
-  color: #7b8794;
+  color: var(--sec-text-color);
   line-height: 1.6;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -314,7 +351,8 @@
   display: -webkit-box;
   margin-top: 5px;
   font-size: 12px;
-  color: #8a94a0;
+  color: var(--sec-text-color);
+  opacity: .9;
   line-height: 1.6;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -330,12 +368,12 @@
   line-height: 1.6;
   padding: 1px 7px;
   border-radius: 20px;
-  background: #f1f4f8;
-  color: #98a2ae;
+  background: var(--res-tint-2);
+  color: var(--sec-text-color);
 }
 .res-flag.ext {
-  background: #fdf3e3;
-  color: #a9720f;
+  background: color-mix(in srgb, #a9720f 15%, var(--board-bg-color));
+  color: color-mix(in srgb, #a9720f 72%, var(--text-color));
 }
 
 /* ---------- 列表视图 ---------- */
@@ -343,7 +381,7 @@
 .res-list {
   display: flex;
   flex-direction: column;
-  border: 1px solid #e8ecf0;
+  border: 1px solid var(--line-color);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -354,15 +392,15 @@
   width: 100%;
   padding: 10px 14px;
   border: 0;
-  border-bottom: 1px solid #f0f3f7;
-  background: #fff;
+  border-bottom: 1px solid var(--line-color);
+  background: var(--board-bg-color);
   text-align: left;
   font-family: inherit;
   cursor: pointer;
   transition: background .14s;
 }
 .res-row:last-child { border-bottom: 0; }
-.res-row:hover { background: #f7fafd; }
+.res-row:hover { background: var(--res-tint); }
 .res-row .res-ico {
   width: 30px;
   height: 30px;
@@ -376,7 +414,7 @@
   min-width: 0;
   font-size: 13.5px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-color);
   text-decoration: none;
   cursor: pointer;
   overflow: hidden;
@@ -384,11 +422,11 @@
   white-space: nowrap;
 }
 .res-row .col-name:hover { text-decoration: none; }
-.res-row:hover .col-name { color: #0366d6; }
+.res-row:hover .col-name { color: var(--post-link-color); }
 .res-row .col-by {
   flex: 0 0 130px;
   font-size: 12.5px;
-  color: #7b8794;
+  color: var(--sec-text-color);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -396,20 +434,22 @@
 .res-row .col-tag {
   flex: 0 0 74px;
   font-size: 11.5px;
-  color: #98a2ae;
+  color: var(--sec-text-color);
+  opacity: .85;
 }
 .res-row .col-size {
   flex: 0 0 74px;
   text-align: right;
   font-size: 12.5px;
-  color: #7b8794;
+  color: var(--sec-text-color);
   font-variant-numeric: tabular-nums;
 }
 .res-row .col-date {
   flex: 0 0 88px;
   text-align: right;
   font-size: 12.5px;
-  color: #9aa4b0;
+  color: var(--sec-text-color);
+  opacity: .85;
   font-variant-numeric: tabular-nums;
 }
 
@@ -425,10 +465,10 @@
 .res-row:focus-within .col-act { opacity: 1; }
 .res-act {
   padding: 3px 9px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--line-color);
   border-radius: 7px;
-  background: #fff;
-  color: #5b6672;
+  background: var(--board-bg-color);
+  color: var(--sec-text-color);
   font-size: 11.5px;
   font-family: inherit;
   cursor: pointer;
@@ -436,9 +476,9 @@
   transition: border-color .14s, color .14s, background .14s;
 }
 .res-act:hover {
-  border-color: #b9d3f5;
-  color: #0366d6;
-  background: #f6faff;
+  border-color: var(--res-accent-line);
+  color: var(--post-link-color);
+  background: var(--res-tint);
 }
 
 /* ---------- 空态 ---------- */
@@ -446,7 +486,7 @@
 .res-empty {
   padding: 54px 22px;
   text-align: center;
-  color: #9aa4b0;
+  color: var(--sec-text-color);
   font-size: 13.5px;
   line-height: 2;
 }
@@ -454,17 +494,17 @@
   display: block;
   font-size: 15px;
   font-weight: 600;
-  color: #6b7683;
+  color: var(--text-color);
   margin-bottom: 6px;
 }
 .res-empty code {
   padding: 1px 6px;
   border-radius: 5px;
-  background: #f1f4f8;
-  color: #5b6672;
+  background: var(--inlinecode-bg-color, var(--res-tint-2));
+  color: var(--text-color);
   font-size: 12.5px;
 }
-.res-empty a { color: #0366d6; text-decoration: none; }
+.res-empty a { color: var(--post-link-color); text-decoration: none; }
 .res-empty a:hover { text-decoration: underline; }
 
 /* 搜索结果里标出来源位置 */
@@ -475,8 +515,8 @@
   margin-left: 7px;
   padding: 1px 7px;
   border-radius: 20px;
-  background: #f1f4f8;
-  color: #8a94a0;
+  background: var(--res-tint-2);
+  color: var(--sec-text-color);
   font-size: 11px;
   font-weight: 400;
 }
@@ -495,90 +535,3 @@
   .res-row .col-tag { display: none; }
   .res-row .col-act { opacity: 1; }
 }
-
-/* ---------- 暗色模式 ---------- */
-
-[data-color-scheme="dark"] .res-app {
-  background: #252d38;
-  border-color: #33404f;
-  box-shadow: none;
-}
-[data-color-scheme="dark"] .res-bar {
-  background: linear-gradient(#2b3440, #272f3a);
-  border-color: #33404f;
-}
-[data-color-scheme="dark"] .res-crumbs .sep { color: #4a5666; }
-[data-color-scheme="dark"] .res-crumb { color: #9aa4ad; }
-[data-color-scheme="dark"] .res-crumb:hover { background: #313c4a; color: #6cb6ff; }
-[data-color-scheme="dark"] .res-crumb.now { color: #d6d8db; }
-[data-color-scheme="dark"] .res-search,
-[data-color-scheme="dark"] .res-sort,
-[data-color-scheme="dark"] .res-view {
-  background: #212832;
-  border-color: #3a4759;
-}
-[data-color-scheme="dark"] .res-search input { color: #c9d1d9; }
-[data-color-scheme="dark"] .res-sort { color: #9aa4ad; }
-[data-color-scheme="dark"] .res-view button.on { background: #33445c; color: #6cb6ff; }
-[data-color-scheme="dark"] .res-view button:hover { color: #c9d1d9; }
-[data-color-scheme="dark"] .res-note {
-  background: #222a34;
-  border-color: #313c4a;
-  color: #8b949e;
-}
-[data-color-scheme="dark"] .res-note .t { color: #c9d1d9; }
-[data-color-scheme="dark"] .res-sec { color: #7d8894; }
-[data-color-scheme="dark"] .res-sec .n { color: #5e6874; }
-[data-color-scheme="dark"] .res-card {
-  background: #252d38;
-  border-color: #33404f;
-}
-[data-color-scheme="dark"] .res-card:hover {
-  background: #2a3441;
-  border-color: #4a6b96;
-  box-shadow: none;
-}
-[data-color-scheme="dark"] .res-name { color: #d6d8db; }
-[data-color-scheme="dark"] .res-card:hover .res-name { color: #6cb6ff; }
-[data-color-scheme="dark"] .res-sub { color: #8b949e; }
-[data-color-scheme="dark"] .res-desc { color: #7d8894; }
-[data-color-scheme="dark"] .res-ico { background: #2f3945; color: #9aa4ad; }
-[data-color-scheme="dark"] .res-ico.folder { background: #26364f; color: #6cb6ff; }
-[data-color-scheme="dark"] .res-ico[data-fmt="PDF"]  { background: #3d2a2a; color: #e07b74; }
-[data-color-scheme="dark"] .res-ico[data-fmt="EPUB"] { background: #22382c; color: #5cbf8a; }
-[data-color-scheme="dark"] .res-ico[data-fmt="MOBI"],
-[data-color-scheme="dark"] .res-ico[data-fmt="AZW3"],
-[data-color-scheme="dark"] .res-ico[data-fmt="AZW"]  { background: #3b3222; color: #d9ae62; }
-[data-color-scheme="dark"] .res-ico[data-fmt="DJVU"] { background: #2b3150; color: #93a2e8; }
-[data-color-scheme="dark"] .res-ico[data-fmt="ZIP"],
-[data-color-scheme="dark"] .res-ico[data-fmt="RAR"],
-[data-color-scheme="dark"] .res-ico[data-fmt="7Z"]   { background: #322a45; color: #b79ce8; }
-[data-color-scheme="dark"] .res-ico[data-fmt="TXT"],
-[data-color-scheme="dark"] .res-ico[data-fmt="MD"]   { background: #223b40; color: #55b8c9; }
-[data-color-scheme="dark"] .res-flag { background: #2f3945; color: #8b949e; }
-[data-color-scheme="dark"] .res-flag.ext { background: #3b3222; color: #d9ae62; }
-[data-color-scheme="dark"] .res-list { border-color: #33404f; }
-[data-color-scheme="dark"] .res-row { background: #252d38; border-color: #2f3945; }
-[data-color-scheme="dark"] .res-row:hover { background: #2a3441; }
-[data-color-scheme="dark"] .res-row .col-name { color: #d6d8db; }
-[data-color-scheme="dark"] .res-row:hover .col-name { color: #6cb6ff; }
-[data-color-scheme="dark"] .res-row .col-by,
-[data-color-scheme="dark"] .res-row .col-size { color: #8b949e; }
-[data-color-scheme="dark"] .res-row .col-tag,
-[data-color-scheme="dark"] .res-row .col-date { color: #6e7681; }
-[data-color-scheme="dark"] .res-act {
-  background: #212832;
-  border-color: #3a4759;
-  color: #9aa4ad;
-}
-[data-color-scheme="dark"] .res-act:hover {
-  background: #2a3441;
-  border-color: #4a6b96;
-  color: #6cb6ff;
-}
-[data-color-scheme="dark"] .res-empty { color: #8b949e; }
-[data-color-scheme="dark"] .res-empty .big { color: #b9c0c8; }
-[data-color-scheme="dark"] .res-empty code { background: #2f3945; color: #c9d1d9; }
-[data-color-scheme="dark"] .res-empty a { color: #6cb6ff; }
-[data-color-scheme="dark"] .res-where { background: #2f3945; color: #7d8894; }
-[data-color-scheme="dark"] .res-loading { color: #7d8894; }

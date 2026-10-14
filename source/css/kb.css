@@ -1,27 +1,41 @@
 /* ============================================================
    知识库样式：双向链接 + 笔记页 + 反向链接
-   由 _config.fluid.yml 的 custom_css 引入
+   由 _config.fluid.yml 的 custom_css 引入（全站）
+
+   配色走 Fluid 的 CSS 变量，层次色用 color-mix 现算，
+   明暗模式与界面皮肤都自动跟随。
+   原来那批 [data-color-scheme="dark"] 规则选择器写错了
+   （主题注入的是 data-user-color-scheme），一直没生效，已移除。
    ============================================================ */
+
+:root {
+  --kb-tint: color-mix(in srgb, var(--text-color) 5%, var(--board-bg-color));
+  --kb-tint-2: color-mix(in srgb, var(--text-color) 10%, var(--board-bg-color));
+  --kb-link-soft: color-mix(in srgb, var(--post-link-color) 32%, transparent);
+  --kb-link-bg: color-mix(in srgb, var(--post-link-color) 8%, transparent);
+  /* 「待写」的琥珀色：明色下偏深，暗色下自动提亮 */
+  --kb-missing: color-mix(in srgb, #a9720f 72%, var(--text-color));
+}
 
 /* ---------- 正文里的 [[双向链接]] ---------- */
 
 .markdown-body a.wikilink,
 a.wikilink {
-  color: #0366d6;
+  color: var(--post-link-color);
   text-decoration: none;
-  border-bottom: 1px solid rgba(3, 102, 214, .32);
+  border-bottom: 1px solid var(--kb-link-soft);
   padding-bottom: .5px;
   transition: border-color .15s, background .15s;
 }
 a.wikilink:hover {
-  border-bottom-color: #0366d6;
-  background: rgba(3, 102, 214, .07);
+  border-bottom-color: var(--post-link-color);
+  background: var(--kb-link-bg);
 }
 
 /* 指向还不存在的笔记：一眼能看出是「待写」 */
 .wikilink.wikilink-missing {
-  color: #a9740f;
-  border-bottom: 1px dashed rgba(169, 116, 15, .5);
+  color: var(--kb-missing);
+  border-bottom: 1px dashed color-mix(in srgb, var(--kb-missing) 50%, transparent);
   cursor: help;
   padding-bottom: .5px;
 }
@@ -33,7 +47,7 @@ a.wikilink:hover {
 }
 .note-sub {
   margin: 0 0 14px;
-  color: #7b8794;
+  color: var(--sec-text-color);
   font-size: 15px;
   line-height: 1.7;
 }
@@ -44,24 +58,25 @@ a.wikilink:hover {
   gap: 7px;
   margin: 0 0 26px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid var(--line-color);
   font-size: 12.5px;
 }
 .note-chip {
   display: inline-block;
   padding: 2px 9px;
   border-radius: 20px;
-  background: #f1f4f8;
-  color: #667180;
+  background: var(--kb-tint-2);
+  color: var(--sec-text-color);
   line-height: 1.65;
 }
 .note-chip-cat {
-  background: #eaf1fe;
-  color: #2f6fed;
+  background: color-mix(in srgb, var(--post-link-color) 14%, transparent);
+  color: var(--post-link-color);
 }
 .note-updated {
   margin-left: auto;
-  color: #9aa4b0;
+  color: var(--sec-text-color);
+  opacity: .85;
   font-size: 12px;
 }
 
@@ -70,16 +85,16 @@ a.wikilink:hover {
 .wiki-backlinks {
   margin: 40px 0 10px;
   padding: 18px 20px;
-  border: 1px solid #e8ecf0;
-  border-left: 3px solid #b9d3f5;
+  border: 1px solid var(--line-color);
+  border-left: 3px solid var(--kb-link-soft);
   border-radius: 10px;
-  background: #fafbfd;
+  background: var(--kb-tint);
 }
 .wiki-backlinks h3 {
   margin: 0 0 12px;
   font-size: 13px;
   font-weight: 600;
-  color: #67727f;
+  color: var(--sec-text-color);
   letter-spacing: .02em;
 }
 .wiki-backlinks ul {
@@ -96,50 +111,20 @@ a.wikilink:hover {
   line-height: 1.6;
 }
 .wiki-backlinks li + li {
-  border-top: 1px dashed #edf1f5;
+  border-top: 1px dashed var(--line-color);
 }
 .wiki-backlinks li a {
-  color: #3c4858;
+  color: var(--text-color);
   text-decoration: none;
 }
 .wiki-backlinks li a:hover {
-  color: #0366d6;
+  color: var(--post-link-color);
 }
 .wiki-backlinks .wiki-tag {
   flex-shrink: 0;
   font-size: 11px;
   padding: 1px 7px;
   border-radius: 20px;
-  background: #eef1f5;
-  color: #8a94a0;
+  background: var(--kb-tint-2);
+  color: var(--sec-text-color);
 }
-
-/* ---------- 暗色模式 ---------- */
-
-[data-color-scheme="dark"] a.wikilink {
-  color: #6cb6ff;
-  border-bottom-color: rgba(108, 182, 255, .35);
-}
-[data-color-scheme="dark"] a.wikilink:hover {
-  border-bottom-color: #6cb6ff;
-  background: rgba(108, 182, 255, .1);
-}
-[data-color-scheme="dark"] .wikilink.wikilink-missing {
-  color: #e0b055;
-  border-bottom-color: rgba(224, 176, 85, .5);
-}
-[data-color-scheme="dark"] .note-sub { color: #8b949e; }
-[data-color-scheme="dark"] .note-meta { border-color: #30363d; }
-[data-color-scheme="dark"] .note-chip { background: #2c333d; color: #a7a9ad; }
-[data-color-scheme="dark"] .note-chip-cat { background: #1b2740; color: #6cb6ff; }
-[data-color-scheme="dark"] .note-updated { color: #6e7681; }
-[data-color-scheme="dark"] .wiki-backlinks {
-  background: #20262e;
-  border-color: #30363d;
-  border-left-color: #3d5a80;
-}
-[data-color-scheme="dark"] .wiki-backlinks h3 { color: #9aa4ad; }
-[data-color-scheme="dark"] .wiki-backlinks li + li { border-color: #2b3138; }
-[data-color-scheme="dark"] .wiki-backlinks li a { color: #c9d1d9; }
-[data-color-scheme="dark"] .wiki-backlinks li a:hover { color: #6cb6ff; }
-[data-color-scheme="dark"] .wiki-backlinks .wiki-tag { background: #2c333d; color: #8b949e; }

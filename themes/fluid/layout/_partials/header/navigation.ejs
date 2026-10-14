@@ -1,3 +1,10 @@
+<%
+  // head.ejs 里的变量不会流到这里（partial 之间不共享局部变量），所以自己算一遍
+  var navUi = site.data.ui || {}
+  var navUiSkins = (navUi.skins || []).filter(function (s) { return s && s.id })
+  // 只有一套皮肤时切换器没有意义，不渲染入口
+  var navUiSwitchable = navUi.allowSwitch !== false && navUiSkins.length > 1
+%>
 <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="<%= url_for() %>">
@@ -61,6 +68,14 @@
           <li class="nav-item" id="color-toggle-btn">
             <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
               <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        <% } %>
+        <% if(navUiSwitchable) { %>
+          <li class="nav-item" id="ui-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" role="button"
+               aria-label="界面风格" title="界面风格">
+              <i class="iconfont icon-brush"></i>
             </a>
           </li>
         <% } %>
@@ -133,6 +148,16 @@
               <div class="mobile-grid-item">
                 <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
                 <span id="mobile-color-toggle-label"><%= __('darkmode.dark') %></span>
+              </div>
+            </a>
+          </div>
+        <% } %>
+        <% if(navUiSwitchable) { %>
+          <div class="col-4 mobile-grid-cell" id="mobile-ui-toggle-btn">
+            <a href="javascript:;" aria-label="界面风格">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-brush"></i>
+                <span>界面风格</span>
               </div>
             </a>
           </div>

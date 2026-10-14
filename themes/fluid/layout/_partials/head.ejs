@@ -11,10 +11,64 @@ if (description) {
 }
 var ogImage = page.og_img || page.index_img
 var ogConfig = Object.assign({ image: ogImage && url_for(ogImage) }, theme.open_graph)
+
+// 界面风格（皮肤）：清单在 source/_data/ui.json，站主在后台「外观」页维护。
+// 这里要做的只是把它塞给前端的切换器（window.LY_UI），以及**在首次绘制之前**
+// 把 <html data-ui> 定下来 —— 晚一步就会先闪一下默认皮肤再跳到访客选的皮肤。
+var uiData = site.data.ui || {}
+// enabled 缺省视为启用（老版本 ui.json 里没有这个字段）
+var uiSkins = (uiData.skins || []).filter(function (s) { return s && s.id && s.enabled !== false })
+if (!uiSkins.length) {
+  // ui.json 缺失或被写坏时的兜底：至少保证站点还能正常渲染
+  uiSkins = [{ id: 'default', name: '经典', desc: '', accent: '#2f4154', accent2: '#f6f8fa' }]
+}
+var uiIds = uiSkins.map(function (s) { return s.id })
+var uiDefault = uiIds.indexOf(uiData.default) >= 0 ? uiData.default : uiIds[0]
+var uiConfig = {
+  default: uiDefault,
+  allowSwitch: uiData.allowSwitch !== false,
+  skins: uiSkins.map(function (s) {
+    return {
+      id: s.id,
+      name: s.name || s.id,
+      desc: s.desc || '',
+      accent: s.accent || '',
+      accent2: s.accent2 || ''
+    }
+  })
+}
+// 这段 JSON 会以未转义的形式写进 <script>，所以 < > & 必须先转义，
+// 否则皮肤描述里出现 </script> 之类的文本会直接把脚本块截断
+var uiConfigJson = JSON.stringify(uiConfig)
+  .replace(/</g, '\\u003c')
+  .replace(/>/g, '\\u003e')
+  .replace(/&/g, '\\u0026')
+  .replace(/\u2028/g, '\\u2028')
+  .replace(/\u2029/g, '\\u2029')
 %>
 
 <head>
   <meta charset="UTF-8">
+
+  <!-- 皮肤：越早越好，必须排在样式表之前。localStorage 里存着访客的选择，
+       没有记录（或记录已失效）就用站点默认值。 -->
+  <script>
+    window.LY_UI = <%- uiConfigJson %>;
+    (function () {
+      var cfg = window.LY_UI;
+      var fallback = (cfg.skins[0] && cfg.skins[0].id) || 'default';
+      try {
+        var ids = cfg.skins.map(function (s) { return s.id; });
+        var saved = null;
+        try { saved = localStorage.getItem('ly_ui_skin'); } catch (e) {}
+        var pick = ids.indexOf(saved) >= 0 ? saved : cfg.default;
+        if (ids.indexOf(pick) < 0) pick = fallback;
+        document.documentElement.setAttribute('data-ui', pick);
+      } catch (e) {
+        document.documentElement.setAttribute('data-ui', fallback);
+      }
+    })();
+  </script>
 
   <link rel="apple-touch-icon" sizes="76x76" href="<%= url_for(theme.apple_touch_icon) %>">
   <link rel="icon" href="<%= url_for(theme.favicon) %>">

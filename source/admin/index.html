@@ -478,6 +478,50 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 }
 .res-admin-foot{max-width:1040px}
 .res-dirty{font-size:12px;color:var(--warn)}
+/* ===== 外观（界面风格） ===== */
+.ui-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px;max-width:1040px}
+.ui-card{
+  display:flex;flex-direction:column;gap:9px;padding:12px;background:var(--surface);
+  border:1px solid var(--border);border-radius:12px;
+  transition:border-color .15s,box-shadow .15s,opacity .15s;
+}
+.ui-card:hover{border-color:var(--border-strong);box-shadow:var(--shadow)}
+.ui-card.on{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent)}
+.ui-card.off{opacity:.5}
+.ui-card-pick{
+  display:flex;align-items:center;gap:11px;width:100%;padding:0;border:0;
+  background:transparent;color:inherit;font-family:inherit;text-align:left;cursor:pointer;
+}
+.ui-sw{
+  flex:0 0 44px;width:44px;height:44px;border-radius:10px;overflow:hidden;
+  border:1px solid var(--border);display:flex;flex-direction:column;
+}
+.ui-sw i{display:block;flex:1}
+/* 顶上一窄条代表导航栏，剩下的是页面底色 —— 一眼能看出这套皮肤长什么样 */
+.ui-sw i:first-child{flex:0 0 13px}
+.ui-cmeta{min-width:0;flex:1}
+.ui-cname{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:var(--text)}
+.ui-badge{
+  padding:1px 7px;border-radius:20px;font-size:10.5px;font-weight:600;
+  background:var(--accent-soft);color:var(--accent);
+}
+.ui-cdesc{font-size:11.5px;color:var(--text-3);line-height:1.5;margin-top:3px}
+.ui-enable{
+  display:flex;align-items:center;gap:7px;padding-top:9px;border-top:1px solid var(--border);
+  font-size:11.5px;color:var(--text-2);cursor:pointer;
+}
+.ui-enable input{margin:0;cursor:pointer}
+.ui-enable.locked{color:var(--text-3);cursor:default}
+.ui-enable .ui-lock-tip{margin-left:auto;font-size:11px;color:var(--text-3)}
+.ui-switch{
+  display:flex;align-items:flex-start;gap:10px;max-width:1040px;margin-top:16px;
+  padding:13px 15px;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;cursor:pointer;
+}
+.ui-switch input{margin:2px 0 0;cursor:pointer}
+.ui-switch-body{display:flex;flex-direction:column;gap:3px}
+.ui-switch-body b{font-size:13px;font-weight:600;color:var(--text)}
+.ui-switch-body em{font-size:11.5px;color:var(--text-3);font-style:normal;line-height:1.55}
 .dialog .fd{margin-bottom:12px}
 .dialog .fd label{display:block;font-size:12px;color:var(--text-2);margin-bottom:5px;font-weight:500}
 .dialog .fd .hint{font-weight:400;color:var(--text-3);margin-left:6px}
@@ -803,6 +847,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       <button id="tab-resources">资源</button>
       <button id="tab-images">图片</button>
       <button id="tab-ov">概览</button>
+      <button id="tab-ui">外观</button>
     </nav>
 
     <div class="topbar-actions">
@@ -1012,6 +1057,37 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         </div>
       </div>
 
+      <div class="ui-admin-pane hidden" id="ui-admin-pane">
+        <div class="col-head">
+          <div>
+            <h2>界面风格</h2>
+            <p>
+              给站点准备几套配色，访客点右上角的画笔按钮就能自己挑。
+              这里设的是「默认」——没挑过的人打开看到的那一套。
+              改动要点了「发布外观设置」、等构建走完才会在线上生效。
+            </p>
+          </div>
+          <a class="btn-ghost" id="ui-open-site" href="#" target="_blank" rel="noopener">打开站点看看</a>
+        </div>
+
+        <div class="ui-cards" id="ui-cards"></div>
+
+        <label class="ui-switch" id="ui-switch-row">
+          <input type="checkbox" id="ui-allow-switch">
+          <span class="ui-switch-body">
+            <b>允许访客自己切换风格</b>
+            <em>关掉之后所有访客都只用「默认」这套，导航栏上的画笔按钮也会消失。</em>
+          </span>
+        </label>
+
+        <div class="col-foot">
+          <span id="ui-admin-status">配置保存在 source/_data/ui.json</span>
+          <span class="sp"></span>
+          <span class="res-dirty hidden" id="ui-admin-dirty">有未发布的改动</span>
+          <button class="btn-primary" id="btn-ui-save">发布外观设置</button>
+        </div>
+      </div>
+
       <div class="statusbar">
         <span class="path" id="status-path">未选择文章</span>
         <span class="right">
@@ -1082,6 +1158,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     resPath: 'source/_data/resources.json',
     resDir: 'source/resources',
     resUrl: '/resources',
+    uiPath: 'source/_data/ui.json',
     api: 'https://api.github.com',
     site: 'https://lyzeromoon.github.io',
     kdfIterations: 600000,
@@ -1141,7 +1218,12 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     resQuery: '',
     resDirty: false,
     resLoaded: false,
-    resBusy: 0
+    resBusy: 0,
+    /* 界面风格 / 皮肤。skins 数组就是 source/_data/ui.json 的原文，
+       后台只负责改 default / allowSwitch / enabled 三个位置 */
+    ui: { default: 'default', allowSwitch: true, skins: [] },
+    uiSha: null,
+    uiDirty: false
   };
 
   var authDoc = null;
@@ -1467,8 +1549,9 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     var deployStartedAt = Date.now();
 
     function say(msg) {
-      // 资源库没有「正在编辑的文章」，进度写在面板自己的状态栏上
+      // 资源库 / 外观没有「正在编辑的文章」，进度写在各自面板自己的状态栏上
       if (state.mode === 'resources') { resSetStatus(msg); return; }
+      if (state.mode === 'ui') { renderUiStatus(msg); return; }
       // 只在用户还停在这篇文章 / 这个页面上时才去改状态栏
       if (state.editingPath !== filePath) return;
       if (state.mode !== 'posts' && state.mode !== 'about') return;
@@ -2289,25 +2372,26 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
   function setMode(mode) {
     state.mode = mode;
-    ['posts', 'notes', 'about', 'columns', 'resources', 'images', 'ov'].forEach(function (m) {
+    ['posts', 'notes', 'about', 'columns', 'resources', 'images', 'ov', 'ui'].forEach(function (m) {
       document.body.classList.toggle(m + '-mode', mode === m);
       var tab = $('tab-' + m);
       if (tab) tab.classList.toggle('on', mode === m);
     });
 
     var canEdit = mode === 'posts' || mode === 'notes';
-    var isPlain = mode === 'columns' || mode === 'resources' || mode === 'images' || mode === 'ov';
+    var isPlain = mode === 'columns' || mode === 'resources' || mode === 'images' || mode === 'ov' || mode === 'ui';
 
     $('btn-new').classList.toggle('hidden', !canEdit);
     $('btn-new').textContent = mode === 'notes' ? '新建笔记' : '新建文章';
     $('btn-delete').classList.toggle('hidden', !canEdit || !state.editingPath);
-    $('btn-save').classList.toggle('hidden', mode === 'images' || mode === 'ov' || mode === 'resources');
+    $('btn-save').classList.toggle('hidden', mode === 'images' || mode === 'ov' || mode === 'resources' || mode === 'ui');
     $('toolbar').classList.toggle('hidden', isPlain);
     $('panes').classList.toggle('hidden', isPlain);
     $('columns-pane').classList.toggle('hidden', mode !== 'columns');
     $('resources-pane').classList.toggle('hidden', mode !== 'resources');
     $('images-pane').classList.toggle('hidden', mode !== 'images');
     $('ov-pane').classList.toggle('hidden', mode !== 'ov');
+    $('ui-admin-pane').classList.toggle('hidden', mode !== 'ui');
 
     if (!isPlain) {
       $('md-input').placeholder =
@@ -4028,6 +4112,244 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     step();
   }
 
+  /* ================= 界面风格（皮肤） ================= */
+
+  /* ui.json 读不到或被写坏时的兜底。前台 head.ejs 里也有一份同样的兜底，
+     两边都留一手，是为了「配置没了站点也还能正常打开」。 */
+  function uiBuiltinDefault() {
+    return {
+      id: 'default', name: '经典', desc: 'Fluid 原味，干净克制',
+      accent: '#2f4154', accent2: '#f6f8fa', builtin: true, enabled: true
+    };
+  }
+
+  function uiFallbackState() {
+    return { version: 1, default: 'default', allowSwitch: true, skins: [uiBuiltinDefault()] };
+  }
+
+  function uiEsc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function uiColor(v, dft) {
+    return /^#[0-9a-fA-F]{3,8}$/.test(v || '') ? v : dft;
+  }
+
+  /* 前台读的就是这个结构，字段多一个少一个都会让页面显示异常，
+     所以不管线上文件长什么样，进来先归一化成同一个形状 */
+  function uiNormalize(raw) {
+    var out = uiFallbackState();
+    if (!raw || typeof raw !== 'object') return out;
+
+    if (raw.version != null && !isNaN(Number(raw.version))) out.version = Number(raw.version);
+    if (typeof raw.allowSwitch === 'boolean') out.allowSwitch = raw.allowSwitch;
+
+    var list = Array.isArray(raw.skins) ? raw.skins : [];
+    var seen = {};
+    var skins = [];
+    list.forEach(function (s) {
+      if (!s || !s.id) return;
+      var id = String(s.id).trim();
+      if (!id || seen[id]) return;
+      seen[id] = true;
+      skins.push({
+        id: id,
+        name: s.name ? String(s.name) : id,
+        desc: s.desc ? String(s.desc) : '',
+        accent: uiColor(s.accent, '#888888'),
+        accent2: uiColor(s.accent2, '#e8e8e8'),
+        builtin: !!s.builtin,
+        enabled: s.enabled !== false
+      });
+    });
+
+    /* 「经典」必须始终在列 —— 前台的样式表里只有它是「零覆盖」的那套，
+       一旦出事它就是唯一的退路，所以不给删也不给停 */
+    if (!seen['default']) skins.unshift(uiBuiltinDefault());
+    out.skins = skins;
+
+    var ids = skins.map(function (s) { return s.id; });
+    out.default = (typeof raw.default === 'string' && ids.indexOf(raw.default) >= 0)
+      ? raw.default
+      : ids[0];
+    return out;
+  }
+
+  function uiFind(id) {
+    for (var i = 0; i < state.ui.skins.length; i++) {
+      if (state.ui.skins[i].id === id) return state.ui.skins[i];
+    }
+    return null;
+  }
+
+  function renderUiStatus(msg) {
+    var el = $('ui-admin-status');
+    if (el) el.textContent = msg || ('配置保存在 ' + CFG.uiPath);
+  }
+
+  function uiMarkDirty(on) {
+    state.uiDirty = !!on;
+    var el = $('ui-admin-dirty');
+    if (el) el.classList.toggle('hidden', !on);
+  }
+
+  function openUi() {
+    setMode('ui');
+    loadUi();
+  }
+
+  function loadUi() {
+    renderUiStatus('加载中…');
+    return fetchFile(CFG.uiPath).then(function (r) {
+      state.uiSha = r.sha;
+      var parsed = null;
+      try { parsed = JSON.parse(r.text); } catch (e) { parsed = null; }
+      state.ui = uiNormalize(parsed);
+      renderUi();
+      uiMarkDirty(false);
+      renderUiStatus(parsed
+        ? '已加载'
+        : '文件格式有问题，先按默认值展示，保存后会修好');
+    }).catch(function (e) {
+      state.ui = uiFallbackState();
+      state.uiSha = null;
+      renderUi();
+      uiMarkDirty(false);
+      renderUiStatus('还没有配置文件，保存时会自动创建');
+      if (e && e.status !== 404) toast('外观配置读不到：' + e.message, 'err');
+    });
+  }
+
+  function renderUi() {
+    var box = $('ui-cards');
+    if (!box) return;
+    box.innerHTML = '';
+
+    state.ui.skins.forEach(function (skin) {
+      var isDefault = skin.id === state.ui.default;
+
+      var card = document.createElement('div');
+      card.className = 'ui-card' + (isDefault ? ' on' : '') + (skin.enabled ? '' : ' off');
+
+      var pick = document.createElement('button');
+      pick.type = 'button';
+      pick.className = 'ui-card-pick';
+      pick.title = '把「' + skin.name + '」设为默认';
+      pick.innerHTML =
+        '<span class="ui-sw">' +
+          '<i style="background:' + uiEsc(skin.accent) + '"></i>' +
+          '<i style="background:' + uiEsc(skin.accent2) + '"></i>' +
+        '</span>' +
+        '<span class="ui-cmeta">' +
+          '<span class="ui-cname">' + uiEsc(skin.name) +
+            (isDefault ? '<span class="ui-badge">默认</span>' : '') +
+          '</span>' +
+          '<span class="ui-cdesc">' + uiEsc(skin.desc || skin.id) + '</span>' +
+        '</span>';
+      pick.addEventListener('click', function () { uiSetDefault(skin.id); });
+
+      var enable = document.createElement('label');
+      enable.className = 'ui-enable' + (skin.builtin ? ' locked' : '');
+      if (skin.builtin) {
+        enable.innerHTML = '<input type="checkbox" checked disabled>' +
+          '<span>启用</span><span class="ui-lock-tip">兜底皮肤，不可停用</span>';
+      } else {
+        enable.innerHTML = '<input type="checkbox"' + (skin.enabled ? ' checked' : '') + '>' +
+          '<span>在切换器里显示</span>';
+        enable.querySelector('input').addEventListener('change', function () {
+          uiSetEnabled(skin.id, this.checked);
+        });
+      }
+
+      card.appendChild(pick);
+      card.appendChild(enable);
+      box.appendChild(card);
+    });
+
+    var sw = $('ui-allow-switch');
+    if (sw) sw.checked = state.ui.allowSwitch !== false;
+  }
+
+  function uiSetDefault(id) {
+    if (state.ui.default === id) return;
+    var skin = uiFind(id);
+    if (!skin) return;
+    state.ui.default = id;
+    uiMarkDirty(true);
+    renderUi();
+    renderUiStatus('默认皮肤改成「' + skin.name + '」，还没发布');
+  }
+
+  function uiSetEnabled(id, on) {
+    var skin = uiFind(id);
+    if (!skin || skin.builtin) return;
+    skin.enabled = !!on;
+
+    /* 刚停用的正好是当前默认 → 顺延到下一个还开着的，
+       否则发布时会因为「默认指向一套停用的皮肤」而失败 */
+    if (!on && state.ui.default === id) {
+      var next = state.ui.skins.filter(function (x) { return x.enabled; })[0];
+      if (next) {
+        state.ui.default = next.id;
+        toast('「' + skin.name + '」停用后不能再当默认，已自动切到「' + next.name + '」', '');
+      }
+    }
+
+    uiMarkDirty(true);
+    renderUi();
+  }
+
+  function saveUi() {
+    var enabled = state.ui.skins.filter(function (s) { return s.enabled; });
+    if (!enabled.length) { toast('至少要留一套启用的皮肤', 'err'); return; }
+    if (!enabled.some(function (s) { return s.id === state.ui.default; })) {
+      toast('默认皮肤必须是已启用的那一套', 'err'); return;
+    }
+
+    var payload = {
+      version: state.ui.version || 1,
+      default: state.ui.default,
+      allowSwitch: state.ui.allowSwitch !== false,
+      skins: state.ui.skins.map(function (s) {
+        return {
+          id: s.id,
+          name: s.name,
+          desc: s.desc,
+          accent: s.accent,
+          accent2: s.accent2,
+          builtin: !!s.builtin,
+          enabled: !!s.enabled
+        };
+      })
+    };
+    var text = JSON.stringify(payload, null, 2) + '\n';
+
+    $('btn-ui-save').disabled = true;
+    renderUiStatus('提交中…');
+
+    var shaPromise = state.uiSha ? Promise.resolve(state.uiSha) : getSha(CFG.uiPath);
+
+    shaPromise
+      .then(function (sha) { return putFile(CFG.uiPath, text, 'chore: 更新界面风格设置', sha); })
+      .then(function (r) {
+        state.uiSha = (r && r.content && r.content.sha) || state.uiSha;
+        state.ui = uiNormalize(payload);   /* 界面上看到的 == 实际写进去的 */
+        uiMarkDirty(false);
+        renderUi();
+        var d = uiFind(state.ui.default);
+        renderUiStatus('已发布 · 默认「' + ((d && d.name) || state.ui.default) + '」');
+        toast('外观设置已发布，正在构建…', 'ok');
+        watchDeploy(r && r.commit && r.commit.sha, CFG.uiPath);
+      })
+      .catch(function (e) {
+        renderUiStatus('发布失败');
+        toast('发布失败：' + e.message, 'err');
+      })
+      .then(function () { $('btn-ui-save').disabled = false; });
+  }
+
   /* ================= 站点概览 ================= */
 
   function openOverview() {
@@ -4791,6 +5113,22 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       renderResources();
     }, 140);
   });
+
+  /* ---------- 外观 ---------- */
+  $('tab-ui').addEventListener('click', function () {
+    if (state.mode === 'ui') return;
+    if (state.dirty && !window.confirm('当前页面有未发布的改动，确定要切到「外观」吗？')) return;
+    openUi();
+  });
+  $('btn-ui-save').addEventListener('click', saveUi);
+  $('ui-allow-switch').addEventListener('change', function () {
+    state.ui.allowSwitch = this.checked;
+    uiMarkDirty(true);
+    renderUiStatus(this.checked
+      ? '访客可以自己挑风格，还没发布'
+      : '访客只能用默认风格，还没发布');
+  });
+  $('ui-open-site').href = CFG.site + '/';
 
   $('btn-draft-restore').addEventListener('click', restoreDraft);
   $('btn-draft-discard').addEventListener('click', function () { clearDraft(); toast('草稿已丢弃', 'ok'); });
