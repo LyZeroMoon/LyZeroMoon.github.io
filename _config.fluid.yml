@@ -391,7 +391,7 @@ navbar:
   menu:
     - { key: "home", link: "/", icon: "iconfont icon-home-fill" }
     - { key: "columns", name: "专栏", link: "/columns/", icon: "iconfont icon-books" }
-    - { key: "notes", name: "笔记", link: "/notes/", icon: "iconfont icon-note" }
+    - { key: "notes", name: "常用公式", link: "/notes/", icon: "iconfont icon-note" }
     - { key: "resources", name: "资源", link: "/resources/", icon: "iconfont icon-briefcase" }
     # 「小游戏」这一项**故意不写在这里** —— 菜单是静态的，而小游戏要跟着
     # source/_data/games.json 的开关走（整站关掉游戏时导航项要一起消失）。

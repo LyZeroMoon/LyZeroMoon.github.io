@@ -31,20 +31,20 @@ X(z)=\sum_{n=0}^{\infty} x[n]\,z^{-n}
 |---|---|---|
 | \(\delta[n]\) | \(1\) | 全部 \(z\) |
 | \(\delta[n-k]\) | \(z^{-k}\) | \(z \neq 0\)（或全部，取决于单/双边） |
-| \(u[n]\) | \(\dfrac{z}{z-1}\) | \|z\| > 1 |
-| \(-u[-n-1]\) | \(\dfrac{z}{z-1}\) | \|z\| < 1 |
-| \(a^n u[n]\) | \(\dfrac{z}{z-a}\) | \|z\| > \|a\| |
-| \(-a^n u[-n-1]\) | \(\dfrac{z}{z-a}\) | \|z\| < \|a\| |
-| \(n u[n]\) | \(\dfrac{z}{(z-1)^2}\) | \|z\| > 1 |
-| \(n a^n u[n]\) | \(\dfrac{a z}{(z-a)^2}\) | \|z\| > \|a\| |
-| \(n^2 u[n]\) | \(\dfrac{z(z+1)}{(z-1)^3}\) | \|z\| > 1 |
-| \(\sin(\omega_0 n) u[n]\) | \(\dfrac{z \sin\omega_0}{z^2 - 2z\cos\omega_0 + 1}\) | \|z\| > 1 |
-| \(\cos(\omega_0 n) u[n]\) | \(\dfrac{z(z - \cos\omega_0)}{z^2 - 2z\cos\omega_0 + 1}\) | \|z\| > 1 |
-| \(a^n \sin(\omega_0 n) u[n]\) | \(\dfrac{a z \sin\omega_0}{z^2 - 2a z \cos\omega_0 + a^2}\) | \|z\| > \|a\| |
-| \(a^n \cos(\omega_0 n) u[n]\) | \(\dfrac{z(z - a\cos\omega_0)}{z^2 - 2a z \cos\omega_0 + a^2}\) | \|z\| > \|a\| |
-| \(r^n \cos(\omega_0 n) u[n]\) | \(\dfrac{z(z - r\cos\omega_0)}{z^2 - 2r z \cos\omega_0 + r^2}\) | \|z\| > r |
-| \((n+1) a^n u[n]\) | \(\dfrac{z^2}{(z-a)^2}\) | \|z\| > \|a\| |
-| \(\dfrac{1}{n!}(a^n) u[n]\) | \(e^{a/z}\) | \|z\| > 0 |
+| \(u[n]\) | \(\dfrac{z}{z-1}\) | \(|z| > 1\) |
+| \(-u[-n-1]\) | \(\dfrac{z}{z-1}\) | \(|z| < 1\) |
+| \(a^n u[n]\) | \(\dfrac{z}{z-a}\) | \(|z| > |a|\) |
+| \(-a^n u[-n-1]\) | \(\dfrac{z}{z-a}\) | \(|z| < |a|\) |
+| \(n u[n]\) | \(\dfrac{z}{(z-1)^2}\) | \(|z| > 1\) |
+| \(n a^n u[n]\) | \(\dfrac{a z}{(z-a)^2}\) | \(|z| > |a|\) |
+| \(n^2 u[n]\) | \(\dfrac{z(z+1)}{(z-1)^3}\) | \(|z| > 1\) |
+| \(\sin(\omega_0 n) u[n]\) | \(\dfrac{z \sin\omega_0}{z^2 - 2z\cos\omega_0 + 1}\) | \(|z| > 1\) |
+| \(\cos(\omega_0 n) u[n]\) | \(\dfrac{z(z - \cos\omega_0)}{z^2 - 2z\cos\omega_0 + 1}\) | \(|z| > 1\) |
+| \(a^n \sin(\omega_0 n) u[n]\) | \(\dfrac{a z \sin\omega_0}{z^2 - 2a z \cos\omega_0 + a^2}\) | \(|z| > |a|\) |
+| \(a^n \cos(\omega_0 n) u[n]\) | \(\dfrac{z(z - a\cos\omega_0)}{z^2 - 2a z \cos\omega_0 + a^2}\) | \(|z| > |a|\) |
+| \(r^n \cos(\omega_0 n) u[n]\) | \(\dfrac{z(z - r\cos\omega_0)}{z^2 - 2r z \cos\omega_0 + r^2}\) | \(|z| > r\) |
+| \((n+1) a^n u[n]\) | \(\dfrac{z^2}{(z-a)^2}\) | \(|z| > |a|\) |
+| \(\dfrac{1}{n!}(a^n) u[n]\) | \(e^{a/z}\) | \(|z| > 0\) |
 
 ---
 

@@ -1,5 +1,5 @@
 /* ============================================================
-   知识库样式：双向链接 + 笔记页 + 反向链接
+   知识库样式：双向链接 + 常用公式页 + 反向链接
    由 _config.fluid.yml 的 custom_css 引入（全站）
 
    配色走 Fluid 的 CSS 变量，层次色用 color-mix 现算，
@@ -32,7 +32,7 @@ a.wikilink:hover {
   background: var(--kb-link-bg);
 }
 
-/* 指向还不存在的笔记：一眼能看出是「待写」 */
+/* 指向还不存在的内容：一眼能看出是「待写」 */
 .wikilink.wikilink-missing {
   color: var(--kb-missing);
   border-bottom: 1px dashed color-mix(in srgb, var(--kb-missing) 50%, transparent);
@@ -40,7 +40,7 @@ a.wikilink:hover {
   padding-bottom: .5px;
 }
 
-/* ---------- 笔记页 ---------- */
+/* ---------- 常用公式页 ---------- */
 
 .note-page h1#seo-header {
   margin-bottom: .3em;

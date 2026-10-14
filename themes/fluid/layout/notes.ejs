@@ -1,7 +1,7 @@
 <%
 page.layout = 'notes'
-page.title = page.title || '笔记'
-page.subtitle = page.subtitle || '概念、速查与方法，按主题整理'
+page.title = page.title || '常用公式'
+page.subtitle = page.subtitle || '按主题整理的公式、性质与速查'
 page.banner_img = page.banner_img || theme.page.banner_img
 page.banner_img_height = page.banner_img_height || theme.page.banner_img_height
 page.banner_mask_alpha = page.banner_mask_alpha || theme.page.banner_mask_alpha
@@ -123,15 +123,15 @@ order.sort(function (a, b) {
 </style>
 
 <div class="notes-intro">
-  这里放的是<b>不按时间排的参考内容</b> —— 概念定义、公式速查、方法总结。
+  这里放的是<b>不按时间排的参考内容</b> —— 公式、性质、速查表。
   它们和文章区的区别是：没有日期、不进归档，写作时用
-  <code>[[笔记名]]</code> 互相引用，页面底部会列出谁提到过它。
+  <code>[[名称]]</code> 互相引用，页面底部会列出谁提到过它。
 </div>
 
 <% if (!all.length) { %>
   <div class="notes-empty">
-    还没有笔记。<br>
-    打开 <a href="/admin/">写作后台</a> 的「笔记」标签就可以开始写。
+    还没有内容。<br>
+    打开 <a href="/admin/">写作后台</a> 的「常用公式」标签就可以开始写。
   </div>
 <% } else { %>
   <% order.forEach(function (name) { %>

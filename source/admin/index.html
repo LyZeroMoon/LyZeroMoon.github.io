@@ -897,7 +897,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
     <nav class="tabs">
       <button id="tab-posts" class="on">文章</button>
-      <button id="tab-notes">笔记</button>
+      <button id="tab-notes">常用公式</button>
       <button id="tab-about">关于页</button>
       <button id="tab-columns">专栏</button>
       <button id="tab-resources">资源</button>
@@ -956,11 +956,11 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
             <input type="text" id="f-slug" placeholder="留空自动生成" spellcheck="false">
           </div>
           <div class="meta-item wide" data-scope="note">
-            <label for="f-desc">简介<span class="lbl-note">一句话说明，显示在笔记列表里</span></label>
+            <label for="f-desc">简介<span class="lbl-note">一句话说明，显示在列表里</span></label>
             <input type="text" id="f-desc" placeholder="例如：把常见序列的能量与功率一次列清">
           </div>
           <div class="meta-item wide" data-scope="doc">
-            <label>分类<span class="lbl-note">文章的专栏，也是笔记的主题归类</span></label>
+            <label>分类<span class="lbl-note">文章的专栏，也是「常用公式」的主题归类</span></label>
             <div class="picker" id="cat-picker">
               <div class="picker-box" id="cat-box">
                 <input type="text" id="f-categories" placeholder="点这里选已有的，或输入后回车新建…" autocomplete="off" spellcheck="false">
@@ -1285,7 +1285,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     aboutMeta: null,
     aboutSha: null,
     lastPostPath: null,
-    /* 文章与笔记各自记住上次打开的，切回来时不会串 */
+    /* 文章与「常用公式」各自记住上次打开的，切回来时不会串 */
     lastPath: { posts: null, notes: null },
     columns: [],
     columnsSha: null,
@@ -1591,7 +1591,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     return gh('/user').then(function (u) { return u.login; });
   }
 
-  /* 文章在 _posts，笔记在 notes，两套内容共用同一套编辑器 */
+  /* 文章在 _posts，「常用公式」在 notes，两套内容共用同一套编辑器 */
   function dirOf(mode) { return mode === 'notes' ? CFG.notesDir : CFG.dir; }
 
   function fetchPosts(dir) {
@@ -1602,7 +1602,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         return list
           .filter(function (f) {
             if (f.type !== 'file' || !/\.md$/i.test(f.name)) return false;
-            // notes/index.md 是笔记索引页，不列进可编辑的笔记里
+            // notes/index.md 是「常用公式」的索引页，不列进可编辑的条目里
             if (dir === CFG.notesDir && /^index\.md$/i.test(f.name)) return false;
             return true;
           })
@@ -1812,7 +1812,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
   var NOTE_KEYS = ['title', 'layout', 'permalink', 'updated', 'description', 'categories', 'tags', 'date'];
 
-  /* 笔记的 front-matter：没有 date（不进时间线），带 layout 与 permalink 让它有干净的地址 */
+  /* 「常用公式」的 front-matter：没有 date（不进时间线），带 layout 与 permalink 让它有干净的地址 */
   function buildNoteFrontMatter(meta, body, slug) {
     var out = '---\n';
     out += 'title: ' + meta.title + '\n';
@@ -2295,7 +2295,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
   /* ================= 文章动作 ================= */
 
   function openPost(path) {
-    // 在笔记模式下打开笔记时不要跳回文章模式
+    // 在「常用公式」模式下打开条目时不要跳回文章模式
     if (state.mode !== 'notes') setMode('posts');
     setStatus(path, '加载中…');
     fetchFile(path).then(function (res) {
@@ -2338,11 +2338,11 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     renderPreview();
     renderPostList();
     $('btn-delete').classList.add('hidden');
-    setStatus(null, isNote ? '新笔记（尚未发布）' : '新文章（尚未发布）');
+    setStatus(null, isNote ? '新公式页（尚未发布）' : '新文章（尚未发布）');
     $('f-title').focus();
   }
 
-  /* 切到「笔记」：列出 source/notes 下的笔记，没有就开一条新的 */
+  /* 切到「常用公式」：列出 source/notes 下的内容，没有就开一条新的 */
   function openNotes() {
     setMode('notes');
     state.editingPath = null;
@@ -2461,7 +2461,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       if (mode === 'posts') {
         setStatus(state.editingPath, '共 ' + list.length + ' 篇文章');
       } else if (mode === 'notes') {
-        setStatus(state.editingPath, '共 ' + list.length + ' 条笔记');
+        setStatus(state.editingPath, '共 ' + list.length + ' 条');
       }
     }).catch(function (e) {
       toast('获取列表失败：' + e.message, 'err');
@@ -2484,7 +2484,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       mode === 'ui' || mode === 'games';
 
     $('btn-new').classList.toggle('hidden', !canEdit);
-    $('btn-new').textContent = mode === 'notes' ? '新建笔记' : '新建文章';
+    $('btn-new').textContent = mode === 'notes' ? '新建公式页' : '新建文章';
     $('btn-delete').classList.toggle('hidden', !canEdit || !state.editingPath);
     $('btn-save').classList.toggle('hidden',
       mode === 'images' || mode === 'ov' || mode === 'resources' || mode === 'ui' || mode === 'games');
@@ -2500,12 +2500,12 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     if (!isPlain) {
       $('md-input').placeholder =
         mode === 'about' ? '在这里写「关于」页的正文…' :
-        mode === 'notes' ? '在这里写这条笔记的正文。用 [[另一条笔记]] 互相引用。' :
+        mode === 'notes' ? '在这里写这一页的正文。公式用 $...$ 或 $$...$$，也认 \\(...\\) 和 \\[...\\]。用 [[另一条]] 互相引用。' :
         '在这里写正文…';
     }
 
     var q = $('q');
-    if (q) q.placeholder = mode === 'notes' ? '搜索笔记…' : '搜索文章…';
+    if (q) q.placeholder = mode === 'notes' ? '搜索公式…' : '搜索文章…';
 
     renderPostList();
   }
@@ -5576,7 +5576,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
   });
   $('tab-notes').addEventListener('click', function () {
     if (state.mode === 'notes') return;
-    if (state.dirty && !window.confirm('当前页面有未发布的改动，确定要切到「笔记」吗？')) return;
+    if (state.dirty && !window.confirm('当前页面有未发布的改动，确定要切到「常用公式」吗？')) return;
     openNotes();
   });
   $('tab-about').addEventListener('click', function () {

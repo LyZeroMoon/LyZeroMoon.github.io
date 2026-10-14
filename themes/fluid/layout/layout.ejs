@@ -16,7 +16,9 @@ var colorSchema = theme.dark_mode && theme.dark_mode.enable && theme.dark_mode.d
   </header>
 
   <main>
-    <% if(is_post() || page.layout === '404') { %>
+    <%# note 页有自己的整幅栅格（container-fluid > row > col-lg-8 > #board），
+        再套一层会把正文压成 10/12 × 8/12，还会出现两个 id="board"。 %>
+    <% if(is_post() || page.layout === '404' || page.layout === 'note') { %>
       <%- body %>
     <% } else { %>
       <div class="container nopadding-x-md">
