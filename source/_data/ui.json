@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "default": "default",
+  "default": "arcade",
   "allowSwitch": true,
   "skins": [
     {
@@ -9,49 +9,62 @@
       "desc": "Fluid 原味，干净克制",
       "accent": "#2f4154",
       "accent2": "#f6f8fa",
-      "builtin": true
+      "builtin": true,
+      "enabled": true
     },
     {
       "id": "ink",
       "name": "墨韵",
       "desc": "暖纸底、衬线字、朱砂点缀",
       "accent": "#2b2620",
-      "accent2": "#f3eee4"
+      "accent2": "#f3eee4",
+      "builtin": false,
+      "enabled": true
     },
     {
       "id": "midnight",
       "name": "深海",
       "desc": "深蓝夜色，为长时间阅读而调",
       "accent": "#16324a",
-      "accent2": "#eef3f9"
+      "accent2": "#eef3f9",
+      "builtin": false,
+      "enabled": true
     },
     {
       "id": "glass",
       "name": "玻璃",
       "desc": "毛玻璃卡片 + 渐变背景",
       "accent": "#5b7cfa",
-      "accent2": "#eef2ff"
+      "accent2": "#eef2ff",
+      "builtin": false,
+      "enabled": true
     },
     {
       "id": "sakura",
       "name": "樱雾",
       "desc": "粉紫柔和，轻盈通透",
       "accent": "#7a4a63",
-      "accent2": "#fdf2f6"
+      "accent2": "#fdf2f6",
+      "builtin": false,
+      "enabled": true
     },
     {
       "id": "terminal",
       "name": "终端",
       "desc": "等宽字体与磷光绿，极客风",
       "accent": "#0f1a14",
-      "accent2": "#e8f5ec"
+      "accent2": "#e8f5ec",
+      "builtin": false,
+      "enabled": true
     },
     {
       "id": "retro",
       "name": "复古",
       "desc": "Windows 95 视窗，青色桌面与立体边框",
       "accent": "#008080",
-      "accent2": "#c0c0c0"
+      "accent2": "#c0c0c0",
+      "builtin": false,
+      "enabled": true
     },
     {
       "id": "arcade",
@@ -59,21 +72,26 @@
       "desc": "霓虹街机 + CRT 扫描线，附赠贪吃蛇",
       "accent": "#0a0118",
       "accent2": "#ffd60a",
-      "game": true
+      "builtin": false,
+      "enabled": true
     },
     {
       "id": "magazine",
       "name": "杂志",
       "desc": "衬线大字、首字下沉、编辑式分栏",
       "accent": "#8c1d18",
-      "accent2": "#fbf9f4"
+      "accent2": "#fbf9f4",
+      "builtin": false,
+      "enabled": true
     },
     {
       "id": "cyber",
       "name": "赛博",
       "desc": "网格底纹、切角面板、霓虹辉光",
       "accent": "#05060a",
-      "accent2": "#22d3ee"
+      "accent2": "#22d3ee",
+      "builtin": false,
+      "enabled": true
     }
   ]
 }
