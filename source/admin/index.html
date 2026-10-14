@@ -524,6 +524,60 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 .ui-switch-body{display:flex;flex-direction:column;gap:3px}
 .ui-switch-body b{font-size:13px;font-weight:600;color:var(--text)}
 .ui-switch-body em{font-size:11.5px;color:var(--text-3);font-style:normal;line-height:1.55}
+
+/* ---------- 后台 · 小游戏管理 ---------- */
+.games-tip{max-width:1040px;margin:14px 0 4px;font-size:12px;line-height:1.7;color:var(--text-3)}
+.games-tip code{
+  padding:1px 5px;border-radius:5px;background:var(--surface-2);border:1px solid var(--border);
+  font-size:11.5px;
+}
+.games-list{display:flex;flex-direction:column;gap:10px;max-width:1040px;margin-top:12px}
+.games-list:empty{margin-top:0}
+.game-row{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  transition:border-color .15s,opacity .15s;
+}
+.game-row:hover{border-color:var(--border-strong)}
+.game-row.off{opacity:.52}
+.game-row.off .game-fields{pointer-events:none}
+.game-ord{display:flex;flex-direction:column;gap:4px;padding-top:2px}
+.game-ord button{
+  width:24px;height:22px;padding:0;border:1px solid var(--border);border-radius:6px;
+  background:var(--surface-2);color:var(--text-2);font-size:11px;line-height:1;cursor:pointer;
+}
+.game-ord button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.game-ord button:disabled{opacity:.35;cursor:default}
+.game-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:9px}
+.game-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.game-id{
+  padding:2px 7px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);
+  font-size:11px;color:var(--text-3);font-family:ui-monospace,Consolas,monospace;
+}
+.game-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:var(--accent)}
+.game-badge{padding:1px 7px;border-radius:20px;font-size:10.5px;font-weight:600;
+  background:var(--accent-soft);color:var(--accent)}
+.game-head .sp{flex:1}
+.game-head .link-btn{font-size:11.5px}
+.game-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.game-fields .full{grid-column:1/-1}
+.game-fields label{display:block;font-size:11px;color:var(--text-3);margin-bottom:4px}
+.game-fields input[type=text]{
+  width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px;
+  background:var(--surface-2);font-size:12.5px;font-family:inherit;color:var(--text);outline:none;
+}
+.game-fields input[type=text]:focus{border-color:var(--accent)}
+.game-fields input[type=color]{
+  width:100%;height:32px;padding:2px;border:1px solid var(--border);border-radius:8px;
+  background:var(--surface-2);cursor:pointer;
+}
+.game-modes{display:flex;gap:14px;flex-wrap:wrap}
+.game-modes label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);cursor:pointer}
+.game-modes input{cursor:pointer}
+@media (max-width:720px){
+  .game-fields{grid-template-columns:1fr}
+  .game-row{flex-wrap:wrap}
+}
 .dialog .fd{margin-bottom:12px}
 .dialog .fd label{display:block;font-size:12px;color:var(--text-2);margin-bottom:5px;font-weight:500}
 .dialog .fd .hint{font-weight:400;color:var(--text-3);margin-left:6px}
@@ -552,7 +606,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 }
 
 /* ---------- 图片管理 ---------- */
-.images-pane,.ov-pane,.resources-pane{flex:1;overflow-y:auto;padding:24px 26px 60px;background:var(--surface)}
+.images-pane,.ov-pane,.resources-pane,.ui-admin-pane,.games-pane{flex:1;overflow-y:auto;padding:24px 26px 60px;background:var(--surface)}
 .pane-toolbar{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;
   max-width:1040px;padding-bottom:14px;border-bottom:1px solid var(--border);
@@ -850,6 +904,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       <button id="tab-images">图片</button>
       <button id="tab-ov">概览</button>
       <button id="tab-ui">外观</button>
+      <button id="tab-games">游戏</button>
     </nav>
 
     <div class="topbar-actions">
@@ -1090,6 +1145,44 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         </div>
       </div>
 
+      <div class="games-pane hidden" id="games-pane">
+        <div class="col-head">
+          <div>
+            <h2>小游戏</h2>
+            <p>
+              导航栏上的「小游戏」板块。这里能开关整站游戏、指定哪款放在游戏中心最前面，
+              以及逐款启停、调序、改文案。改动要点了「发布游戏设置」、等构建走完才在线上生效。
+            </p>
+          </div>
+          <a class="btn-ghost" id="games-open-site" href="#" target="_blank" rel="noopener">打开游戏中心</a>
+        </div>
+
+        <label class="ui-switch" id="games-switch-row">
+          <input type="checkbox" id="games-enabled">
+          <span class="ui-switch-body">
+            <b>启用小游戏板块</b>
+            <em>关掉之后导航栏的入口和游戏中心页一起消失，直接访问 /games/ 也只会看到一句提示。
+              已经发过的文章不受影响。</em>
+          </span>
+        </label>
+
+        <p class="games-tip">
+          每款游戏都要有同名脚本 <code>source/js/games/&lt;id&gt;.js</code>。
+          「id」是脚本文件名，也是最高分在本地的存储键，所以出过成绩的不要改它；
+          要换名字改「显示名称」就好。
+        </p>
+
+        <div class="games-list" id="games-list"></div>
+
+        <div class="col-foot">
+          <span id="games-admin-status">配置保存在 source/_data/games.json</span>
+          <span class="sp"></span>
+          <span class="res-dirty hidden" id="games-admin-dirty">有未发布的改动</span>
+          <button class="btn-ghost" id="btn-games-add">添加一款</button>
+          <button class="btn-primary" id="btn-games-save">发布游戏设置</button>
+        </div>
+      </div>
+
       <div class="statusbar">
         <span class="path" id="status-path">未选择文章</span>
         <span class="right">
@@ -1161,6 +1254,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     resDir: 'source/resources',
     resUrl: '/resources',
     uiPath: 'source/_data/ui.json',
+    gamesPath: 'source/_data/games.json',
+    gamesUrl: '/games/',
     api: 'https://api.github.com',
     site: 'https://lyzeromoon.github.io',
     kdfIterations: 600000,
@@ -1225,7 +1320,11 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
        后台只负责改 default / allowSwitch / enabled 三个位置 */
     ui: { default: 'default', allowSwitch: true, skins: [] },
     uiSha: null,
-    uiDirty: false
+    uiDirty: false,
+    /* 小游戏（source/_data/games.json） */
+    games: null,
+    gamesSha: null,
+    gamesDirty: false
   };
 
   var authDoc = null;
@@ -2374,19 +2473,21 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
   function setMode(mode) {
     state.mode = mode;
-    ['posts', 'notes', 'about', 'columns', 'resources', 'images', 'ov', 'ui'].forEach(function (m) {
+    ['posts', 'notes', 'about', 'columns', 'resources', 'images', 'ov', 'ui', 'games'].forEach(function (m) {
       document.body.classList.toggle(m + '-mode', mode === m);
       var tab = $('tab-' + m);
       if (tab) tab.classList.toggle('on', mode === m);
     });
 
     var canEdit = mode === 'posts' || mode === 'notes';
-    var isPlain = mode === 'columns' || mode === 'resources' || mode === 'images' || mode === 'ov' || mode === 'ui';
+    var isPlain = mode === 'columns' || mode === 'resources' || mode === 'images' || mode === 'ov' ||
+      mode === 'ui' || mode === 'games';
 
     $('btn-new').classList.toggle('hidden', !canEdit);
     $('btn-new').textContent = mode === 'notes' ? '新建笔记' : '新建文章';
     $('btn-delete').classList.toggle('hidden', !canEdit || !state.editingPath);
-    $('btn-save').classList.toggle('hidden', mode === 'images' || mode === 'ov' || mode === 'resources' || mode === 'ui');
+    $('btn-save').classList.toggle('hidden',
+      mode === 'images' || mode === 'ov' || mode === 'resources' || mode === 'ui' || mode === 'games');
     $('toolbar').classList.toggle('hidden', isPlain);
     $('panes').classList.toggle('hidden', isPlain);
     $('columns-pane').classList.toggle('hidden', mode !== 'columns');
@@ -2394,6 +2495,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     $('images-pane').classList.toggle('hidden', mode !== 'images');
     $('ov-pane').classList.toggle('hidden', mode !== 'ov');
     $('ui-admin-pane').classList.toggle('hidden', mode !== 'ui');
+    $('games-pane').classList.toggle('hidden', mode !== 'games');
 
     if (!isPlain) {
       $('md-input').placeholder =
@@ -4326,6 +4428,8 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
           accent: s.accent,
           accent2: s.accent2,
           builtin: !!s.builtin,
+          /* 纯角标，但得原样带回去 —— 漏了就是「保存一次丢一个字段」 */
+          game: !!s.game,
           enabled: !!s.enabled
         };
       })
@@ -4354,6 +4458,468 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         toast('发布失败：' + e.message, 'err');
       })
       .then(function () { $('btn-ui-save').disabled = false; });
+  }
+
+  /* ================= 小游戏 =================
+     清单文件 source/_data/games.json。前台两处读它：
+       themes/fluid/layout/_partials/head.ejs   → window.LY_GAMES（每页都注入）
+       themes/fluid/layout/games.ejs           → 游戏中心页的卡片（服务端渲染）
+     所以这个文件里的字段一改动，构建之后导航、卡片、最高分格式会一起跟着变。
+
+     **id 不是普通文案**：它是脚本文件名（js/games/<id>.js）也是最高分在
+     localStorage 里的键（ly_game_best_<id>），所以只允许小写字母/数字/-/_，
+     而且出过成绩就不该再改 —— 要换名字改「显示名称」就行。 */
+
+  var GAME_ID_RE = /^[a-z0-9][a-z0-9_-]{0,23}$/;
+
+  /* games.json 丢了或被写坏时的兜底：直接还原成这 5 款内置游戏。
+     顺序 = 游戏中心里的默认顺序。 */
+  var GAMES_SEED = [
+    { id: 'snake', name: '贪吃蛇', desc: '最经典的街机规则：吃到食物变长，撞墙或咬到自己就结束，每吃五个提速一档。', controls: '方向键 / WASD 转向', tags: ['街机', '反应'], accent: '#00f5d4', accent2: '#0a0118', builtin: true },
+    { id: 'g2048', name: '2048', desc: '滑动合并相同数字，凑出 2048。看着简单，越往后越考验规划。', controls: '方向键 / 划屏幕', tags: ['益智', '慢节奏'], accent: '#edc22e', accent2: '#bbada0' },
+    { id: 'tetris', name: '俄罗斯方块', desc: '七种方块往下掉，转好位置填满整行消除。消得越多，落得越快。', controls: '左右移动 · 上键旋转 · 下键速降', tags: ['街机', '益智'], accent: '#7b5cff', accent2: '#0b1020' },
+    { id: 'breakout', name: '打砖块', desc: '用挡板接住小球，把上面的砖墙一块块敲掉。三条命，敲空就过关。', controls: '左右键 / 在画面里拖动', tags: ['街机', '反应'], accent: '#ff2e97', accent2: '#1b0a2e' },
+    { id: 'minesweeper', name: '扫雷', desc: '数字代表周围有几颗雷，靠推理把安全的格子全部翻开。右键（或长按）插旗。', controls: '点开格子 · 右键插旗', tags: ['益智', '慢节奏'], accent: '#22d3ee', accent2: '#0b1018', bestMode: 'low' }
+  ];
+
+  function gamesText(v, max) {
+    var s = String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+    return s.length > max ? s.slice(0, max) : s;
+  }
+
+  /* 标签：数组或「逗号分隔的字符串」都认，去重、限长、最多 3 个 */
+  function gamesTags(v) {
+    var list = Array.isArray(v) ? v : String(v == null ? '' : v).split(/[,，;；\/]/);
+    var out = [];
+    list.forEach(function (t) {
+      var s = gamesText(t, 8);
+      if (!s || out.indexOf(s) >= 0) return;
+      if (out.length < 3) out.push(s);
+    });
+    return out;
+  }
+
+  function gamesFind(st, id) {
+    var list = (st && st.games) || [];
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+
+  /* 「游戏中心首位」必须是一款存在且启用的游戏，否则前台会没有推荐角标 */
+  function gamesPickFeatured(st, want) {
+    var hit = want ? gamesFind(st, want) : null;
+    if (hit && hit.enabled) return hit.id;
+    for (var i = 0; i < st.games.length; i++) {
+      if (st.games[i].enabled) return st.games[i].id;
+    }
+    return (st.games[0] && st.games[0].id) || '';
+  }
+
+  /* 白名单式归一化：前台只认这些字段，多一个少一个都会让页面显示异常。
+     ⚠️ 以后给 games.json 加字段，这里和 games.ejs / head.ejs 要一起加，
+     不然保存一次就把新字段悄悄擦掉了（uiNormalize 踩过同一个坑）。 */
+  function gamesNormalize(raw) {
+    var out = { version: 1, enabled: true, featured: '', games: [] };
+    if (raw && typeof raw === 'object') {
+      if (raw.version != null && !isNaN(Number(raw.version))) out.version = Number(raw.version);
+      out.enabled = raw.enabled !== false;
+    }
+
+    var list = (raw && typeof raw === 'object' && Array.isArray(raw.games)) ? raw.games : GAMES_SEED;
+    var seen = {};
+    list.forEach(function (g) {
+      if (!g || !g.id) return;
+      var id = String(g.id).trim().toLowerCase();
+      if (!GAME_ID_RE.test(id) || seen[id]) return;
+      seen[id] = true;
+      out.games.push({
+        id: id,
+        name: gamesText(g.name, 24) || id,
+        desc: gamesText(g.desc, 110),
+        controls: gamesText(g.controls, 44),
+        tags: gamesTags(g.tags),
+        accent: uiColor(g.accent, '#7b5cff'),
+        accent2: uiColor(g.accent2, '#0b1020'),
+        /* 成绩怎么比。'low' = 越小越好（扫雷比用时），别的都当 'high' */
+        bestMode: g.bestMode === 'low' ? 'low' : 'high',
+        builtin: !!g.builtin,
+        enabled: g.enabled !== false
+      });
+    });
+
+    out.featured = gamesPickFeatured(out, raw && raw.featured);
+    return out;
+  }
+
+  function gamesMarkDirty(on) {
+    state.gamesDirty = !!on;
+    var el = $('games-admin-dirty');
+    if (el) el.classList.toggle('hidden', !on);
+  }
+
+  function renderGamesStatus(msg) {
+    var el = $('games-admin-status');
+    if (el) el.textContent = msg || ('配置保存在 ' + CFG.gamesPath);
+  }
+
+  function openGames() {
+    setMode('games');
+    loadGames();
+  }
+
+  function loadGames() {
+    renderGamesStatus('加载中…');
+    return fetchFile(CFG.gamesPath).then(function (r) {
+      state.gamesSha = r.sha;
+      var parsed = null;
+      try { parsed = JSON.parse(r.text); } catch (e) { parsed = null; }
+      state.games = gamesNormalize(parsed);
+      renderGames();
+      gamesMarkDirty(false);
+      renderGamesStatus(parsed ? '已加载' : '文件格式有问题，先按默认值展示，保存后会修好');
+    }).catch(function (e) {
+      state.games = gamesNormalize(null);
+      state.gamesSha = null;
+      renderGames();
+      gamesMarkDirty(false);
+      renderGamesStatus('还没有配置文件，保存时会自动创建');
+      if (e && e.status !== 404) toast('游戏配置读不到：' + e.message, 'err');
+    });
+  }
+
+  function gamesHex6(v, dft) {
+    var c = uiColor(v, dft);
+    if (/^#[0-9a-fA-F]{6}$/.test(c)) return c.toLowerCase();
+    if (/^#[0-9a-fA-F]{3}$/.test(c)) {
+      return ('#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3]).toLowerCase();
+    }
+    return dft;                        /* type=color 只吃 6 位十六进制 */
+  }
+
+  function renderGames() {
+    var box = $('games-list');
+    if (!box) return;
+    box.innerHTML = '';
+
+    var st = state.games;
+    var live = st.games.filter(function (g) { return g.enabled; }).length;
+
+    st.games.forEach(function (g, i) {
+      var isFirst = g.id === st.featured;
+      var row = document.createElement('div');
+      row.className = 'game-row' + (g.enabled ? '' : ' off') + (isFirst ? ' first' : '');
+
+      /* ---- 左侧：上下调序 ---- */
+      var ord = document.createElement('div');
+      ord.className = 'game-ord';
+      var up = document.createElement('button');
+      up.type = 'button'; up.textContent = '↑'; up.title = '上移';
+      up.disabled = i === 0;
+      up.addEventListener('click', function () { gamesMove(i, -1); });
+      var down = document.createElement('button');
+      down.type = 'button'; down.textContent = '↓'; down.title = '下移';
+      down.disabled = i === st.games.length - 1;
+      down.addEventListener('click', function () { gamesMove(i, 1); });
+      ord.appendChild(up);
+      ord.appendChild(down);
+      row.appendChild(ord);
+
+      var main = document.createElement('div');
+      main.className = 'game-main';
+
+      /* ---- 头部 ---- */
+      var head = document.createElement('div');
+      head.className = 'game-head';
+      var dot = document.createElement('span');
+      dot.className = 'game-dot';
+      dot.style.background = g.accent;
+      var nameEl = document.createElement('b');
+      nameEl.textContent = g.name;
+      var idEl = document.createElement('code');
+      idEl.className = 'game-id';
+      idEl.textContent = g.id;
+      idEl.title = '脚本文件：source/js/games/' + g.id + '.js';
+
+      head.appendChild(dot);
+      head.appendChild(nameEl);
+      head.appendChild(idEl);
+      if (isFirst) {
+        var badge = document.createElement('span');
+        badge.className = 'game-badge';
+        badge.textContent = '首位';
+        head.appendChild(badge);
+      }
+      var sp = document.createElement('span');
+      sp.className = 'sp';
+      head.appendChild(sp);
+
+      if (!isFirst) {
+        var pick = document.createElement('button');
+        pick.type = 'button';
+        pick.className = 'link-btn';
+        pick.textContent = '放到首位';
+        pick.addEventListener('click', function () { gamesSetFeatured(g.id); });
+        head.appendChild(pick);
+      }
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'link-btn';
+      del.textContent = '移除';
+      del.addEventListener('click', function () { gamesDelete(g.id); });
+      head.appendChild(del);
+      main.appendChild(head);
+
+      /* ---- 开关 ---- */
+      var modes = document.createElement('div');
+      modes.className = 'game-modes';
+
+      var enLabel = document.createElement('label');
+      var en = document.createElement('input');
+      en.type = 'checkbox';
+      en.checked = g.enabled;
+      en.addEventListener('change', function () {
+        gamesToggle(g.id, en.checked);
+      });
+      enLabel.appendChild(en);
+      enLabel.appendChild(document.createTextNode('在游戏中心里显示'));
+      modes.appendChild(enLabel);
+
+      var lowLabel = document.createElement('label');
+      var low = document.createElement('input');
+      low.type = 'checkbox';
+      low.checked = g.bestMode === 'low';
+      low.addEventListener('change', function () {
+        g.bestMode = low.checked ? 'low' : 'high';
+        gamesMarkDirty(true);
+        renderGamesStatus('「' + g.name + '」的成绩改成按' +
+          (low.checked ? '用时（越小越好）' : '分数（越大越好）') + '比较，还没发布');
+      });
+      lowLabel.appendChild(low);
+      lowLabel.appendChild(document.createTextNode('成绩按用时比较（越小越好）'));
+      modes.appendChild(lowLabel);
+      main.appendChild(modes);
+
+      /* ---- 文案字段 ---- */
+      var fields = document.createElement('div');
+      fields.className = 'game-fields';
+      fields.appendChild(gameField('显示名称', 'text', g.name, function (v, input) {
+        g.name = gamesText(v, 24) || g.id;
+        nameEl.textContent = g.name;
+        gamesDirtyNote(g.name);
+        return g.name;
+      }));
+      fields.appendChild(gameField('操作提示', 'text', g.controls, function (v) {
+        g.controls = gamesText(v, 44);
+        gamesDirtyNote(g.name);
+      }, '显示在卡片底部，例如：方向键 / WASD 转向'));
+      var full = gameField('简介', 'text', g.desc, function (v) {
+        g.desc = gamesText(v, 110);
+        gamesDirtyNote(g.name);
+      }, '一句话，显示在卡片上');
+      full.classList.add('full');
+      fields.appendChild(full);
+      fields.appendChild(gameField('标签', 'text', g.tags.join('，'), function (v, input) {
+        g.tags = gamesTags(v);
+        var joined = g.tags.join('，');
+        if (input.value !== joined) input.value = joined;   /* 顺手把非法输入洗掉 */
+        gamesDirtyNote(g.name);
+      }, '最多 3 个，逗号分隔'));
+      fields.appendChild(gameField('卡片主色', 'color', gamesHex6(g.accent, '#7b5cff'), function (v) {
+        g.accent = String(v || '').toLowerCase();
+        dot.style.background = g.accent;
+        gamesDirtyNote(g.name);
+      }));
+      main.appendChild(fields);
+
+      row.appendChild(main);
+      box.appendChild(row);
+    });
+
+    var sw = $('games-enabled');
+    if (sw) sw.checked = st.enabled !== false;
+    /* 这里写的是「默认状态文案」；调用方要更具体的提示，
+       就在 renderGames() 之后再调一次 renderGamesStatus() */
+    renderGamesStatus(st.games.length
+      ? ('共 ' + st.games.length + ' 款，其中 ' + live + ' 款在游戏中心里显示')
+      : '一款游戏都没有，游戏中心和导航入口都不会出现');
+  }
+
+  /* 字段行的统一构造。onInput 的返回值会被写回输入框（用来做即时清洗） */
+  function gameField(label, type, value, onInput, hint) {
+    var wrap = document.createElement('div');
+    var lab = document.createElement('label');
+    lab.textContent = label;
+    if (hint) {
+      var h = document.createElement('span');
+      h.className = 'hint';
+      h.textContent = ' · ' + hint;
+      lab.appendChild(h);
+    }
+    var input = document.createElement('input');
+    input.type = type;
+    if (type === 'color') {
+      input.value = value;
+    } else {
+      input.value = value == null ? '' : String(value);
+    }
+    var commit = function () {
+      var back = onInput(input.value, input);
+      if (type !== 'color' && back != null && input.value !== back) input.value = back;
+    };
+    input.addEventListener('change', commit);
+    if (type !== 'color') input.addEventListener('blur', commit);
+    wrap.appendChild(lab);
+    wrap.appendChild(input);
+    return wrap;
+  }
+
+  function gamesDirtyNote(name) {
+    gamesMarkDirty(true);
+    renderGamesStatus('「' + name + '」的文案改过了，还没发布');
+  }
+
+  function gamesMove(i, delta) {
+    var list = state.games.games;
+    var j = i + delta;
+    if (j < 0 || j >= list.length) return;
+    var t = list[i];
+    list[i] = list[j];
+    list[j] = t;
+    gamesMarkDirty(true);
+    renderGames();
+    renderGamesStatus('顺序改过了，还没发布');
+  }
+
+  function gamesSetFeatured(id) {
+    if (state.games.featured === id) return;
+    var g = gamesFind(state.games, id);
+    if (!g) return;
+    if (!g.enabled) { toast('「' + g.name + '」已经停用了，先打开它才能放到首位', 'err'); return; }
+    state.games.featured = id;
+    gamesMarkDirty(true);
+    renderGames();
+    renderGamesStatus('游戏中心首位改成「' + g.name + '」，还没发布');
+  }
+
+  function gamesToggle(id, on) {
+    var g = gamesFind(state.games, id);
+    if (!g) return;
+    g.enabled = !!on;
+
+    /* 停用的正好是首位 → 顺延到下一款还开着的，免得发布时报错 */
+    if (!on && state.games.featured === id) {
+      var next = state.games.games.filter(function (x) { return x.enabled; })[0];
+      if (next) {
+        state.games.featured = next.id;
+        toast('「' + g.name + '」停用后不能再当首位，已自动切到「' + next.name + '」', '');
+      }
+    }
+    gamesMarkDirty(true);
+    renderGames();
+  }
+
+  function gamesDelete(id) {
+    var g = gamesFind(state.games, id);
+    if (!g) return;
+    if (!window.confirm('把「' + g.name + '」从游戏中心移除？\n\n' +
+      '只是从这个清单里去掉，source/js/games/' + id + '.js 不会被删 —— 想加回来再点「添加一款」填 ' + id + ' 就行。')) return;
+
+    state.games.games = state.games.games.filter(function (x) { return x.id !== id; });
+    if (state.games.featured === id) {
+      state.games.featured = gamesPickFeatured(state.games, '');
+    }
+    gamesMarkDirty(true);
+    renderGames();
+    toast('已移除，记得点「发布游戏设置」', '');
+  }
+
+  function gamesAdd() {
+    var idIn = resInput('', '例如：pong');
+    var nameIn = resInput('', '留空就用 id');
+    var tip = document.createElement('p');
+    tip.className = 'small';
+    tip.innerHTML = 'id 是脚本文件名，也是最高分的存储键：只能用小写字母、数字、<code>-</code>、<code>_</code>。' +
+      '<br>发布之前请先确认 <code>source/js/games/&lt;id&gt;.js</code> 已经写好并注册了自己。';
+
+    resDialog('添加一款游戏', null, [tip, resField('id', null, idIn), resField('显示名称', '可留空', nameIn)], '添加',
+      function () {
+        var id = String(idIn.value || '').trim().toLowerCase();
+        if (!GAME_ID_RE.test(id)) return 'id 只能用小写字母、数字、- 和 _，且以字母或数字开头';
+        if (gamesFind(state.games, id)) return '已经有一款同 id 的游戏了';
+
+        var g = {
+          id: id,
+          name: gamesText(nameIn.value, 24) || id,
+          desc: '', controls: '', tags: [],
+          accent: '#7b5cff', accent2: '#0b1020',
+          bestMode: 'high', builtin: false, enabled: true
+        };
+        state.games.games.push(g);
+        if (!state.games.featured) state.games.featured = id;
+        gamesMarkDirty(true);
+        renderGames();
+        toast('已添加，把文案填好再点「发布游戏设置」', 'ok');
+        return '';
+      });
+  }
+
+  function saveGames() {
+    var st = state.games;
+    if (!st || !st.games.length) {
+      toast('至少留一款游戏，否则整块板块会消失。确实不想开的话，把上面的总开关关掉', 'err');
+      return;
+    }
+    var live = st.games.filter(function (g) { return g.enabled; });
+    if (st.enabled !== false && !live.length) {
+      toast('至少要留一款「在游戏中心里显示」的游戏', 'err');
+      return;
+    }
+    if (st.enabled !== false && !live.some(function (g) { return g.id === st.featured; })) {
+      st.featured = gamesPickFeatured(st, '');
+    }
+
+    var payload = {
+      version: st.version || 1,
+      enabled: st.enabled !== false,
+      featured: st.featured,
+      games: st.games.map(function (g) {
+        return {
+          id: g.id,
+          name: g.name,
+          desc: g.desc,
+          controls: g.controls,
+          tags: g.tags,
+          accent: g.accent,
+          accent2: g.accent2,
+          bestMode: g.bestMode === 'low' ? 'low' : 'high',
+          builtin: !!g.builtin,
+          enabled: !!g.enabled
+        };
+      })
+    };
+    var text = JSON.stringify(payload, null, 2) + '\n';
+
+    $('btn-games-save').disabled = true;
+    renderGamesStatus('提交中…');
+
+    var shaPromise = state.gamesSha ? Promise.resolve(state.gamesSha) : getSha(CFG.gamesPath);
+
+    shaPromise
+      .then(function (sha) { return putFile(CFG.gamesPath, text, 'chore: 更新小游戏配置', sha); })
+      .then(function (r) {
+        state.gamesSha = (r && r.content && r.content.sha) || state.gamesSha;
+        state.games = gamesNormalize(payload);   /* 界面上看到的 == 实际写进去的 */
+        gamesMarkDirty(false);
+        renderGames();
+        renderGamesStatus('已发布');
+        toast('游戏配置已发布，正在构建…', 'ok');
+        watchDeploy(r && r.commit && r.commit.sha, CFG.gamesPath);
+      })
+      .catch(function (e) {
+        renderGamesStatus('发布失败');
+        toast('发布失败：' + e.message, 'err');
+      })
+      .then(function () { $('btn-games-save').disabled = false; });
   }
 
   /* ================= 站点概览 ================= */
@@ -5135,6 +5701,23 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       : '访客只能用默认风格，还没发布');
   });
   $('ui-open-site').href = CFG.site + '/';
+
+  /* ---------- 小游戏 ---------- */
+  $('tab-games').addEventListener('click', function () {
+    if (state.mode === 'games') return;
+    if (state.dirty && !window.confirm('当前页面有未发布的改动，确定要切到「游戏」吗？')) return;
+    openGames();
+  });
+  $('btn-games-save').addEventListener('click', saveGames);
+  $('btn-games-add').addEventListener('click', gamesAdd);
+  $('games-open-site').href = CFG.site + CFG.gamesUrl;
+  $('games-enabled').addEventListener('change', function () {
+    state.games.enabled = this.checked;
+    gamesMarkDirty(true);
+    renderGamesStatus(this.checked
+      ? '导航栏的「小游戏」入口和游戏中心页会一起出现，还没发布'
+      : '导航栏的「小游戏」入口和游戏中心页会一起消失，还没发布');
+  });
 
   $('btn-draft-restore').addEventListener('click', restoreDraft);
   $('btn-draft-discard').addEventListener('click', function () { clearDraft(); toast('草稿已丢弃', 'ok'); });

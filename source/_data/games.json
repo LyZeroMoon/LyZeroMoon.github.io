@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "enabled": true,
+  "featured": "snake",
+  "games": [
+    {
+      "id": "snake",
+      "name": "贪吃蛇",
+      "desc": "最经典的街机规则：吃到食物变长，撞墙或咬到自己就结束，每吃五个提速一档。",
+      "controls": "方向键 / WASD 转向",
+      "tags": ["街机", "反应"],
+      "accent": "#00f5d4",
+      "accent2": "#0a0118",
+      "builtin": true,
+      "enabled": true
+    },
+    {
+      "id": "g2048",
+      "name": "2048",
+      "desc": "滑动合并相同数字，凑出 2048。看着简单，越往后越考验规划。",
+      "controls": "方向键 / 划屏幕",
+      "tags": ["益智", "慢节奏"],
+      "accent": "#edc22e",
+      "accent2": "#bbada0",
+      "enabled": true
+    },
+    {
+      "id": "tetris",
+      "name": "俄罗斯方块",
+      "desc": "七种方块往下掉，转好位置填满整行消除。消得越多，落得越快。",
+      "controls": "左右移动 · 上键旋转 · 下键速降",
+      "tags": ["街机", "益智"],
+      "accent": "#7b5cff",
+      "accent2": "#0b1020",
+      "enabled": true
+    },
+    {
+      "id": "breakout",
+      "name": "打砖块",
+      "desc": "用挡板接住小球，把上面的砖墙一块块敲掉。三条命，敲空就过关。",
+      "controls": "左右键 / 在画面里拖动",
+      "tags": ["街机", "反应"],
+      "accent": "#ff2e97",
+      "accent2": "#1b0a2e",
+      "enabled": true
+    },
+    {
+      "id": "minesweeper",
+      "name": "扫雷",
+      "desc": "数字代表周围有几颗雷，靠推理把安全的格子全部翻开。右键（或长按）插旗。",
+      "controls": "点开格子 · 右键插旗",
+      "tags": ["益智", "慢节奏"],
+      "accent": "#22d3ee",
+      "accent2": "#0b1018",
+      "bestMode": "low",
+      "enabled": true
+    }
+  ]
+}

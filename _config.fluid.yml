@@ -235,6 +235,10 @@ font:
 # Specify the path of your custom js file, support list. The path is relative to the source directory, such as `/js/custom.js` corresponding to the directory `source/js/custom.js`
 custom_js:
   - /js/skins.js
+  # 小游戏入口。这个文件只有 ~3KB：它只负责「绑卡片 + 按需加载引擎」，
+  # 真正的引擎（js/games/kit.js）、每一款游戏、以及机台样式（css/games.css）
+  # 都要等访客真的点开某一款才下载。
+  - /js/games-hub.js
 
 # 指定自定义 .css 文件路径，用法和 custom_js 相同
 # The usage is the same as custom_js
@@ -389,6 +393,10 @@ navbar:
     - { key: "columns", name: "专栏", link: "/columns/", icon: "iconfont icon-books" }
     - { key: "notes", name: "笔记", link: "/notes/", icon: "iconfont icon-note" }
     - { key: "resources", name: "资源", link: "/resources/", icon: "iconfont icon-briefcase" }
+    # 「小游戏」这一项**故意不写在这里** —— 菜单是静态的，而小游戏要跟着
+    # source/_data/games.json 的开关走（整站关掉游戏时导航项要一起消失）。
+    # 它由 themes/fluid/layout/_partials/header/navigation.ejs 条件渲染，
+    # 排在菜单最后一项之后、搜索按钮之前。
     - { key: "archive", link: "/archives/", icon: "iconfont icon-archive-fill" }
     - { key: "category", link: "/categories/", icon: "iconfont icon-category-fill" }
     - { key: "tag", link: "/tags/", icon: "iconfont icon-tags-fill" }

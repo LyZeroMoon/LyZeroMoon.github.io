@@ -4,10 +4,25 @@
   var navUiSkins = (navUi.skins || []).filter(function (s) { return s && s.id && s.enabled !== false })
   // 只有一套皮肤时切换器没有意义，不渲染入口
   var navUiSwitchable = navUi.allowSwitch !== false && navUiSkins.length > 1
-  // 「街机」皮肤额外挂一个小游戏入口（样式和脚本都写死了这个 id）。
+  // 「街机」皮肤额外挂一个「直接开一局」的快捷入口（样式和脚本都写死了这个 id）。
   // 入口本身一直渲染，靠 CSS 的 :root[data-ui="arcade"] 控制显隐 ——
   // 这样在切换器里换皮肤时，按钮会跟着即时出现/消失，不用刷新。
   var navUiGame = navUiSkins.some(function (s) { return s.id === 'arcade' })
+
+  // 小游戏板块：内容清单在 source/_data/games.json，站主在后台「游戏」页维护。
+  // 这里**故意不走 _config.fluid.yml 的 menu** —— 那一串是静态的，而小游戏要跟着
+  // games.json 的开关走：整站关掉游戏时，导航项和游戏中心页一起消失，
+  // 不会在栏上留一个点进去空空如也的死链接。
+  var navGames = site.data.games || {}
+  var navGameList = (navGames.games || []).filter(function (g) {
+    return g && g.id && g.enabled !== false
+  })
+  var navGamesOn = navGames.enabled !== false && navGameList.length > 0
+  var navFeatured = null
+  for (var gi = 0; gi < navGameList.length; gi++) {
+    if (navGameList[gi].id === navGames.featured) { navFeatured = navGameList[gi]; break }
+  }
+  if (!navFeatured) navFeatured = navGameList[0] || null
   // iconfont 里没有游戏类图标，直接内联一个摇杆
   var navGameIcon = '<svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" ' +
     'fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" ' +
@@ -66,6 +81,14 @@
             </li>
           <% } %>
         <% } %>
+        <% if(navGamesOn) { %>
+          <li class="nav-item" id="nav-games-btn">
+            <a class="nav-link" href="<%= url_for('/games/') %>" target="_self"
+               aria-label="小游戏" title="小游戏">
+              <%- navGameIcon %><span>小游戏</span>
+            </a>
+          </li>
+        <% } %>
         <% if(theme.search.enable) { %>
           <li class="nav-item" id="search-btn">
             <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
@@ -89,10 +112,10 @@
             </a>
           </li>
         <% } %>
-        <% if(navUiGame) { %>
+        <% if(navUiGame && navGamesOn) { %>
           <li class="nav-item nav-game-only" id="arcade-game-btn">
             <a class="nav-link" target="_self" href="javascript:;" role="button"
-               aria-label="小游戏" title="贪吃蛇（街机皮肤专属）">
+               aria-label="直接开一局" title="直接开一局：<%= navFeatured ? navFeatured.name : '小游戏' %>">
               <%- navGameIcon %>
             </a>
           </li>
@@ -148,6 +171,16 @@
             </div>
           <% } %>
         <% } %>
+        <% if(navGamesOn) { %>
+          <div class="col-4 mobile-grid-cell" id="mobile-games-btn">
+            <a href="<%= url_for('/games/') %>" aria-label="小游戏">
+              <div class="mobile-grid-item">
+                <%- navGameIcon %>
+                <span>小游戏</span>
+              </div>
+            </a>
+          </div>
+        <% } %>
         <% if(theme.search.enable) { %>
           <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
             <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
@@ -180,12 +213,12 @@
             </a>
           </div>
         <% } %>
-        <% if(navUiGame) { %>
+        <% if(navUiGame && navGamesOn) { %>
           <div class="col-4 mobile-grid-cell nav-game-only" id="mobile-arcade-game-btn">
-            <a href="javascript:;" aria-label="小游戏">
+            <a href="javascript:;" aria-label="直接开一局">
               <div class="mobile-grid-item">
                 <%- navGameIcon %>
-                <span>小游戏</span>
+                <span>开一局</span>
               </div>
             </a>
           </div>

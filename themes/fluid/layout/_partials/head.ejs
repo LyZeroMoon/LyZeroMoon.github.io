@@ -56,6 +56,34 @@ var uiConfigJson = JSON.stringify(uiConfig)
   .replace(/&/g, '\\u0026')
   .replace(/\u2028/g, '\\u2028')
   .replace(/\u2029/g, '\\u2029')
+
+// 小游戏：清单在 source/_data/games.json（后台「游戏」页是唯一写入方）。
+// 导航项由 navigation.ejs 渲染，这里只把「有哪些游戏、脚本在哪」递给前端。
+// 只有这几百字节是每页都发的 —— 引擎、游戏本体、机台样式都由 js/games-hub.js
+// 在真的点开某一款时才按需下载（见 source/css/games.css 顶部的说明）。
+var gamesData = site.data.games || {}
+var gamesList = (gamesData.games || []).filter(function (g) {
+  return g && g.id && g.enabled !== false
+})
+var gamesConfig = {
+  enabled: gamesData.enabled !== false && gamesList.length > 0,
+  featured: gamesData.featured || (gamesList[0] && gamesList[0].id) || '',
+  page: url_for('/games/'),
+  dir: url_for('/js/games/'),
+  css: url_for('/css/games.css'),
+  games: gamesList.map(function (g) {
+    return {
+      id: g.id,
+      name: g.name || g.id,
+      // 扫雷比的是用时（越小越好），卡片上的「最好成绩」要按这个来格式化
+      bestMode: g.bestMode === 'low' ? 'low' : 'high'
+    }
+  })
+}
+var gamesConfigJson = JSON.stringify(gamesConfig)
+  .replace(/</g, '\\u003c')
+  .replace(/>/g, '\\u003e')
+  .replace(/&/g, '\\u0026')
 %>
 
 <head>
@@ -83,6 +111,10 @@ var uiConfigJson = JSON.stringify(uiConfig)
       }
     })();
   </script>
+
+  <!-- 小游戏清单：给 js/games-hub.js 用。放在这里（而不是页面里）是因为
+       街机皮肤的「直接开一局」入口在任何页面都可能被点到。 -->
+  <script>window.LY_GAMES = <%- gamesConfigJson %>;</script>
 
   <link rel="apple-touch-icon" sizes="76x76" href="<%= url_for(theme.apple_touch_icon) %>">
   <link rel="icon" href="<%= url_for(theme.favicon) %>">

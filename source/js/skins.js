@@ -20,8 +20,6 @@
   var STORAGE_KEY = 'ly_ui_skin';
   var TOGGLE_ID = 'ui-toggle-btn';
   var MASK_ID = 'ui-mask';
-  var GAME_API = 'LY_ARCADE';
-  var GAME_FILE = 'skins-arcade.js';
   var root = document.documentElement;
 
   var cfg = window.LY_UI || {};
@@ -80,79 +78,47 @@
     return null;
   }
 
-  /* ------------------------------ 小游戏按需加载 ------------------------------
-     街机皮肤带一个贪吃蛇（/js/skins-arcade.js，约 20KB）。不玩的人不该为它
-     付出一次请求，所以这里只在「第一次点开小游戏」时才把脚本插进来。
-     入口按钮由 navigation.ejs 渲染、CSS 控制显隐，这里只管加载和开关。 */
+  /* ------------------------------ 小游戏 ------------------------------
+     机台不挂在这个文件里了：引擎（js/games/kit.js）和每一款游戏都由
+     js/games-hub.js 按需加载，机台样式在 source/css/games.css。
+     这里只留「街机皮肤在导航栏多出来的那个快捷入口」——点它直接开精选那款，
+     省掉先去游戏中心再点一次。入口按钮由 navigation.ejs 渲染、CSS 控制显隐。
 
-  var gameState = 0;          // 0 未加载 / 1 加载中 / 2 已就绪 / -1 失败
-  var gamePromise = null;
+     不玩的人一个字节都不用下：hub 只负责绑卡片，kit 和游戏模块都要等真的开
+     某一款时才插 <script>。 */
 
-  /* 站点可能挂在子路径下，所以从自己这个 <script src> 反推目录，别硬编码 /js/ */
-  function jsBase() {
-    var list = document.querySelectorAll('script[src]');
-    for (var i = 0; i < list.length; i++) {
-      var src = list[i].getAttribute('src') || '';
-      var at = src.indexOf('skins.js');
-      if (at >= 0) return src.slice(0, at);
+  function featuredId() {
+    var games = (window.LY_GAMES || {}).games || [];
+    var want = (window.LY_GAMES || {}).featured;
+    var i;
+    for (i = 0; i < games.length; i++) {
+      if (games[i].id === want) return want;
     }
-    return '/js/';
+    for (i = 0; i < games.length; i++) {
+      if (games[i].enabled !== false) return games[i].id;
+    }
+    return null;
   }
 
-  function loadGame() {
-    if (window[GAME_API]) {
-      gameState = 2;
-      return Promise.resolve(window[GAME_API]);
-    }
-    if (gameState === 1) return gamePromise;
-    if (gameState === -1) return Promise.reject(new Error('小游戏脚本加载失败'));
-
-    gameState = 1;
-    gamePromise = new Promise(function (resolve, reject) {
-      var el = document.createElement('script');
-      el.src = jsBase() + GAME_FILE;
-      el.async = true;
-      el.onload = function () {
-        if (window[GAME_API]) {
-          gameState = 2;
-          resolve(window[GAME_API]);
-        } else {
-          gameState = -1;
-          reject(new Error('小游戏脚本已加载但没有挂出接口'));
-        }
-      };
-      el.onerror = function () {
-        gameState = -1;
-        reject(new Error('小游戏脚本加载失败'));
-      };
-      document.head.appendChild(el);
-    });
-    /* 失败过就别把状态永远卡在「加载中」 */
-    gamePromise.catch(function () {});
-    return gamePromise;
+  function gamesPage() {
+    return (window.LY_GAMES && window.LY_GAMES.page) || '/games/';
   }
 
   function openGame() {
-    loadGame().then(function (api) {
-      if (api && api.open) api.open();
-    }).catch(function (err) {
-      /* 脚本没到位时给出可见反馈，而不是点了完全没反应 */
-      var note = mask && mask.querySelector('#ui-foot-note');
-      if (note) note.textContent = '小游戏加载失败，请刷新重试';
+    var hub = window.LY_GAME_HUB;
+    var id = featuredId();
+    /* hub 或配置没到位（脚本被拦、站点关掉了游戏）就退回游戏中心页，
+       而不是点了完全没反应 */
+    if (!hub || !id) {
+      window.location.href = gamesPage();
+      return;
+    }
+    hub.play(id).catch(function (err) {
       if (window.console && window.console.warn) {
         window.console.warn('[skins] ' + ((err && err.message) || err));
       }
+      window.location.href = gamesPage();
     });
-  }
-
-  function closeGameIfOpen() {
-    var api = window[GAME_API];
-    if (api && api.isOpen && api.isOpen()) api.close();
-  }
-
-  /* 换到非街机皮肤时，机台留着就说不通了 */
-  function syncGameFor(skinId) {
-    if (skinId !== 'arcade') closeGameIfOpen();
   }
 
   /* 主题的 color-schema.js 会按 --navbar-bg-color 刷新浏览器地址栏配色，
@@ -173,7 +139,6 @@
 
     root.setAttribute('data-ui', next);
     syncThemeColor();
-    syncGameFor(next);
 
     if (next !== prev) {
       /* 只在切换这一下开过渡，平时不干扰主题自己的动画设定 */
