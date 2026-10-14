@@ -20,6 +20,8 @@
   var STORAGE_KEY = 'ly_ui_skin';
   var TOGGLE_ID = 'ui-toggle-btn';
   var MASK_ID = 'ui-mask';
+  var GAME_API = 'LY_ARCADE';
+  var GAME_FILE = 'skins-arcade.js';
   var root = document.documentElement;
 
   var cfg = window.LY_UI || {};
@@ -78,6 +80,81 @@
     return null;
   }
 
+  /* ------------------------------ 小游戏按需加载 ------------------------------
+     街机皮肤带一个贪吃蛇（/js/skins-arcade.js，约 20KB）。不玩的人不该为它
+     付出一次请求，所以这里只在「第一次点开小游戏」时才把脚本插进来。
+     入口按钮由 navigation.ejs 渲染、CSS 控制显隐，这里只管加载和开关。 */
+
+  var gameState = 0;          // 0 未加载 / 1 加载中 / 2 已就绪 / -1 失败
+  var gamePromise = null;
+
+  /* 站点可能挂在子路径下，所以从自己这个 <script src> 反推目录，别硬编码 /js/ */
+  function jsBase() {
+    var list = document.querySelectorAll('script[src]');
+    for (var i = 0; i < list.length; i++) {
+      var src = list[i].getAttribute('src') || '';
+      var at = src.indexOf('skins.js');
+      if (at >= 0) return src.slice(0, at);
+    }
+    return '/js/';
+  }
+
+  function loadGame() {
+    if (window[GAME_API]) {
+      gameState = 2;
+      return Promise.resolve(window[GAME_API]);
+    }
+    if (gameState === 1) return gamePromise;
+    if (gameState === -1) return Promise.reject(new Error('小游戏脚本加载失败'));
+
+    gameState = 1;
+    gamePromise = new Promise(function (resolve, reject) {
+      var el = document.createElement('script');
+      el.src = jsBase() + GAME_FILE;
+      el.async = true;
+      el.onload = function () {
+        if (window[GAME_API]) {
+          gameState = 2;
+          resolve(window[GAME_API]);
+        } else {
+          gameState = -1;
+          reject(new Error('小游戏脚本已加载但没有挂出接口'));
+        }
+      };
+      el.onerror = function () {
+        gameState = -1;
+        reject(new Error('小游戏脚本加载失败'));
+      };
+      document.head.appendChild(el);
+    });
+    /* 失败过就别把状态永远卡在「加载中」 */
+    gamePromise.catch(function () {});
+    return gamePromise;
+  }
+
+  function openGame() {
+    loadGame().then(function (api) {
+      if (api && api.open) api.open();
+    }).catch(function (err) {
+      /* 脚本没到位时给出可见反馈，而不是点了完全没反应 */
+      var note = mask && mask.querySelector('#ui-foot-note');
+      if (note) note.textContent = '小游戏加载失败，请刷新重试';
+      if (window.console && window.console.warn) {
+        window.console.warn('[skins] ' + ((err && err.message) || err));
+      }
+    });
+  }
+
+  function closeGameIfOpen() {
+    var api = window[GAME_API];
+    if (api && api.isOpen && api.isOpen()) api.close();
+  }
+
+  /* 换到非街机皮肤时，机台留着就说不通了 */
+  function syncGameFor(skinId) {
+    if (skinId !== 'arcade') closeGameIfOpen();
+  }
+
   /* 主题的 color-schema.js 会按 --navbar-bg-color 刷新浏览器地址栏配色，
      换皮之后这个值变了，得跟着同步一次，否则移动端状态栏颜色会停在上一个皮肤 */
   function syncThemeColor() {
@@ -96,6 +173,7 @@
 
     root.setAttribute('data-ui', next);
     syncThemeColor();
+    syncGameFor(next);
 
     if (next !== prev) {
       /* 只在切换这一下开过渡，平时不干扰主题自己的动画设定 */
@@ -222,6 +300,7 @@
     /* 站主关掉切换开关时，按钮压根不会渲染；这里再拦一道，
        免得有别的入口（或调试调用）把面板放出来 */
     if (!allowSwitch) return;
+    closeGameIfOpen();          // 两层全屏遮罩别叠一起
     buildMask().classList.add('show');
     document.body.classList.add('ui-lock');
     lastFocus = document.activeElement;
@@ -248,7 +327,9 @@
   function bind() {
     var btn = document.getElementById(TOGGLE_ID);
     var mobileBtn = document.getElementById('mobile-ui-toggle-btn');
-    if (!btn && !mobileBtn) return false;
+    var gameBtn = document.getElementById('arcade-game-btn');
+    var mobileGameBtn = document.getElementById('mobile-arcade-game-btn');
+    if (!btn && !mobileBtn && !gameBtn && !mobileGameBtn) return false;
 
     if (btn) {
       btn.addEventListener('click', function (e) {
@@ -267,6 +348,19 @@
         open();
       });
     }
+
+    /* 小游戏入口：脚本按需加载，不点不下载 */
+    [gameBtn, mobileGameBtn].forEach(function (el) {
+      if (!el) return;
+      el.addEventListener('click', function (e) {
+        e.preventDefault();
+        var gridMenu = document.getElementById('mobile-grid-menu');
+        if (gridMenu) gridMenu.classList.remove('show');
+        document.body.classList.remove('mobile-menu-open');
+        openGame();
+      });
+    });
+
     return true;
   }
 

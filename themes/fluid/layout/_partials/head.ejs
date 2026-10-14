@@ -24,16 +24,27 @@ if (!uiSkins.length) {
 }
 var uiIds = uiSkins.map(function (s) { return s.id })
 var uiDefault = uiIds.indexOf(uiData.default) >= 0 ? uiData.default : uiIds[0]
+// 「复古」皮肤要在窗口标题栏里显示站点名。CSS 的 content 取不到站点配置，
+// 所以把站点名做成一个自定义属性（JSON.stringify 顺带把引号转义掉，
+// 它输出的双引号字符串正好是合法的 CSS 字符串字面量）。
+var uiSiteTitle = String(theme.navbar.blog_title || config.title || '').trim()
 var uiConfig = {
   default: uiDefault,
   allowSwitch: uiData.allowSwitch !== false,
+  // 小游戏入口只认「街机」这个 id：CSS 那边是 :root[data-ui="arcade"]，
+  // JS 那边也是写死的。ui.json 里的 game 字段只用来给后台画个角标，
+  // 不作为渲染依据 —— 万一那个字段被写丢（老版本后台不认它），入口也不会消失。
+  game: uiSkins.some(function (s) { return s.id === 'arcade' }),
+  // 已经是「CSS 字符串字面量」形态（带双引号），前端直接丢给 setProperty
+  siteTitle: uiSiteTitle ? JSON.stringify(uiSiteTitle) : '',
   skins: uiSkins.map(function (s) {
     return {
       id: s.id,
       name: s.name || s.id,
       desc: s.desc || '',
       accent: s.accent || '',
-      accent2: s.accent2 || ''
+      accent2: s.accent2 || '',
+      game: !!s.game
     }
   })
 }
@@ -58,6 +69,9 @@ var uiConfigJson = JSON.stringify(uiConfig)
       var cfg = window.LY_UI;
       var fallback = (cfg.skins[0] && cfg.skins[0].id) || 'default';
       try {
+        if (cfg.siteTitle) {
+          document.documentElement.style.setProperty('--ly-site-title', cfg.siteTitle);
+        }
         var ids = cfg.skins.map(function (s) { return s.id; });
         var saved = null;
         try { saved = localStorage.getItem('ly_ui_skin'); } catch (e) {}

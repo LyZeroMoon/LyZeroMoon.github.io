@@ -1,9 +1,19 @@
 <%
   // head.ejs 里的变量不会流到这里（partial 之间不共享局部变量），所以自己算一遍
   var navUi = site.data.ui || {}
-  var navUiSkins = (navUi.skins || []).filter(function (s) { return s && s.id })
+  var navUiSkins = (navUi.skins || []).filter(function (s) { return s && s.id && s.enabled !== false })
   // 只有一套皮肤时切换器没有意义，不渲染入口
   var navUiSwitchable = navUi.allowSwitch !== false && navUiSkins.length > 1
+  // 「街机」皮肤额外挂一个小游戏入口（样式和脚本都写死了这个 id）。
+  // 入口本身一直渲染，靠 CSS 的 :root[data-ui="arcade"] 控制显隐 ——
+  // 这样在切换器里换皮肤时，按钮会跟着即时出现/消失，不用刷新。
+  var navUiGame = navUiSkins.some(function (s) { return s.id === 'arcade' })
+  // iconfont 里没有游戏类图标，直接内联一个摇杆
+  var navGameIcon = '<svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" ' +
+    'fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" ' +
+    'stroke-linejoin="round" aria-hidden="true">' +
+    '<circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/>' +
+    '<path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>'
 %>
 <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
@@ -76,6 +86,14 @@
             <a class="nav-link" target="_self" href="javascript:;" role="button"
                aria-label="界面风格" title="界面风格">
               <i class="iconfont icon-brush"></i>
+            </a>
+          </li>
+        <% } %>
+        <% if(navUiGame) { %>
+          <li class="nav-item nav-game-only" id="arcade-game-btn">
+            <a class="nav-link" target="_self" href="javascript:;" role="button"
+               aria-label="小游戏" title="贪吃蛇（街机皮肤专属）">
+              <%- navGameIcon %>
             </a>
           </li>
         <% } %>
@@ -158,6 +176,16 @@
               <div class="mobile-grid-item">
                 <i class="iconfont icon-brush"></i>
                 <span>界面风格</span>
+              </div>
+            </a>
+          </div>
+        <% } %>
+        <% if(navUiGame) { %>
+          <div class="col-4 mobile-grid-cell nav-game-only" id="mobile-arcade-game-btn">
+            <a href="javascript:;" aria-label="小游戏">
+              <div class="mobile-grid-item">
+                <%- navGameIcon %>
+                <span>小游戏</span>
               </div>
             </a>
           </div>

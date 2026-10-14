@@ -45,6 +45,35 @@
       "desc": "等宽字体与磷光绿，极客风",
       "accent": "#0f1a14",
       "accent2": "#e8f5ec"
+    },
+    {
+      "id": "retro",
+      "name": "复古",
+      "desc": "Windows 95 视窗，青色桌面与立体边框",
+      "accent": "#008080",
+      "accent2": "#c0c0c0"
+    },
+    {
+      "id": "arcade",
+      "name": "街机",
+      "desc": "霓虹街机 + CRT 扫描线，附赠贪吃蛇",
+      "accent": "#0a0118",
+      "accent2": "#ffd60a",
+      "game": true
+    },
+    {
+      "id": "magazine",
+      "name": "杂志",
+      "desc": "衬线大字、首字下沉、编辑式分栏",
+      "accent": "#8c1d18",
+      "accent2": "#fbf9f4"
+    },
+    {
+      "id": "cyber",
+      "name": "赛博",
+      "desc": "网格底纹、切角面板、霓虹辉光",
+      "accent": "#05060a",
+      "accent2": "#22d3ee"
     }
   ]
 }
