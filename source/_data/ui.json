@@ -10,6 +10,7 @@
       "accent": "#2f4154",
       "accent2": "#f6f8fa",
       "builtin": true,
+      "game": false,
       "enabled": true
     },
     {
@@ -19,6 +20,7 @@
       "accent": "#2b2620",
       "accent2": "#f3eee4",
       "builtin": false,
+      "game": false,
       "enabled": true
     },
     {
@@ -28,6 +30,7 @@
       "accent": "#16324a",
       "accent2": "#eef3f9",
       "builtin": false,
+      "game": false,
       "enabled": true
     },
     {
@@ -37,6 +40,7 @@
       "accent": "#5b7cfa",
       "accent2": "#eef2ff",
       "builtin": false,
+      "game": false,
       "enabled": true
     },
     {
@@ -46,6 +50,7 @@
       "accent": "#7a4a63",
       "accent2": "#fdf2f6",
       "builtin": false,
+      "game": false,
       "enabled": true
     },
     {
@@ -55,6 +60,7 @@
       "accent": "#0f1a14",
       "accent2": "#e8f5ec",
       "builtin": false,
+      "game": false,
       "enabled": true
     },
     {
@@ -64,6 +70,7 @@
       "accent": "#008080",
       "accent2": "#c0c0c0",
       "builtin": false,
+      "game": false,
       "enabled": true
     },
     {
@@ -73,6 +80,7 @@
       "accent": "#0a0118",
       "accent2": "#ffd60a",
       "builtin": false,
+      "game": false,
       "enabled": true
     },
     {
@@ -82,6 +90,7 @@
       "accent": "#8c1d18",
       "accent2": "#fbf9f4",
       "builtin": false,
+      "game": false,
       "enabled": true
     },
     {
@@ -91,6 +100,7 @@
       "accent": "#05060a",
       "accent2": "#22d3ee",
       "builtin": false,
+      "game": false,
       "enabled": true
     }
   ]
