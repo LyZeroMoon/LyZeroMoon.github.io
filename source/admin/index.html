@@ -194,6 +194,7 @@ body.about-mode .sidebar{display:none}
 body.columns-mode .sidebar{display:none}
 body.images-mode .sidebar{display:none}
 body.ov-mode .sidebar{display:none}
+body.resources-mode .sidebar{display:none}
 .sidebar-head{padding:12px 12px 10px;border-bottom:1px solid var(--border)}
 .search{position:relative}
 .search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--text-3);pointer-events:none}
@@ -409,8 +410,103 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
   border:1px dashed var(--border-strong);border-radius:13px;line-height:2;
 }
 
+/* ---------- 资源库管理 ---------- */
+.res-tip{
+  max-width:1040px;margin:0 0 18px;padding:11px 14px;border-radius:10px;
+  background:var(--surface-2);border:1px solid var(--border);
+  font-size:12.5px;line-height:1.85;color:var(--text-2);
+}
+.res-admin-crumbs{display:flex;align-items:center;flex-wrap:wrap;gap:2px;font-size:13px;min-width:0}
+.res-admin-crumbs .c{
+  padding:4px 9px;border-radius:8px;border:1px solid transparent;background:transparent;
+  color:var(--text-2);font-size:13px;cursor:pointer;transition:all .14s;max-width:200px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.res-admin-crumbs .c:hover{background:var(--surface-3);color:var(--accent)}
+.res-admin-crumbs .c.now{color:var(--text);font-weight:600;cursor:default;border-color:var(--border);background:var(--surface-2)}
+.res-admin-crumbs .s{color:var(--text-3);padding:0 2px}
+.res-admin-body{display:flex;flex-direction:column;gap:7px;max-width:1040px}
+.res-sec{
+  display:flex;align-items:center;gap:8px;margin:12px 0 2px;
+  font-size:11.5px;font-weight:600;letter-spacing:.06em;color:var(--text-3);
+}
+.res-sec:first-child{margin-top:0}
+.res-sec .n{font-weight:400;letter-spacing:0;color:var(--text-3);opacity:.7}
+
+.res-line{
+  display:flex;align-items:center;gap:11px;padding:10px 13px;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:11px;
+  box-shadow:var(--shadow-sm);transition:border-color .15s,box-shadow .15s;
+}
+.res-line:hover{border-color:var(--border-strong);box-shadow:var(--shadow)}
+.res-ic{
+  width:34px;height:34px;flex:0 0 34px;border-radius:9px;display:flex;align-items:center;
+  justify-content:center;background:var(--surface-3);color:var(--text-2);
+  font-size:10px;font-weight:700;letter-spacing:.02em;
+}
+.res-ic svg{width:18px;height:18px}
+.res-ic.folder{background:var(--accent-soft);color:var(--accent)}
+.res-ic[data-fmt="PDF"]{background:var(--danger-soft);color:var(--danger)}
+.res-ic[data-fmt="EPUB"]{background:var(--ok-soft);color:var(--ok)}
+.res-ic[data-fmt="MOBI"],.res-ic[data-fmt="AZW3"],.res-ic[data-fmt="AZW"]{background:var(--warn-soft);color:var(--warn)}
+.res-main{flex:1;min-width:0}
+.res-t{
+  font-size:13.5px;font-weight:600;color:var(--text);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;
+}
+.res-d{
+  font-size:11.5px;color:var(--text-3);margin-top:2px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;
+}
+.res-badge{
+  flex:0 0 auto;padding:1px 8px;border-radius:20px;font-size:11px;line-height:17px;
+  background:var(--surface-3);color:var(--text-2);border:1px solid var(--border);
+}
+.res-badge.ext{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.res-badge.inner{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.res-acts{display:flex;gap:6px;flex:0 0 auto}
+.res-act{
+  padding:5px 11px;border-radius:8px;background:transparent;color:var(--text-2);
+  border:1px solid var(--border);font-size:12px;
+}
+.res-act:hover{background:var(--surface-3);border-color:var(--border-strong);color:var(--text)}
+.res-act.del{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 30%,transparent)}
+.res-act.del:hover{background:var(--danger-soft)}
+.res-empty{
+  max-width:1040px;padding:44px 20px;text-align:center;color:var(--text-3);font-size:13px;
+  border:1px dashed var(--border-strong);border-radius:13px;line-height:2;
+}
+.res-admin-foot{max-width:1040px}
+.res-dirty{font-size:12px;color:var(--warn)}
+.dialog .fd{margin-bottom:12px}
+.dialog .fd label{display:block;font-size:12px;color:var(--text-2);margin-bottom:5px;font-weight:500}
+.dialog .fd .hint{font-weight:400;color:var(--text-3);margin-left:6px}
+.dialog .fd input,.dialog .fd select,.dialog .fd textarea{
+  width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:9px;
+  background:var(--surface-2);outline:none;font-size:13px;font-family:inherit;
+  transition:border-color .15s,box-shadow .15s;
+}
+.dialog .fd select{cursor:pointer;appearance:auto}
+.dialog .fd textarea{resize:vertical;min-height:64px;line-height:1.7}
+.dialog .fd input:focus,.dialog .fd select:focus,.dialog .fd textarea:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3.5px color-mix(in srgb,var(--accent) 15%,transparent);
+}
+.dialog .fd input[readonly]{background:var(--surface-3);color:var(--text-2)}
+.dialog .fd-2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.dialog .file-pick{display:flex;gap:8px;align-items:center}
+.dialog .file-pick input{flex:1;min-width:0;font-family:var(--mono);font-size:12px}
+.dialog .dlg-err{
+  display:none;margin:0 0 12px;padding:9px 12px;border-radius:9px;font-size:12.5px;
+  background:var(--danger-soft);color:var(--danger);
+}
+.dialog .dlg-err.show{display:block}
+@media (max-width:900px){
+  .res-line{flex-wrap:wrap}
+  .res-main{flex-basis:100%}
+}
+
 /* ---------- 图片管理 ---------- */
-.images-pane,.ov-pane{flex:1;overflow-y:auto;padding:24px 26px 60px;background:var(--surface)}
+.images-pane,.ov-pane,.resources-pane{flex:1;overflow-y:auto;padding:24px 26px 60px;background:var(--surface)}
 .pane-toolbar{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;
   max-width:1040px;padding-bottom:14px;border-bottom:1px solid var(--border);
@@ -704,6 +800,7 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
       <button id="tab-notes">笔记</button>
       <button id="tab-about">关于页</button>
       <button id="tab-columns">专栏</button>
+      <button id="tab-resources">资源</button>
       <button id="tab-images">图片</button>
       <button id="tab-ov">概览</button>
     </nav>
@@ -847,6 +944,38 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
         </div>
       </div>
 
+      <div class="resources-pane hidden" id="resources-pane">
+        <div class="pane-toolbar">
+          <nav class="res-admin-crumbs" id="res-admin-crumbs"></nav>
+          <span class="sp"></span>
+          <div class="img-search">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <circle cx="9" cy="9" r="5.5"></circle><path d="M13.2 13.2 17 17"></path>
+            </svg>
+            <input type="search" id="res-q" placeholder="搜索全部条目…" autocomplete="off">
+          </div>
+          <button class="btn-ghost" id="btn-res-newfolder">新建文件夹</button>
+          <button class="btn-ghost" id="btn-res-upload">上传文件</button>
+          <button class="btn-ghost" id="btn-res-addlink">添加链接</button>
+          <button class="btn-ghost" id="btn-res-refresh">刷新</button>
+          <input type="file" id="res-file" multiple hidden>
+        </div>
+
+        <div class="res-tip">
+          小于 25MB 的文件直接传进仓库，页面上点一下就能下载、还能在线看 PDF；
+          更大的书（或已经在网盘里的）用「添加链接」填外部地址，展示效果一模一样。
+        </div>
+
+        <div class="res-admin-body" id="res-admin-body"></div>
+
+        <div class="col-foot res-admin-foot">
+          <span id="res-status">清单保存在 source/_data/resources.json</span>
+          <span class="sp"></span>
+          <span class="res-dirty hidden" id="res-dirty">有未发布的改动</span>
+          <button class="btn-primary" id="btn-res-save">发布资源库</button>
+        </div>
+      </div>
+
       <div class="images-pane hidden" id="images-pane">
         <div class="pane-toolbar">
           <div class="img-search">
@@ -949,11 +1078,19 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     columnsPath: 'source/_data/columns.yml',
     imageDir: 'source/images',
     imageUrl: '/images',
+    resPath: 'source/_data/resources.json',
+    resDir: 'source/resources',
+    resUrl: '/resources',
     api: 'https://api.github.com',
     site: 'https://lyzeromoon.github.io',
     kdfIterations: 600000,
     maxImageBytes: 4 * 1024 * 1024,
-    warnImageBytes: 1024 * 1024
+    warnImageBytes: 1024 * 1024,
+    /* 资源库：单文件超过 maxResBytes 就不要再塞进仓库了，改填外部链接。
+       GitHub 对单文件硬上限是 100MB，但仓库会永久保留每个历史版本，
+       所以这里把线压到 25MB，够放大部分电子书。 */
+    maxResBytes: 25 * 1024 * 1024,
+    warnResBytes: 8 * 1024 * 1024
   };
 
   var state = {
@@ -989,7 +1126,15 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     /* 图片管理 */
     images: [],
     imgQuery: '',
-    selImages: {}
+    selImages: {},
+    /* 资源库（电子书等） */
+    res: { folders: [], items: [] },
+    resSha: null,
+    resFolder: '',
+    resQuery: '',
+    resDirty: false,
+    resLoaded: false,
+    resBusy: 0
   };
 
   var authDoc = null;
@@ -1312,8 +1457,11 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     if (!commitSha) { setStatus(filePath, '已提交，正在部署…'); return; }
     var tries = 0;
     var MAX_TRIES = 40;
+    var deployStartedAt = Date.now();
 
     function say(msg) {
+      // 资源库没有「正在编辑的文章」，进度写在面板自己的状态栏上
+      if (state.mode === 'resources') { resSetStatus(msg); return; }
       // 只在用户还停在这篇文章 / 这个页面上时才去改状态栏
       if (state.editingPath !== filePath) return;
       if (state.mode !== 'posts' && state.mode !== 'about') return;
@@ -1323,13 +1471,22 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
     function poll() {
       tries++;
-      gh('/repos/' + CFG.owner + '/' + CFG.repo +
-        '/actions/runs?per_page=10&head_sha=' + commitSha)
+      /* 不要用 head_sha 过滤：实测这个参数经常返回空数组，
+         会让人误以为「构建没触发 / 卡住了」。直接列最近的运行，
+         再自己在客户端按 head_sha 挑。 */
+      gh('/repos/' + CFG.owner + '/' + CFG.repo + '/actions/runs?per_page=20')
         .then(function (data) {
           var runs = (data && data.workflow_runs) || [];
-          var run = runs.filter(function (r) {
+          var deploys = runs.filter(function (r) {
             return String(r.path || '').indexOf('deploy.yml') >= 0;
-          })[0];
+          });
+          var run = deploys.filter(function (r) { return r.head_sha === commitSha; })[0];
+          if (!run && deployStartedAt) {
+            // 万一还没排到，就先认最近一次部署，避免空转
+            run = deploys.filter(function (r) {
+              return new Date(r.created_at).getTime() >= deployStartedAt - 60000;
+            })[0];
+          }
 
           if (!run) {
             say('已提交，等待构建启动…');
@@ -2125,22 +2282,23 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
 
   function setMode(mode) {
     state.mode = mode;
-    ['posts', 'notes', 'about', 'columns', 'images', 'ov'].forEach(function (m) {
+    ['posts', 'notes', 'about', 'columns', 'resources', 'images', 'ov'].forEach(function (m) {
       document.body.classList.toggle(m + '-mode', mode === m);
       var tab = $('tab-' + m);
       if (tab) tab.classList.toggle('on', mode === m);
     });
 
     var canEdit = mode === 'posts' || mode === 'notes';
-    var isPlain = mode === 'columns' || mode === 'images' || mode === 'ov';
+    var isPlain = mode === 'columns' || mode === 'resources' || mode === 'images' || mode === 'ov';
 
     $('btn-new').classList.toggle('hidden', !canEdit);
     $('btn-new').textContent = mode === 'notes' ? '新建笔记' : '新建文章';
     $('btn-delete').classList.toggle('hidden', !canEdit || !state.editingPath);
-    $('btn-save').classList.toggle('hidden', mode === 'images' || mode === 'ov');
+    $('btn-save').classList.toggle('hidden', mode === 'images' || mode === 'ov' || mode === 'resources');
     $('toolbar').classList.toggle('hidden', isPlain);
     $('panes').classList.toggle('hidden', isPlain);
     $('columns-pane').classList.toggle('hidden', mode !== 'columns');
+    $('resources-pane').classList.toggle('hidden', mode !== 'resources');
     $('images-pane').classList.toggle('hidden', mode !== 'images');
     $('ov-pane').classList.toggle('hidden', mode !== 'ov');
 
@@ -2949,6 +3107,894 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     step();
   }
 
+  /* ================= 资源库（电子书等） =================
+     清单是 source/_data/resources.json，本体文件放 source/resources/。
+     Hexo 的 _data 支持 json（内置 json 渲染器），所以这里直接用
+     JSON.parse / JSON.stringify，不用像 columns.yml 那样手写解析器。 */
+
+  var RES_FMT = {
+    pdf: 'PDF', epub: 'EPUB', mobi: 'MOBI', azw3: 'AZW3', azw: 'AZW',
+    djvu: 'DJVU', txt: 'TXT', md: 'MD', zip: 'ZIP', rar: 'RAR', '7z': '7Z', chm: 'CHM'
+  };
+  /* 文件名里不能出现的字符（Windows / macOS / Linux 取并集） */
+  var RES_BAD_FS = /[<>:"/\\|?*\u0000-\u001f]/g;
+
+  function resSetStatus(text) {
+    var n = $('res-status');
+    if (n) n.textContent = text;
+  }
+
+  function resId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function resNorm(p) {
+    return String(p == null ? '' : p)
+      .replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '')
+      .replace(/\/{2,}/g, '/').trim();
+  }
+  function resParent(p) { p = resNorm(p); var i = p.lastIndexOf('/'); return i < 0 ? '' : p.slice(0, i); }
+  function resBase(p) { p = resNorm(p); var i = p.lastIndexOf('/'); return i < 0 ? p : p.slice(i + 1); }
+  function resJoin(a, b) { a = resNorm(a); b = resNorm(b); return a ? a + '/' + b : b; }
+  function resExt(name) {
+    var m = String(name || '').split(/[?#]/)[0].match(/\.([A-Za-z0-9]{1,6})$/);
+    return m ? m[1].toLowerCase() : '';
+  }
+  function resFmt(name) {
+    var e = resExt(name);
+    return RES_FMT[e] || (e ? e.toUpperCase() : '');
+  }
+  function resToday() { return nowLocal().slice(0, 10); }
+
+  function resStore() {
+    if (!state.res || typeof state.res !== 'object' || Array.isArray(state.res)) {
+      state.res = { folders: [], items: [] };
+    }
+    if (!Array.isArray(state.res.folders)) state.res.folders = [];
+    if (!Array.isArray(state.res.items)) state.res.items = [];
+    return state.res;
+  }
+  function resItems() { return resStore().items; }
+  function resFolders() { return resStore().folders; }
+
+  function resMarkDirty(on) {
+    state.resDirty = on !== false;
+    var d = $('res-dirty');
+    if (d) d.classList.toggle('hidden', !state.resDirty);
+  }
+
+  /* 把「声明的文件夹」和「条目所在路径」合成同一棵树，
+     这样就算清单里漏了某一级目录，界面也不会把条目藏起来 */
+  function resBuildTree() {
+    var map = {};
+    function touch(p) {
+      p = resNorm(p);
+      if (!p) return null;
+      if (!map[p]) map[p] = { path: p, title: resBase(p), desc: '', order: 1000, declared: false };
+      return map[p];
+    }
+    function chain(p) {
+      var segs = resNorm(p).split('/').filter(Boolean), acc = '';
+      segs.forEach(function (s) { acc = acc ? acc + '/' + s : s; touch(acc); });
+    }
+    resFolders().forEach(function (f) {
+      if (!f) return;
+      var p = resNorm(f.path || f.title);
+      if (!p) return;
+      chain(p);
+      var n = map[p];
+      if (f.title) n.title = String(f.title);
+      if (f.desc) n.desc = String(f.desc);
+      if (f.order != null && !isNaN(Number(f.order))) n.order = Number(f.order);
+      n.declared = true;
+    });
+    resItems().forEach(function (it) { if (it && it.path) chain(it.path); });
+    return map;
+  }
+
+  function resChildFolders(tree, path) {
+    path = resNorm(path);
+    return Object.keys(tree).filter(function (p) { return resParent(p) === path; })
+      .map(function (p) { return tree[p]; })
+      .sort(function (a, b) {
+        if (a.order !== b.order) return a.order - b.order;
+        return a.title.localeCompare(b.title, 'zh');
+      });
+  }
+  function resChildItems(path) {
+    path = resNorm(path);
+    return resItems().filter(function (it) { return resNorm(it.path) === path; })
+      .sort(function (a, b) { return String(a.title || '').localeCompare(String(b.title || ''), 'zh'); });
+  }
+  function resCountItems(path) {
+    path = resNorm(path);
+    var prefix = path ? path + '/' : '', n = 0;
+    resItems().forEach(function (it) {
+      var p = resNorm(it.path);
+      if (path ? (p === path || p.indexOf(prefix) === 0) : true) n++;
+    });
+    return n;
+  }
+
+  /* ---------- 打开 / 加载 / 保存 ---------- */
+
+  function openResources() {
+    setMode('resources');
+    if (state.resLoaded) { renderResources(); return; }
+    loadResources();
+  }
+
+  function loadResources() {
+    resSetStatus('加载清单…');
+    $('res-admin-body').innerHTML = '<div class="res-empty">正在读取 source/_data/resources.json …</div>';
+    gh('/repos/' + CFG.owner + '/' + CFG.repo + '/contents/' + CFG.resPath + '?ref=' + CFG.branch)
+      .then(function (d) {
+        state.resSha = d.sha;
+        var txt = b64decode(d.content);
+        try { state.res = JSON.parse(txt); }
+        catch (e) { throw new Error('resources.json 不是合法 JSON（' + e.message + '）'); }
+        state.resLoaded = true;
+        resStore();
+        resMarkDirty(false);
+        renderResources();
+        resSetStatus('已加载 ' + resItems().length + ' 个条目 / ' + resFolders().length + ' 个文件夹');
+      })
+      .catch(function (e) {
+        if (e && e.status === 404) {
+          // 还没建过这个文件：按空清单处理，不要吓人
+          state.res = { folders: [], items: [] };
+          state.resSha = null;
+          state.resLoaded = true;
+          renderResources();
+          resSetStatus('清单还不存在，发布后会自动创建');
+          return;
+        }
+        state.res = { folders: [], items: [] };
+        state.resSha = null;
+        state.resLoaded = true;
+        renderResources();
+        resSetStatus('加载失败');
+        toast('资源清单加载失败：' + e.message, 'err');
+      });
+  }
+
+  function saveResources(message) {
+    var d = resStore();
+    var payload = {
+      version: 1,
+      folders: d.folders.filter(function (f) { return f && (f.path || f.title); }).map(function (f) {
+        var o = { path: resNorm(f.path || f.title) };
+        if (f.title) o.title = String(f.title);
+        if (f.desc) o.desc = String(f.desc);
+        if (f.order != null && !isNaN(Number(f.order))) o.order = Number(f.order);
+        return o;
+      }),
+      items: d.items.filter(function (it) { return it && it.title; }).map(function (it) {
+        var o = { id: it.id || resId(), title: String(it.title) };
+        if (it.path) o.path = resNorm(it.path);
+        if (it.author) o.author = String(it.author);
+        if (it.format) o.format = String(it.format).toUpperCase();
+        if (Number(it.size) > 0) o.size = Number(it.size);
+        if (it.file) o.file = resNorm(it.file);
+        if (it.link) o.link = String(it.link);
+        if (it.desc) o.desc = String(it.desc);
+        if (it.tags && it.tags.length) o.tags = it.tags.slice();
+        if (it.date) o.date = String(it.date);
+        if (it.star) o.star = true;
+        return o;
+      })
+    };
+    var text = JSON.stringify(payload, null, 2) + '\n';
+
+    $('btn-res-save').disabled = true;
+    resSetStatus('提交中…');
+    var shaPromise = state.resSha ? Promise.resolve(state.resSha) : getSha(CFG.resPath);
+
+    return shaPromise
+      .then(function (sha) { return putFile(CFG.resPath, text, message || 'res: 更新资源库清单', sha); })
+      .then(function (r) {
+        state.resSha = (r && r.content && r.content.sha) || state.resSha;
+        state.res = payload;           /* 用归一化后的结果回写，界面看到的 == 实际写进去的 */
+        state.resLoaded = true;
+        resMarkDirty(false);
+        renderResources();
+        toast('已发布，正在构建…', 'ok');
+        watchDeploy(r && r.commit && r.commit.sha, CFG.resPath);
+      })
+      .catch(function (e) {
+        toast('发布失败：' + e.message, 'err');
+        resSetStatus('发布失败');
+      })
+      .then(function () { $('btn-res-save').disabled = false; });
+  }
+
+  /* ---------- 渲染 ---------- */
+
+  function resActBtn(label, danger, fn) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'res-act' + (danger ? ' del' : '');
+    b.textContent = label;
+    b.addEventListener('click', fn);
+    return b;
+  }
+
+  function resIcoFolder() {
+    var n = document.createElement('span');
+    n.className = 'res-ic folder';
+    n.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">' +
+      '<path d="M3 7.2A1.7 1.7 0 0 1 4.7 5.5h3.8l1.7 2.1h8.1A1.7 1.7 0 0 1 20 9.3v7.5a1.7 1.7 0 0 1-1.7 1.7H4.7A1.7 1.7 0 0 1 3 16.8z"/></svg>';
+    return n;
+  }
+  function resIcoFmt(fmt) {
+    var n = document.createElement('span');
+    n.className = 'res-ic';
+    if (fmt) { n.setAttribute('data-fmt', fmt); n.textContent = fmt.length > 5 ? fmt.slice(0, 5) : fmt; }
+    else { n.textContent = '?'; }
+    return n;
+  }
+
+  function renderResCrumbs() {
+    var box = $('res-admin-crumbs');
+    box.innerHTML = '';
+    var segs = state.resFolder ? state.resFolder.split('/') : [];
+    var acc = '';
+
+    function crumb(label, target, now) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'c' + (now ? ' now' : '');
+      b.textContent = label;
+      if (!now) b.addEventListener('click', function () { resGo(target); });
+      box.appendChild(b);
+    }
+    crumb('资源库', '', !segs.length);
+    segs.forEach(function (name, i) {
+      acc = acc ? acc + '/' + name : name;
+      var s = document.createElement('span');
+      s.className = 's';
+      s.textContent = '/';
+      box.appendChild(s);
+      crumb(name, acc, i === segs.length - 1);
+    });
+  }
+
+  function resGo(path) {
+    state.resFolder = resNorm(path);
+    state.resQuery = '';
+    var q = $('res-q');
+    if (q) q.value = '';
+    renderResources();
+  }
+
+  function renderResources() {
+    renderResCrumbs();
+    var box = $('res-admin-body');
+    box.innerHTML = '';
+
+    var tree = resBuildTree();
+    var q = state.resQuery.trim().toLowerCase();
+    var folders, items;
+
+    if (q) {
+      folders = Object.keys(tree).map(function (p) { return tree[p]; }).filter(function (f) {
+        return f.title.toLowerCase().indexOf(q) >= 0 ||
+          String(f.desc || '').toLowerCase().indexOf(q) >= 0 ||
+          f.path.toLowerCase().indexOf(q) >= 0;
+      });
+      items = resItems().filter(function (it) {
+        return String(it.title || '').toLowerCase().indexOf(q) >= 0 ||
+          String(it.author || '').toLowerCase().indexOf(q) >= 0 ||
+          String(it.desc || '').toLowerCase().indexOf(q) >= 0 ||
+          resNorm(it.path).toLowerCase().indexOf(q) >= 0 ||
+          (it.tags || []).join(' ').toLowerCase().indexOf(q) >= 0;
+      });
+      resSetStatus('搜索「' + state.resQuery + '」· 命中 ' + (folders.length + items.length) + ' 项');
+    } else {
+      folders = resChildFolders(tree, state.resFolder);
+      items = resChildItems(state.resFolder);
+      var total = resCountItems('');
+      if (total || resFolders().length) {
+        resSetStatus(resItems().length + ' 个条目 / ' + resFolders().length + ' 个文件夹' +
+          (state.resDirty ? ' · 有未发布的改动' : ''));
+      }
+    }
+
+    if (!folders.length && !items.length) {
+      var empty = document.createElement('div');
+      empty.className = 'res-empty';
+      empty.innerHTML = q
+        ? '没有匹配「' + state.resQuery + '」的条目。'
+        : '这里还是空的。<br>用右上角「新建文件夹」分个类，或者「上传文件」「添加链接」直接往里放。';
+      box.appendChild(empty);
+      return;
+    }
+
+    if (folders.length) {
+      box.appendChild(resSec('文件夹', folders.length));
+      folders.forEach(function (f) { box.appendChild(resFolderLine(f, q)); });
+    }
+    if (items.length) {
+      box.appendChild(resSec('条目', items.length));
+      items.forEach(function (it) { box.appendChild(resItemLine(it, q)); });
+    }
+  }
+
+  function resSec(label, n) {
+    var s = document.createElement('div');
+    s.className = 'res-sec';
+    s.textContent = label;
+    var c = document.createElement('span');
+    c.className = 'n';
+    c.textContent = n;
+    s.appendChild(c);
+    return s;
+  }
+
+  function resFolderLine(f, searching) {
+    var line = document.createElement('div');
+    line.className = 'res-line';
+    line.appendChild(resIcoFolder());
+
+    var main = document.createElement('div');
+    main.className = 'res-main';
+    var t = document.createElement('div');
+    t.className = 'res-t';
+    t.textContent = f.title;
+    t.style.cursor = 'pointer';
+    t.addEventListener('click', function () { resGo(f.path); });
+    main.appendChild(t);
+    var d = document.createElement('div');
+    d.className = 'res-d';
+    var sub = resChildFolders(resBuildTree(), f.path).length;
+    var parts = [f.path];
+    if (sub) parts.push(sub + ' 个子文件夹');
+    parts.push(resCountItems(f.path) + ' 个条目');
+    if (f.desc) parts.push(f.desc);
+    d.textContent = parts.join(' · ');
+    main.appendChild(d);
+    line.appendChild(main);
+
+    var acts = document.createElement('div');
+    acts.className = 'res-acts';
+    acts.appendChild(resActBtn('打开', false, function () { resGo(f.path); }));
+    acts.appendChild(resActBtn('重命名', false, function () { resFolderDialog(f); }));
+    acts.appendChild(resActBtn('删除', true, function () { resDeleteFolder(f); }));
+    line.appendChild(acts);
+    return line;
+  }
+
+  function resItemLine(it, searching) {
+    var line = document.createElement('div');
+    line.className = 'res-line';
+    line.appendChild(resIcoFmt(it.format || resFmt(it.file || it.link)));
+
+    var main = document.createElement('div');
+    main.className = 'res-main';
+    var t = document.createElement('div');
+    t.className = 'res-t';
+    t.textContent = it.title || '(未命名)';
+    main.appendChild(t);
+    var d = document.createElement('div');
+    d.className = 'res-d';
+    var parts = [];
+    if (it.author) parts.push(it.author);
+    if (Number(it.size) > 0) parts.push(humanSize(Number(it.size)));
+    if (it.date) parts.push(it.date);
+    if (searching && it.path) parts.push('在 ' + it.path);
+    else if (it.file) parts.push(resBase(it.file));
+    if (it.desc) parts.push(it.desc);
+    d.textContent = parts.join(' · ');
+    main.appendChild(d);
+    line.appendChild(main);
+
+    var badge = document.createElement('span');
+    badge.className = 'res-badge ' + (it.file ? 'inner' : 'ext');
+    badge.textContent = it.file ? '仓库内' : '外链';
+    line.appendChild(badge);
+
+    var acts = document.createElement('div');
+    acts.className = 'res-acts';
+    acts.appendChild(resActBtn('编辑', false, function () { resItemDialog(it); }));
+    acts.appendChild(resActBtn('删除', true, function () { resDeleteItem(it); }));
+    line.appendChild(acts);
+    return line;
+  }
+
+  /* ---------- 通用对话框 ---------- */
+
+  function resDialog(title, tip, nodes, okLabel, onSubmit) {
+    var mask = document.createElement('div');
+    mask.className = 'mask';
+    var dlg = document.createElement('div');
+    dlg.className = 'dialog wide';
+
+    var h = document.createElement('h3');
+    h.textContent = title;
+    dlg.appendChild(h);
+
+    var err = document.createElement('p');
+    err.className = 'dlg-err';
+    dlg.appendChild(err);
+
+    if (tip) {
+      var p = document.createElement('p');
+      p.className = 'small';
+      p.textContent = tip;
+      dlg.appendChild(p);
+    }
+    nodes.forEach(function (n) { dlg.appendChild(n); });
+
+    var actions = document.createElement('div');
+    actions.className = 'dialog-actions';
+    var cancel = document.createElement('button');
+    cancel.className = 'btn-ghost';
+    cancel.type = 'button';
+    cancel.textContent = '取消';
+    var ok = document.createElement('button');
+    ok.className = 'btn-primary';
+    ok.type = 'button';
+    ok.textContent = okLabel || '确定';
+    actions.appendChild(cancel);
+    actions.appendChild(ok);
+    dlg.appendChild(actions);
+    mask.appendChild(dlg);
+
+    function close() {
+      document.removeEventListener('keydown', onKey);
+      if (mask.parentNode) mask.parentNode.removeChild(mask);
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', onKey);
+    cancel.addEventListener('click', close);
+    mask.addEventListener('click', function (e) { if (e.target === mask) close(); });
+    ok.addEventListener('click', function () {
+      var msg = onSubmit();
+      if (typeof msg === 'string' && msg) {
+        err.textContent = msg;
+        err.classList.add('show');
+        return;
+      }
+      close();
+    });
+
+    document.body.appendChild(mask);
+    var first = dlg.querySelector('input,textarea,select');
+    if (first) setTimeout(function () { first.focus(); }, 30);
+    return { close: close, root: dlg };
+  }
+
+  function resField(label, hint, input) {
+    var w = document.createElement('div');
+    w.className = 'fd';
+    var l = document.createElement('label');
+    l.textContent = label;
+    if (hint) {
+      var s = document.createElement('span');
+      s.className = 'hint';
+      s.textContent = hint;
+      l.appendChild(s);
+    }
+    w.appendChild(l);
+    w.appendChild(input);
+    return w;
+  }
+  function resInput(value, ph) {
+    var i = document.createElement('input');
+    i.type = 'text';
+    i.value = value == null ? '' : String(value);
+    if (ph) i.placeholder = ph;
+    return i;
+  }
+  function resArea(value, ph) {
+    var t = document.createElement('textarea');
+    t.value = value == null ? '' : String(value);
+    if (ph) t.placeholder = ph;
+    return t;
+  }
+  function resFolderSelect(value) {
+    var s = document.createElement('select');
+    var root = document.createElement('option');
+    root.value = '';
+    root.textContent = '（资源库根目录）';
+    s.appendChild(root);
+    Object.keys(resBuildTree()).sort(function (a, b) { return a.localeCompare(b, 'zh'); }).forEach(function (p) {
+      var o = document.createElement('option');
+      o.value = p;
+      o.textContent = p;
+      s.appendChild(o);
+    });
+    s.value = resNorm(value);
+    if (s.selectedIndex < 0) s.value = '';
+    return s;
+  }
+
+  /* ---------- 文件夹：新建 / 重命名 / 删除 ---------- */
+
+  function resFolderDialog(node) {
+    var isNew = !node;
+    var nameIn = resInput(isNew ? '' : node.title, '比如：数字信号处理');
+    var descIn = resInput(isNew ? '' : node.desc, '一句话说明，会显示在资源页的文件夹上');
+    var nodes = [
+      resField('文件夹名称', null, nameIn),
+      resField('简介', '可留空', descIn)
+    ];
+    if (isNew) {
+      var where = document.createElement('p');
+      where.className = 'small';
+      where.textContent = '将建在：' + (state.resFolder || '（资源库根目录）');
+      nodes.unshift(where);
+    }
+
+    resDialog(isNew ? '新建文件夹' : '重命名文件夹', null, nodes, isNew ? '创建' : '保存', function () {
+      var name = nameIn.value.trim();
+      if (!name) return '请填文件夹名称';
+      if (RES_BAD_FS.test(name)) return '名称里不能有 \\ / : * ? " < > | 这些字符';
+      RES_BAD_FS.lastIndex = 0;
+      if (name === '.' || name === '..') return '这个名字不能用';
+
+      if (isNew) {
+        var path = resJoin(state.resFolder, name);
+        if (resBuildTree()[path]) return '这个位置已经有同名文件夹了';
+        resFolders().push({ path: path, title: name, desc: descIn.value.trim() });
+        resMarkDirty(true);
+        renderResources();
+        toast('文件夹已创建，记得点「发布资源库」', 'ok');
+        return '';
+      }
+
+      var oldPath = resNorm(node.path);
+      var newPath = resJoin(resParent(oldPath), name);
+      if (newPath !== oldPath && resBuildTree()[newPath]) return '同一层已经有同名文件夹了';
+
+      var folder = resFolders().filter(function (f) { return resNorm(f.path || f.title) === oldPath; })[0];
+      if (!folder) { folder = { path: oldPath }; resFolders().push(folder); }
+      folder.path = newPath;
+      folder.title = name;
+      folder.desc = descIn.value.trim();
+
+      if (newPath !== oldPath) {
+        // 子孙文件夹和里面的条目都要跟着改路径，否则条目会「掉出」目录树
+        var prefix = oldPath + '/';
+        resFolders().forEach(function (f) {
+          var p = resNorm(f.path);
+          if (p.indexOf(prefix) === 0) f.path = newPath + '/' + p.slice(prefix.length);
+        });
+        resItems().forEach(function (it) {
+          var p = resNorm(it.path);
+          if (p === oldPath) it.path = newPath;
+          else if (p.indexOf(prefix) === 0) it.path = newPath + '/' + p.slice(prefix.length);
+        });
+        if (state.resFolder === oldPath || state.resFolder.indexOf(prefix) === 0) {
+          state.resFolder = newPath + state.resFolder.slice(oldPath.length);
+        }
+      }
+      resMarkDirty(true);
+      renderResources();
+      toast('已重命名，记得点「发布资源库」', 'ok');
+      return '';
+    });
+  }
+
+  function resDescendantItems(path) {
+    var prefix = resNorm(path) + '/';
+    return resItems().filter(function (it) {
+      var p = resNorm(it.path);
+      return p === resNorm(path) || p.indexOf(prefix) === 0;
+    });
+  }
+  function resDescendantFolders(path) {
+    path = resNorm(path);
+    var prefix = path + '/';
+    return resFolders().filter(function (f) {
+      var p = resNorm(f.path || f.title);
+      return p === path || p.indexOf(prefix) === 0;
+    });
+  }
+
+  function resDeleteFolder(node) {
+    var items = resDescendantItems(node.path);
+    var subFolders = resDescendantFolders(node.path).length;
+    var withFile = items.filter(function (it) { return !!it.file; });
+    var bytes = withFile.reduce(function (s, it) { return s + (Number(it.size) || 0); }, 0);
+
+    var txt = '「' + node.title + '」里的 ' + items.length + ' 个条目和 ' +
+      Math.max(0, subFolders - 1) + ' 个子文件夹都会从清单里移除。';
+    if (withFile.length) {
+      txt += '其中 ' + withFile.length + ' 个是从仓库里传上来的文件（' + humanSize(bytes) + '），' +
+        '会被一并从仓库删除。';
+    }
+    txt += '此操作无法撤销。';
+
+    confirmDialog('删除文件夹？', txt, function () {
+      var keep = resNorm(node.path);
+      state.res.folders = resFolders().filter(function (f) {
+        var p = resNorm(f.path || f.title);
+        return p !== keep && p.indexOf(keep + '/') !== 0;
+      });
+      state.res.items = resItems().filter(function (it) {
+        var p = resNorm(it.path);
+        return p !== keep && p.indexOf(keep + '/') !== 0;
+      });
+      resMarkDirty(true);
+      if (state.resFolder === keep || state.resFolder.indexOf(keep + '/') === 0) state.resFolder = resParent(keep);
+      renderResources();
+
+      if (!withFile.length) { toast('已从清单移除，记得点「发布资源库」', 'ok'); return; }
+      resDeleteRepoFiles(withFile.map(function (it) { return it.file; }), function () {
+        toast('已移除，记得点「发布资源库」', 'ok');
+      });
+    });
+  }
+
+  function resDeleteItem(it) {
+    var txt = it.file
+      ? '会从清单里移除，并同时删除仓库里的文件：\n' + it.file
+      : '只会从清单里移除这个链接，不影响外部文件。';
+
+    confirmDialog('删除条目？', '「' + it.title + '」' + '\n' + txt, function () {
+      state.res.items = resItems().filter(function (x) { return x !== it && x.id !== it.id; });
+      resMarkDirty(true);
+      renderResources();
+      if (!it.file) { toast('已从清单移除，记得点「发布资源库」', 'ok'); return; }
+      resDeleteRepoFiles([it.file], function () {
+        toast('已删除，记得点「发布资源库」', 'ok');
+      });
+    });
+  }
+
+  /* 逐个删仓库文件（每个文件一次提交）。书名不多，够用；
+     真到几十个文件时再考虑用 Git Data API 合成一次提交。 */
+  function resDeleteRepoFiles(paths, done) {
+    var list = paths.slice();
+    var failed = 0;
+    if (!list.length) { if (done) done(); return; }
+
+    function step() {
+      if (!list.length) {
+        if (failed) toast('有 ' + failed + ' 个文件没删掉，去仓库里手动清理一下', 'err');
+        if (done) done();
+        return;
+      }
+      var p = list.shift();
+      resSetStatus('删除仓库文件 ' + resBase(p) + '（还剩 ' + (list.length + 1) + ' 个）…');
+      getSha(p).then(function (sha) {
+        if (!sha) return null;
+        return deleteFile(p, 'res: 删除文件 ' + resBase(p), sha);
+      }).then(function () {
+        step();
+      }).catch(function () {
+        failed++;
+        step();
+      });
+    }
+    step();
+  }
+
+  /* ---------- 条目：新建 / 编辑 ---------- */
+
+  function resItemDialog(it, preset) {
+    var isNew = !it;
+    it = it || {};
+    preset = preset || {};
+
+    var titleIn = resInput(it.title || '', '书名 / 资料名');
+    var authorIn = resInput(it.author || '', '作者或编者');
+    var fmtIn = resInput(it.format || preset.format || '', 'PDF');
+    var sizeIn = resInput(Number(it.size) > 0 ? (Number(it.size) / 1048576).toFixed(1) : '', '例如 17.6');
+    var fileIn = resInput(it.file || '', '点右边按钮上传，或直接粘贴仓库路径');
+    fileIn.readOnly = true;
+    var linkIn = resInput(it.link || '', 'https://…');
+    var folderIn = resFolderSelect(preset.path != null ? preset.path : it.path);
+    var descIn = resArea(it.desc || '', '这本书讲什么、适合谁看');
+    var tagsIn = resInput((it.tags || []).join(', '), '多个用逗号隔开');
+    var dateIn = resInput(it.date || resToday(), 'YYYY-MM-DD');
+
+    var pick = document.createElement('input');
+    pick.type = 'file';
+    pick.hidden = true;
+    pick.style.display = 'none';
+
+    var upBtn = document.createElement('button');
+    upBtn.type = 'button';
+    upBtn.className = 'btn-ghost';
+    upBtn.textContent = '上传…';
+    var picking = false;
+    upBtn.addEventListener('click', function () {
+      picking = true;
+      pick.value = '';
+      pick.click();
+    });
+    pick.addEventListener('change', function () {
+      var f = pick.files && pick.files[0];
+      picking = false;
+      if (!f) return;
+      if (f.size > CFG.maxResBytes) {
+        toast('这个文件 ' + humanSize(f.size) + '，超过 ' + humanSize(CFG.maxResBytes) +
+          ' 就不适合放仓库了，请填外部链接', 'err');
+        return;
+      }
+      var targetFolder = folderIn.value;
+      upBtn.disabled = true;
+      upBtn.textContent = '上传中…';
+      resUploadFile(targetFolder, f).then(function (r) {
+        fileIn.value = r.file;
+        sizeIn.value = (f.size / 1048576).toFixed(1);
+        if (!fmtIn.value.trim()) fmtIn.value = r.format;
+        if (!titleIn.value.trim()) titleIn.value = resBase(r.file).replace(/\.[^.]+$/, '');
+        toast('文件已上传到仓库：' + r.file, 'ok');
+      }).catch(function (e) {
+        toast('上传失败：' + e.message, 'err');
+      }).then(function () {
+        upBtn.disabled = false;
+        upBtn.textContent = '上传…';
+      });
+    });
+
+    var fileBox = document.createElement('div');
+    fileBox.className = 'file-pick';
+    fileBox.appendChild(fileIn);
+    fileBox.appendChild(upBtn);
+    fileBox.appendChild(pick);
+
+    var two = document.createElement('div');
+    two.className = 'fd-2';
+    two.appendChild(resField('作者', null, authorIn));
+    two.appendChild(resField('格式', '留空会自动识别', fmtIn));
+    var two2 = document.createElement('div');
+    two2.className = 'fd-2';
+    two2.appendChild(resField('大小（MB）', '外链不知道就留空，会自动改显示「—」', sizeIn));
+    two2.appendChild(resField('入库日期', null, dateIn));
+
+    var nodes = [
+      resField('标题', null, titleIn),
+      two,
+      resField('仓库内文件', '传进仓库就能在资源页直接下载 / 在线看 PDF', fileBox),
+      resField('外部链接', '已经存在网盘里的书填这里，和仓库文件二选一', linkIn),
+      two2,
+      resField('所属文件夹', null, folderIn),
+      resField('简介', null, descIn),
+      resField('标签', '多个用逗号隔开', tagsIn)
+    ];
+
+    var dlg = resDialog(isNew ? (preset.linkOnly ? '添加外部链接' : '新建条目') : '编辑条目',
+      isNew ? '仓库内文件和外部链接填任意一个就行。' : null,
+      nodes, isNew ? '添加' : '保存', function () {
+        var title = titleIn.value.trim();
+        if (!title) return '请填标题';
+        var file = resNorm(fileIn.value);
+        var link = linkIn.value.trim();
+        if (!file && !link) return '仓库内文件和外部链接至少填一个';
+        if (link && !/^https?:\/\//i.test(link)) return '外部链接要以 http:// 或 https:// 开头';
+
+        var sizeMb = parseFloat(sizeIn.value);
+        var format = fmtIn.value.trim().toUpperCase() || resFmt(file || link);
+        var tags = tagsIn.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+
+        var rec = {
+          id: it.id || resId(),
+          title: title,
+          path: resNorm(folderIn.value),
+          author: authorIn.value.trim(),
+          format: format,
+          size: isNaN(sizeMb) ? 0 : Math.round(sizeMb * 1048576),
+          file: file,
+          link: link,
+          desc: descIn.value.trim(),
+          tags: tags,
+          date: dateIn.value.trim()
+        };
+
+        if (isNew) resItems().push(rec);
+        else {
+          var target = resItems().filter(function (x) { return x.id === it.id; })[0];
+          if (target) Object.keys(rec).forEach(function (k) { target[k] = rec[k]; });
+          else resItems().push(rec);
+        }
+        resMarkDirty(true);
+        renderResources();
+        toast(isNew ? '已添加，记得点「发布资源库」' : '已修改，记得点「发布资源库」', 'ok');
+        return '';
+      });
+    return dlg;
+  }
+
+  /* ---------- 上传文件到仓库 ---------- */
+
+  function resSafeName(name) {
+    var s = String(name || 'file').replace(RES_BAD_FS, '_').replace(/^\.+/, '').trim();
+    return s || 'file';
+  }
+
+  /* 重名不覆盖，自动加 -2 / -3 后缀，避免手滑把上一版书盖掉 */
+  function resUniqueRepoPath(dirPath, name) {
+    var m = name.match(/^(.*?)(\.[^.]+)$/);
+    var base = m ? m[1] : name;
+    var ext = m ? m[2] : '';
+    var candidate = name, i = 1;
+
+    function attempt() {
+      var p = CFG.resDir + (dirPath ? '/' + resNorm(dirPath) : '') + '/' + candidate;
+      return getSha(p).then(function (sha) {
+        if (!sha) return p;
+        i++;
+        candidate = base + '-' + i + ext;
+        return attempt();
+      });
+    }
+    return attempt();
+  }
+
+  function resUploadFile(dirPath, file) {
+    var safe = resSafeName(file.name);
+    var repoPath;
+    return resUniqueRepoPath(dirPath, safe).then(function (p) {
+      repoPath = p;
+      return fileToB64(file);
+    }).then(function (b64) {
+      return gh('/repos/' + CFG.owner + '/' + CFG.repo + '/contents/' + encodeURI(repoPath), {
+        method: 'PUT',
+        body: { message: 'res: 上传 ' + resBase(repoPath), content: b64, branch: CFG.branch }
+      });
+    }).then(function () {
+      return { file: repoPath, size: file.size, format: resFmt(repoPath), title: resBase(repoPath).replace(/\.[^.]+$/, '') };
+    });
+  }
+
+  function resUploadFiles(files) {
+    var arr = Array.prototype.slice.call(files || []);
+    if (!arr.length) return;
+    var ok = [], skipped = [];
+    arr.forEach(function (f) {
+      if (f.size > CFG.maxResBytes) skipped.push(f);
+      else ok.push(f);
+    });
+    if (skipped.length) {
+      toast(skipped.length + ' 个文件超过 ' + humanSize(CFG.maxResBytes) + '，已跳过（请改用外部链接）', 'err');
+    }
+    if (!ok.length) return;
+
+    $('btn-res-upload').disabled = true;
+    var done = 0, failed = 0;
+    var added = [];
+
+    function step() {
+      if (!ok.length) {
+        $('btn-res-upload').disabled = false;
+        if (failed) toast(failed + ' 个文件上传失败', 'err');
+        if (added.length) {
+          // 上传和写清单分两次提交，但连着做完，免得「传了却看不到」
+          saveResources('res: 上传 ' + added.length + ' 个文件');
+        }
+        return;
+      }
+      var f = ok.shift();
+      resSetStatus('上传 ' + f.name + '（' + humanSize(f.size) + '）… ' + done + '/' + (done + ok.length + 1));
+      resUploadFile(state.resFolder, f).then(function (r) {
+        added.push({
+          id: resId(),
+          title: r.title,
+          path: state.resFolder,
+          format: r.format,
+          size: r.size,
+          file: r.file,
+          link: '',
+          desc: '',
+          tags: [],
+          date: resToday()
+        });
+        resItems().push(added[added.length - 1]);
+        resMarkDirty(true);
+        renderResources();
+        done++;
+      }).catch(function (e) {
+        failed++;
+        toast('「' + f.name + '」上传失败：' + e.message, 'err');
+      }).then(step);
+    }
+    step();
+  }
+
   /* ================= 站点概览 ================= */
 
   function openOverview() {
@@ -3616,6 +4662,11 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     if (state.dirty && !window.confirm('当前页面有未发布的改动，确定要切到「专栏」吗？')) return;
     openColumns();
   });
+  $('tab-resources').addEventListener('click', function () {
+    if (state.mode === 'resources') return;
+    if (state.dirty && !window.confirm('当前页面有未发布的改动，确定要切到「资源」吗？')) return;
+    openResources();
+  });
   $('tab-images').addEventListener('click', function () {
     if (state.mode === 'images') return;
     if (state.dirty && !window.confirm('当前页面有未发布的改动，确定要切到「图片」吗？')) return;
@@ -3676,6 +4727,37 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
     this.value = '';
   });
   $('btn-ov-refresh').addEventListener('click', openOverview);
+
+  /* ---------- 资源库 ---------- */
+  $('btn-res-refresh').addEventListener('click', function () {
+    if (state.resDirty && !window.confirm('有未发布的改动，刷新会丢掉它们，确定吗？')) return;
+    resMarkDirty(false);
+    loadResources();
+  });
+  $('btn-res-newfolder').addEventListener('click', function () { resFolderDialog(null); });
+  $('btn-res-upload').addEventListener('click', function () {
+    if (!state.resLoaded) { toast('资源清单还没加载完，稍等一下', 'err'); return; }
+    $('res-file').click();
+  });
+  $('res-file').addEventListener('change', function () {
+    resUploadFiles(this.files);
+    this.value = '';
+  });
+  $('btn-res-addlink').addEventListener('click', function () {
+    if (!state.resLoaded) { toast('资源清单还没加载完，稍等一下', 'err'); return; }
+    resItemDialog(null, { linkOnly: true, path: state.resFolder });
+  });
+  $('btn-res-save').addEventListener('click', function () { saveResources(); });
+
+  var resQTimer = null;
+  $('res-q').addEventListener('input', function () {
+    clearTimeout(resQTimer);
+    var v = this.value;
+    resQTimer = setTimeout(function () {
+      state.resQuery = v;
+      renderResources();
+    }, 140);
+  });
 
   $('btn-draft-restore').addEventListener('click', restoreDraft);
   $('btn-draft-discard').addEventListener('click', function () { clearDraft(); toast('草稿已丢弃', 'ok'); });
@@ -3779,6 +4861,10 @@ body.view-preview .pane-edit,body.view-preview .divider{display:none}
   window.addEventListener('beforeunload', function (e) {
     if (state.dirty) {
       saveDraftNow();
+      e.preventDefault();
+      e.returnValue = '';
+    } else if (state.resDirty) {
+      // 资源库的改动只在内存里，没发布就关页面会丢
       e.preventDefault();
       e.returnValue = '';
     }

@@ -1,0 +1,79 @@
+<%
+page.title = page.title || '资源'
+page.subtitle = page.subtitle || '电子书与资料，按文件夹整理'
+page.banner_img = page.banner_img || theme.page.banner_img
+page.banner_img_height = page.banner_img_height || theme.page.banner_img_height
+page.banner_mask_alpha = page.banner_mask_alpha || theme.page.banner_mask_alpha
+
+/* 这两个是主题的页面级注入 helper：只有这一页会加载，
+   不会像 custom_css / custom_js 那样把资源加到全站每个页面 */
+import_css('/', 'css/resources.css')
+import_js('/', 'js/resources.js')
+
+var res = site.data.resources || {}
+var payload = {
+  folders: res.folders || [],
+  items: res.items || [],
+  root: config.root || '/'
+}
+/* 把 JSON 塞进 <script type="application/json">：
+   < 必须转义，否则内容里出现 </script> 会提前结束脚本块 */
+var payloadJson = JSON.stringify(payload)
+  .replace(/&/g, '\\u0026')
+  .replace(/</g, '\\u003c')
+  .replace(/>/g, '\\u003e')
+  .replace(/\u2028/g, '\\u2028')
+  .replace(/\u2029/g, '\\u2029')
+%>
+
+<div class="res-app" id="res-app">
+  <div class="res-bar">
+    <nav class="res-crumbs" id="res-crumbs" aria-label="当前位置"></nav>
+
+    <div class="res-tools">
+      <label class="res-search">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="9" cy="9" r="5.5"></circle><path d="M13.2 13.2 17 17"></path>
+        </svg>
+        <input type="search" id="res-q" placeholder="搜索全部资源…" autocomplete="off">
+      </label>
+
+      <select class="res-sort" id="res-sort" aria-label="排序方式">
+        <option value="name">按名称</option>
+        <option value="date">按时间</option>
+        <option value="size">按大小</option>
+      </select>
+
+      <div class="res-view" role="group" aria-label="视图切换">
+        <button type="button" data-view="grid" class="on" title="网格视图" aria-label="网格视图">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <rect x="1" y="1" width="6" height="6" rx="1.4"></rect>
+            <rect x="9" y="1" width="6" height="6" rx="1.4"></rect>
+            <rect x="1" y="9" width="6" height="6" rx="1.4"></rect>
+            <rect x="9" y="9" width="6" height="6" rx="1.4"></rect>
+          </svg>
+        </button>
+        <button type="button" data-view="list" title="列表视图" aria-label="列表视图">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <rect x="1" y="2" width="3" height="3" rx="1"></rect>
+            <rect x="6" y="2.6" width="9" height="1.8" rx=".9"></rect>
+            <rect x="1" y="6.5" width="3" height="3" rx="1"></rect>
+            <rect x="6" y="7.1" width="9" height="1.8" rx=".9"></rect>
+            <rect x="1" y="11" width="3" height="3" rx="1"></rect>
+            <rect x="6" y="11.6" width="9" height="1.8" rx=".9"></rect>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="res-note" id="res-note" hidden></div>
+  <div class="res-body" id="res-body">
+    <p class="res-loading">正在整理书架…</p>
+  </div>
+
+  <script type="application/json" id="res-data"><%- payloadJson %></script>
+  <noscript>
+    <p class="res-loading">资源页需要开启 JavaScript 才能浏览目录。</p>
+  </noscript>
+</div>
