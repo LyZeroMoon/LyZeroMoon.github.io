@@ -1,6 +1,6 @@
 ---
 title: 【数字信号处理DSP】（十二）系统互联
-date: 2026-10-15 14:51:50
+date: 2026-10-15 15:01:48
 ---
 
 # 系统互联
@@ -70,11 +70,14 @@ $$
 
 两个系统共用同一输入，输出相加。
 
-┌→ [系统1: h₁[n]] ─┐
-
-x[n] ──┤                   ├→ (+) → y[n]
-
-└→ [系统2: h₂[n]] ─┘
+$$
+x[n] \;\longrightarrow\; 
+\begin{array}{c}
+\boxed{h_1[n]} \\[6pt]
+\boxed{h_2[n]}
+\end{array}
+\;\longrightarrow\; \oplus \;\longrightarrow\; y[n]
+$$
 
 ### 2. 整体单位脉冲响应
 
@@ -105,15 +108,13 @@ $$
 ### 1. 定义
 
 前向通路输出经反馈通路后与输入相减（负反馈）或相加（正反馈）。
-┌─────────────┐
-
-x[n] ──(+)──→ [前向系统 G] ──→ y[n]
-
-↑                  │
-
-│                  │
-
-└── [反馈系统 F] ←─┘
+$$
+\begin{array}{ccccccc}
+x[n] & \longrightarrow & (+) & \longrightarrow & \boxed{G} & \longrightarrow & y[n] \\
+ &  &  &  &  &  & \downarrow \\
+ &  & \uparrow & \longleftarrow & \boxed{F} & \longleftarrow &  
+\end{array}
+$$
 
 ### 2. 整体系统函数
 
