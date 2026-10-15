@@ -104,6 +104,17 @@
     return (window.LY_GAMES && window.LY_GAMES.page) || '/games/';
   }
 
+  /* 打开换肤面板前先把机台收掉，免得两层全屏遮罩叠在一起。
+     机台从「搬进皮肤的附属品」升级成独立板块之后，归 games-hub 管
+     （见上面的说明），所以这里必须走它对外暴露的 close()，不能再直接
+     操作 DOM。hub 可能压根没加载 —— 站主关掉了游戏、或者访客一直没开过
+     任何一款（hub 是随页面加载的，但 kit 是点开才下），两种情况下都只需
+     什么都不做，绝不能因此把换肤面板带崩。 */
+  function closeGameIfOpen() {
+    var hub = window.LY_GAME_HUB;
+    if (hub && typeof hub.close === 'function') hub.close();
+  }
+
   function openGame() {
     var hub = window.LY_GAME_HUB;
     var id = featuredId();
