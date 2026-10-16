@@ -76,6 +76,11 @@ graph LR
 
 ### 1. 为什么数字频率是周期的？
 
+![数字频率的 2π 周期性](/images/dsp/dsp10-digfreq.svg)
+
+> 上图：两条连续正弦 $\sin(0.3\pi t)$（蓝）与 $\sin(2.3\pi t)$（橙）形状不同，但在整数采样点 $n$ 上取到的**离散值完全相同**（红圈）。数字频率相差 $2\pi$ 时对应同一个离散序列。
+
+
 $$
 e^{j(\omega + 2\pi)n} = e^{j\omega n} \cdot e^{j2\pi n} = e^{j\omega n}
 $$

@@ -33,6 +33,11 @@ categories:
 
 ## 二、定理内容
 
+![维纳-辛钦：时域自相关 ↔ 频域功率谱](/images/dsp/dsp05-wienerkhinchin.svg)
+
+> 上图：左为衰减的自相关 $r[m]=0.7^{|m|}$，经 DTFT 得到右端功率谱 $P(\omega)=\frac{1-0.7^2}{1-2\cdot0.7\cos\omega+0.7^2}$。时域与频域互为 DTFT 对。
+
+
 ### 1. 连续时间形式
 
 设 $x(t)$ 是宽平稳随机过程，自相关函数为 $R_x(\tau)$，则功率谱密度为：

@@ -11,6 +11,11 @@ categories:
 
 ## 一、定义
 
+![四类序列的收敛域 ROC 形状](/images/dsp/dsp-note-roc.svg)
+
+> 上图：因果（右边）序列 ROC 在最外极点之外；反因果（左边）在原点之内；双边序列 ROC 是两极点之间的圆环；有限长序列 ROC 为除 $z=0$ 或 $z=\infty$ 外的全平面。
+
+
 **双边 Z 变换**：
 \[
 X(z)=\sum_{n=-\infty}^{\infty} x[n]\,z^{-n}
