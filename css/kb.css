@@ -1,0 +1,130 @@
+/* ============================================================
+   知识库样式：双向链接 + 常用公式页 + 反向链接
+   由 _config.fluid.yml 的 custom_css 引入（全站）
+
+   配色走 Fluid 的 CSS 变量，层次色用 color-mix 现算，
+   明暗模式与界面皮肤都自动跟随。
+   原来那批 [data-color-scheme="dark"] 规则选择器写错了
+   （主题注入的是 data-user-color-scheme），一直没生效，已移除。
+   ============================================================ */
+
+:root {
+  --kb-tint: color-mix(in srgb, var(--text-color) 5%, var(--board-bg-color));
+  --kb-tint-2: color-mix(in srgb, var(--text-color) 10%, var(--board-bg-color));
+  --kb-link-soft: color-mix(in srgb, var(--post-link-color) 32%, transparent);
+  --kb-link-bg: color-mix(in srgb, var(--post-link-color) 8%, transparent);
+  /* 「待写」的琥珀色：明色下偏深，暗色下自动提亮 */
+  --kb-missing: color-mix(in srgb, #a9720f 72%, var(--text-color));
+}
+
+/* ---------- 正文里的 [[双向链接]] ---------- */
+
+.markdown-body a.wikilink,
+a.wikilink {
+  color: var(--post-link-color);
+  text-decoration: none;
+  border-bottom: 1px solid var(--kb-link-soft);
+  padding-bottom: .5px;
+  transition: border-color .15s, background .15s;
+}
+a.wikilink:hover {
+  border-bottom-color: var(--post-link-color);
+  background: var(--kb-link-bg);
+}
+
+/* 指向还不存在的内容：一眼能看出是「待写」 */
+.wikilink.wikilink-missing {
+  color: var(--kb-missing);
+  border-bottom: 1px dashed color-mix(in srgb, var(--kb-missing) 50%, transparent);
+  cursor: help;
+  padding-bottom: .5px;
+}
+
+/* ---------- 常用公式页 ---------- */
+
+.note-page h1#seo-header {
+  margin-bottom: .3em;
+}
+.note-sub {
+  margin: 0 0 14px;
+  color: var(--sec-text-color);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.note-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 26px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-color);
+  font-size: 12.5px;
+}
+.note-chip {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 20px;
+  background: var(--kb-tint-2);
+  color: var(--sec-text-color);
+  line-height: 1.65;
+}
+.note-chip-cat {
+  background: color-mix(in srgb, var(--post-link-color) 14%, transparent);
+  color: var(--post-link-color);
+}
+.note-updated {
+  margin-left: auto;
+  color: var(--sec-text-color);
+  opacity: .85;
+  font-size: 12px;
+}
+
+/* ---------- 反向链接 ---------- */
+
+.wiki-backlinks {
+  margin: 40px 0 10px;
+  padding: 18px 20px;
+  border: 1px solid var(--line-color);
+  border-left: 3px solid var(--kb-link-soft);
+  border-radius: 10px;
+  background: var(--kb-tint);
+}
+.wiki-backlinks h3 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sec-text-color);
+  letter-spacing: .02em;
+}
+.wiki-backlinks ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.wiki-backlinks li {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding: 5px 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.wiki-backlinks li + li {
+  border-top: 1px dashed var(--line-color);
+}
+.wiki-backlinks li a {
+  color: var(--text-color);
+  text-decoration: none;
+}
+.wiki-backlinks li a:hover {
+  color: var(--post-link-color);
+}
+.wiki-backlinks .wiki-tag {
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 20px;
+  background: var(--kb-tint-2);
+  color: var(--sec-text-color);
+}
