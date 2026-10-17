@@ -491,6 +491,113 @@ def plot_13_zplane():
     return svg(W, H, "（十三）z 平面：极点、零点与 ROC", inner)
 
 
+def plot_14_rect_sinc():
+    """（十四）矩形脉冲 → sinc 形幅频响应（含零点标注）"""
+    W, H = 740, 470
+    p1 = Panel(70, 60, 300, 320, (-0.5, 4.5), (-0.3, 1.4),
+               title="时域：矩形脉冲 x[n]", xlabel="n", ylabel="x[n]", xticks=[0,1,2,3,4])
+    p1.stems([(n, 1.0) for n in range(0, 5)], BLUE)
+    p2 = Panel(400, 60, 300, 320, (-math.pi, math.pi), (0, 5.4),
+               title="频域：|X(e^{jω})|（sinc 形）", xlabel="ω", ylabel="|X(e^{jω})|",
+               xticks=[-math.pi, -math.pi/2, 0, math.pi/2, math.pi],
+               xtick_labels=["-π","-π/2","0","π/2","π"])
+    def mag(w):
+        s = math.sin(w/2)
+        return abs(math.sin(5*w/2)/s) if abs(s) > 1e-9 else 5.0
+    p2.curve(mag, GREEN, 3.4, 800)
+    # 零点：ω = ±2π/5, ±4π/5
+    for k in (1, 2):
+        for z in (2*math.pi*k/5, -2*math.pi*k/5):
+            p2.vline(z, RED, 1.4, dash="4 3")
+    p2.add(f'<text x="{f(p2.X(2*math.pi/5))}" y="{f(p2.Y(5.1))}" font-family="{FONT}" font-size="12" '
+           f'fill="{RED}" text-anchor="middle">零点 ω=2π/5</text>')
+    p2.add(f'<text x="{f(p2.X(-2*math.pi/5))}" y="{f(p2.Y(5.1))}" font-family="{FONT}" font-size="12" '
+           f'fill="{RED}" text-anchor="middle">零点 ω=-2π/5</text>')
+    inner = p1.render() + p2.render()
+    return svg(W, H, "（十四）矩形脉冲的 DTFT：时域是方门，频域是 sinc", inner)
+
+
+def plot_14_zcircle():
+    """（十四）z 平面单位圆 ↔ DTFT：绕单位圆一周 = ω 扫过 2π"""
+    W, H = 460, 545
+    # 上：z 平面
+    p = Panel(80, 60, 300, 300, (-1.5, 1.5), (-1.5, 1.5),
+              xlabel="Re(z)", ylabel="Im(z)", xticks=[-1, 0, 1], yticks=[-1, 0, 1])
+    cx, cy = p.X(0), p.Y(0); R = p.X(1) - p.X(0)
+    # 单位圆（加粗高亮）
+    p.add(f'<circle cx="{f(cx)}" cy="{f(cy)}" r="{f(R)}" fill="none" stroke="{BLUE}" '
+          f'stroke-width="3.5"/>')
+    p.add(f'<text x="{f(cx + R + 8)}" y="{f(cy - 8)}" font-family="{FONT}" font-size="14" '
+          f'fill="{BLUE}" font-weight="700">单位圆 |z| = 1</text>')
+    # 单位圆内一点（示意 ROC 外/极点区）
+    p.add(f'<circle cx="{f(cx)}" cy="{f(cy)}" r="{f(R*0.55)}" fill="{BLUE}" fill-opacity="0.08"/>')
+    p.add(f'<circle cx="{f(cx)}" cy="{f(cy)}" r="{f(R*0.55)}" fill="none" stroke="{GREY}" '
+          f'stroke-width="1.3" stroke-dasharray="5 4"/>')
+    p.add(f'<text x="{f(cx - R*0.42)}" y="{f(cy - R*0.42)}" font-family="{FONT}" font-size="11.5" '
+          f'fill="{C_SUB}" text-anchor="middle">ROC 内（|z|>r）</text>')
+    # 角频率点 z = e^{jω0}
+    w0 = 0.85
+    zx, zy = math.cos(w0), math.sin(w0)
+    px, py = p.X(zx), p.Y(zy)
+    # 单位圆上的角弧（半径略大，便于看清方向）
+    arc = []
+    for i in range(41):
+        a = w0 * i / 40
+        arc.append((p.X(1.18*math.cos(a)), p.Y(1.18*math.sin(a))))
+    p.add('<polyline points="' + " ".join(f"{f(x)},{f(y)}" for x, y in arc) +
+          f'" fill="none" stroke="{ORANGE}" stroke-width="2" stroke-linecap="round"/>')
+    # 弧末端箭头
+    aend = w0; ex, ey = p.X(1.18*math.cos(aend)), p.Y(1.18*math.sin(aend))
+    p.add(f'<line x1="{f(ex-6)}" y1="{f(ey+7)}" x2="{f(ex)}" y2="{f(ey)}" stroke="{ORANGE}" stroke-width="2.4"/>')
+    p.add(f'<line x1="{f(ex-1)}" y1="{f(ey+7)}" x2="{f(ex)}" y2="{f(ey)}" stroke="{ORANGE}" stroke-width="2.4"/>')
+    # 半径线 + 点
+    p.add(f'<line x1="{f(cx)}" y1="{f(cy)}" x2="{f(px)}" y2="{f(py)}" stroke="{C_AXIS}" stroke-width="1.6" stroke-dasharray="4 3"/>')
+    p.add(f'<circle cx="{f(px)}" cy="{f(py)}" r="7" fill="{RED}" stroke="#fff" stroke-width="1.8"/>')
+    p.add(f'<text x="{f(px + 10)}" y="{f(py - 6)}" font-family="{FONT}" font-size="14" '
+          f'fill="{RED}" font-weight="700">z = e^{"{jω}"}</text>')
+    p.add(f'<text x="{f(cx + R*0.55)}" y="{f(cy + R*0.72)}" font-family="{FONT}" font-size="12.5" '
+          f'fill="{ORANGE}">逆时针一圈 = ω 从 0 到 2π</text>')
+    # 下：ω 轴
+    p2 = Panel(80, 430, 300, 55, (-math.pi, math.pi), (-1, 1),
+               xlabel="ω (数字角频率)", xticks=[-math.pi, -math.pi/2, 0, math.pi/2, math.pi],
+               xtick_labels=["-π","-π/2","0","π/2","π"], yticks=[], grid=False)
+    p2.hline(0, C_AXIS, 2)
+    for wv, col in ((-math.pi, GREY), (0, C_AXIS), (math.pi, GREY)):
+        p2.add(f'<circle cx="{f(p2.X(wv))}" cy="{f(p2.Y(0))}" r="5" fill="{col}" stroke="#fff" stroke-width="1.4"/>')
+    inner = p.render() + p2.render()
+    return svg(W, H, "（十四）单位圆上的 Z 变换就是 DTFT", inner)
+
+
+def plot_14_symmetry():
+    """（十四）实序列的共轭对称：|X| 为偶函数、∠X 为奇函数"""
+    W, H = 780, 460
+    a = 0.7
+    p1 = Panel(55, 70, 220, 300, (-0.5, 9.5), (-0.2, 1.25),
+               title="时域：x[n] = aⁿu[n]", xlabel="n", ylabel="x[n]", xticks=[0,2,4,6,8])
+    p1.stems([(n, a**n) for n in range(0, 10)], BLUE)
+    p2 = Panel(295, 70, 220, 300, (-math.pi, math.pi), (0, 3.4),
+               title="幅频 |X(e^{jω})|（偶）", xlabel="ω", ylabel="|X|",
+               xticks=[-math.pi, -math.pi/2, 0, math.pi/2, math.pi],
+               xtick_labels=["-π","-π/2","0","π/2","π"])
+    p2.curve(lambda w: 1/math.sqrt(1 - 2*a*math.cos(w) + a*a), GREEN, 3.2, 700)
+    p2.vline(0, RED, 1.4, dash="4 3")
+    p2.add(f'<text x="{f(p2.X(0)+6)}" y="{f(p2.Y(3.1))}" font-family="{FONT}" font-size="12" '
+           f'fill="{RED}">左右镜像</text>')
+    p3 = Panel(535, 70, 220, 300, (-math.pi, math.pi), (-3.4, 3.4),
+               title="相频 ∠X(e^{jω})（奇）", xlabel="ω", ylabel="∠X",
+               xticks=[-math.pi, -math.pi/2, 0, math.pi/2, math.pi],
+               xtick_labels=["-π","-π/2","0","π/2","π"],
+               yticks=[-3, 0, 3], ytick_labels=["-π","0","π"])
+    def phase(w):
+        return math.atan2(-a*math.sin(w), 1 - a*math.cos(w))
+    p3.curve(phase, PURPLE, 3.2, 700)
+    p3.vline(0, RED, 1.4, dash="4 3")
+    p3.add(f'<text x="{f(p3.X(0)+6)}" y="{f(p3.Y(-3.0))}" font-family="{FONT}" font-size="12" '
+           f'fill="{RED}">过原点、奇对称</text>')
+    inner = p1.render() + p2.render() + p3.render()
+    return svg(W, H, "（十四）实序列的共轭对称性：幅度偶、相位奇", inner)
+
+
 def plot_note_roc():
     """笔记：四种序列的 ROC 形状对照"""
     W, H = 780, 320
@@ -529,6 +636,9 @@ PLOTS = {
     "dsp11-alias.svg": plot_11_alias,
     "dsp12-cascade.svg": plot_12_cascade,
     "dsp13-zplane.svg": plot_13_zplane,
+    "dsp14-rect-sinc.svg": plot_14_rect_sinc,
+    "dsp14-zcircle.svg": plot_14_zcircle,
+    "dsp14-symmetry.svg": plot_14_symmetry,
     "dsp-note-roc.svg": plot_note_roc,
 }
 
