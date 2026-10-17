@@ -1,5 +1,5 @@
 ---
-title: 【数字信号处理DSP】（五）维纳-辛钦定理（Wiener-Khinchin Theorem）
+title: 【数字信号处理DSP】（六）维纳-辛钦定理（Wiener-Khinchin Theorem）
 date: 2026-10-14 12:48:52
 categories:
   - 数字信号处理DSP
