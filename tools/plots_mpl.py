@@ -803,11 +803,102 @@ def p17():
     save(fig, 'dsp14-symmetry.svg')
 
 
+# ---------------------------------------------------------------- 18 正交性几何
+def p18():
+    """r≠0 时 N 个等幅向量首尾相接成闭合多边形，回到起点 ⇒ 和为 0；r=0 时同相加成 N"""
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(9.8, 4.9))
+    N = 8
+    th = 2 * np.pi / N
+
+    zx, zy = 0.0, 0.0
+    pts = [(0.0, 0.0)]
+    for k in range(N):
+        ang = k * th
+        dx, dy = np.cos(ang), np.sin(ang)
+        a1.annotate('', xy=(zx + dx, zy + dy), xytext=(zx, zy),
+                    arrowprops=dict(arrowstyle='-|>', color=BLUE,
+                                    lw=1.9, shrinkA=0, shrinkB=0))
+        zx, zy = zx + dx, zy + dy
+        pts.append((zx, zy))
+    # 起点 / 终点重合处用红圈强调
+    a1.plot([0], [0], 'o', ms=10, color=RED, mec='white', mew=1.3, zorder=6)
+    a1.text(0.5, -0.62, r'$\sum_{n=0}^{7}W_8^{\,n}=0$', fontsize=13, color=BLUE,
+            ha='center')
+    a1.text(0.5, -1.12, '8 段首尾相接，正好绕回出发点', fontsize=10.5,
+            color=GREY, ha='center')
+    a1.set_title('异频（r≠0）：N 个向量均匀铺满一圈', pad=10)
+    a1.set_xlim(-1.45, 2.45)
+    a1.set_ylim(-1.42, 3.05)
+    a1.set_aspect('equal')
+    clean(a1, grid=False)
+
+    # 右：r = 0，同相叠加（8 段首尾相接，每段长 1，合成 8）
+    a2.annotate('', xy=(8.0, 0), xytext=(0, 0),
+                arrowprops=dict(arrowstyle='-|>', color=GREEN, lw=3.2,
+                                shrinkA=0, shrinkB=0))
+    for k in range(1, 8):
+        a2.plot([k, k], [-0.16, 0.16], color='white', lw=1.6, zorder=5)
+    a2.annotate('', xy=(8.0, -0.95), xytext=(0, -0.95),
+                arrowprops=dict(arrowstyle='-|>', color=RED, lw=3.2))
+    a2.text(4.0, -1.38, r'合成 $=N=8$', fontsize=12, color=RED, ha='center')
+    a2.text(4.0, 1.32, r'$\sum_{n=0}^{7}W_8^{\,0}=8$', fontsize=13, color=GREEN,
+            ha='center')
+    a2.text(4.0, 0.52, '8 段，每段长 1，方向相同，模长直接相加', fontsize=10.5,
+            color=GREY, ha='center')
+    a2.set_title('同相（r=0）：N 个向量首尾同向', pad=10)
+    a2.set_xlim(-0.7, 8.7)
+    a2.set_ylim(-1.65, 1.65)
+    clean(a2)
+
+    fig.tight_layout(w_pad=1.8)
+    save(fig, 'dsp15-orth.svg')
+
+
+# ---------------------------------------------------------------- 19 乘积积分
+def p19():
+    """同频余弦乘积恒正，积分为 T/2；异频余弦乘积正负相消，积分为 0"""
+    fig, (a1, a2) = plt.subplots(2, 1, figsize=(8.4, 5.6))
+    t = np.linspace(0, 1, 1600)
+    w0 = 2 * np.pi
+
+    y1 = np.cos(w0 * t) ** 2
+    a1.plot(t, y1, color=BLUE, lw=2.4)
+    a1.fill_between(t, 0, y1, color=BLUE, alpha=0.22)
+    a1.axhline(0, color='#333', lw=1.0)
+    a1.text(0.5, 1.34, r'$\int_0^{T}\cos^2(\omega_0 t)\,dt=T/2$',
+            fontsize=13, color=BLUE, ha='center')
+    a1.set_title(r'同频 $m=n$：$\cos\cos$ 恒非负，面积积累到 $T/2$（不为零）', pad=16)
+    a1.set_ylabel(r'$\cos(\omega_0 t)\cos(\omega_0 t)$')
+    a1.set_xlim(0, 1)
+    a1.set_ylim(0, 1.72)
+    clean(a1)
+
+    y2 = np.cos(w0 * t) * np.cos(2 * w0 * t)
+    a2.plot(t, y2, color=PURPLE, lw=2.2)
+    a2.fill_between(t, 0, y2, where=y2 >= 0, color=BLUE, alpha=0.25,
+                    label='正面积')
+    a2.fill_between(t, 0, y2, where=y2 <= 0, color=RED, alpha=0.25,
+                    label='负面积')
+    a2.axhline(0, color='#333', lw=1.0)
+    a2.text(0.5, 1.34, r'$\int_0^{T}\cos(\omega_0 t)\cos(2\omega_0 t)\,dt=0$',
+            fontsize=13, color=PURPLE, ha='center')
+    a2.set_title('异频 $m\\neq n$：正负半周面积完全相消，积分为 0', pad=16)
+    a2.set_xlabel(r'$t$（以周期 $T$ 归一化）')
+    a2.set_ylabel(r'$\cos(\omega_0 t)\cos(2\omega_0 t)$')
+    a2.set_xlim(0, 1)
+    a2.set_ylim(-1.62, 1.72)
+    a2.legend(loc='lower center', ncol=2, framealpha=0.94)
+    clean(a2)
+
+    fig.tight_layout(h_pad=1.9)
+    save(fig, 'dsp15-proj.svg')
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     print('生成中 ->', OUT)
     for f in (p01, p02, p03, p04, p05, p06, p07, p08, p08b, p09,
-              p10, p11, p12, p12b, p13, p14_roc, p15, p16, p17):
+              p10, p11, p12, p12b, p13, p14_roc, p15, p16, p17, p18, p19):
         f()
     print('全部完成')
 
