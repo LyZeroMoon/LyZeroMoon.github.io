@@ -189,19 +189,17 @@ def p04():
     a1.legend(loc='upper right', framealpha=0.92)
     clean(a1)
 
-    # 右：自相关，偶对称三角峰
-    m = np.arange(-5, 6)
-    r = np.array([0.0, 0.049, 0.28, 0.98, 2.49, 4.25, 2.49, 0.98, 0.28, 0.049, 0.0])
+    # 右：自相关（由左图序列真实算出，非估值）
+    r = np.correlate(x, x, 'full')
+    m = np.arange(-(len(x) - 1), len(x))
     stem(a2, m, r, GREEN, label=r'$r_{xx}[m]$')
     a2.axvline(0, color='#333', lw=1.1, ls='-')
-    a2.annotate('', xy=(-3, 2.1), xytext=(3, 2.1),
-                arrowprops=dict(arrowstyle='<->', color=RED, lw=1.3, ls='--'))
-    a2.text(0, 2.18, r'偶对称 $r_{xx}[-m]=r_{xx}[m]$', color=RED,
-            ha='center', va='bottom', fontsize=10.5)
-    a2.annotate(r'峰值 $r_{xx}[0]=E$', xy=(0, 4.25), xytext=(2.0, 4.0),
-                fontsize=10.5, color=GREEN,
+    # 用等高横线指示 r[-2]=r[2]，直观表达偶对称，且不与茎线重叠
+    a2.hlines([3.4, 1.9], -2, 2, colors=RED, lw=1.0, ls=':', alpha=0.85)
+    a2.annotate(r'峰值 $r_{xx}[0]=E$', xy=(0, 4.25), xytext=(-4.85, 4.45),
+                fontsize=10.5, color=GREEN, ha='left',
                 arrowprops=dict(arrowstyle='->', color=GREEN, lw=1.2))
-    a2.set_title(r'自相关：偶函数、零延迟处最大')
+    a2.set_title(r'自相关：偶对称（虚线等高）、零延迟最大')
     a2.set_xlabel(r'$m$（延迟）')
     a2.set_ylim(-0.25, 4.9)
     a2.legend(loc='upper right', framealpha=0.92)
@@ -214,8 +212,9 @@ def p04():
 # ---------------------------------------------------------------- 05 维纳-辛钦
 def p05():
     fig, (a1, a2) = plt.subplots(2, 1, figsize=(8.2, 6.8))
-    m = np.arange(-5, 6)
-    r = np.array([0.0, 0.049, 0.28, 0.98, 2.49, 4.25, 2.49, 0.98, 0.28, 0.049, 0.0])
+    x = np.array([1, 1.4, 1.0, 0.5, 0.2, 0])
+    r = np.correlate(x, x, 'full')
+    m = np.arange(-(len(x) - 1), len(x))
 
     stem(a1, m, r, GREEN, label=r'时域：自相关 $r_{xx}[m]$')
     a1.axhline(0, color='#333', lw=1)
@@ -226,17 +225,18 @@ def p05():
     clean(a1)
 
     w = np.linspace(-np.pi, np.pi, 800)
-    P = 4.25 + 2 * (2.49 * np.cos(w) + 0.98 * np.cos(2 * w) + 0.28 * np.cos(3 * w)
-                    + 0.049 * np.cos(4 * w))
+    P = np.sum(r[:, None] * np.exp(-1j * m[:, None] * w[None, :]), axis=0).real
     a2.plot(w, P, color=BLUE, lw=2.6, label=r'频域：功率谱 $P_{xx}(e^{j\omega})$')
     a2.fill_between(w, 0, P, color=BLUE, alpha=0.13)
+    a2.axhline(r[len(x) - 1], color=RED, lw=1.2, ls='--',
+               label=r'$r_{xx}[0]$：谱的积分均值')
     a2.set_title(r'频域：功率谱 $P_{xx}(e^{j\omega})=\mathrm{DTFT}\{r_{xx}[m]\}$')
     a2.set_xlabel(r'$\omega$')
     a2.set_xlim(-np.pi, np.pi)
-    a2.set_ylim(0, 13.5)
+    a2.set_ylim(0, 19.8)
     a2.set_xticks([-np.pi, -np.pi / 2, 0, np.pi / 2, np.pi])
     a2.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$', r'$\pi/2$', r'$\pi$'])
-    a2.legend(loc='upper right', framealpha=0.92)
+    a2.legend(loc='upper left', framealpha=0.92)
     clean(a2)
 
     fig.tight_layout(h_pad=2.0)
