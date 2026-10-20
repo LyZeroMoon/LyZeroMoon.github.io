@@ -277,49 +277,51 @@ def p06():
 # ---------------------------------------------------------------- 07 卷积
 def p07():
     fig, axes = plt.subplots(3, 1, figsize=(8.2, 7.2))
-    # 两个矩形序列（用柱+茎区分，避免重叠遮挡）
+    # 两个等宽矩形序列（柱+茎区分，避免完全重叠遮挡）
     kx = np.arange(0, 4)
-    kh = np.arange(0, 3)
+    kh = np.arange(0, 4)
+    NW = 4
 
     stem(axes[0], kx, np.ones_like(kx, dtype=float), BLUE,
          label=r'$x[k]$：宽 4（$k=0\ldots3$）')
-    axes[0].bar(kh, np.ones_like(kh, dtype=float), width=0.46, color=ORANGE,
+    axes[0].bar(kh, np.ones_like(kh, dtype=float), width=0.44, color=ORANGE,
                 alpha=0.45, edgecolor=ORANGE, lw=1.2,
-                label=r'$h[k]$：宽 3（$k=0\ldots2$）')
-    axes[0].set_title(r'两个矩形序列（柱为 $h$，茎为 $x$）')
-    axes[0].set_xlim(-1.2, 7.2)
-    axes[0].set_ylim(-0.08, 1.45)
-    axes[0].legend(loc='upper right', ncol=2, framealpha=0.92)
+                label=r'$h[k]$：宽 4（$k=0\ldots3$）')
+    axes[0].set_title(r'两个等宽矩形序列（细柱为 $h$，带点茎为 $x$）')
+    axes[0].set_xlim(-1.2, 10.0)
+    axes[0].set_ylim(-0.08, 1.5)
+    axes[0].legend(loc='upper right', ncol=1, framealpha=0.92)
     clean(axes[0])
 
-    # 翻转平移示意（n=3）：x[k] 与 h[3-k]，h 的支撑在 k=1..3
-    n0 = 3
-    kf = np.arange(n0 - 2, n0 + 1)     # h[n-k] 在 k=1,2,3 处为 1
+    # 翻转平移示意（n=2）：h[2-k] 的支撑在 k=-1..2，与 x 重叠 k=0..2 共 3 项
+    n0 = 2
+    kf = np.arange(n0 - NW + 1, n0 + 1)     # k=-1,0,1,2
     stem(axes[1], kx, np.ones_like(kx, dtype=float), BLUE, label=r'$x[k]$（不动）')
     stem(axes[1], kf, np.ones_like(kf, dtype=float), RED,
-         label=r'$h[n-k]$（翻转后右移至 $n=3$）')
+         label=r'$h[n-k]$（翻转后右移至 $n=2$）')
     ovk = np.intersect1d(kx, kf)
-    axes[1].bar(ovk, np.ones_like(ovk, dtype=float), width=0.4,
-                color=PURPLE, alpha=0.4, label=r'重叠项：相乘后求和 $=3$')
-    axes[1].set_title(r'第 ③ 步：翻转 $h[k]\to h[-k]$、右移 $n=3$、求重叠项之和')
-    axes[1].set_xlim(-1.2, 7.2)
-    axes[1].set_ylim(-0.08, 1.45)
-    axes[1].legend(loc='upper right', ncol=2, framealpha=0.92)
+    axes[1].bar(ovk, np.ones_like(ovk, dtype=float), width=0.38,
+                color=PURPLE, alpha=0.45,
+                label=r'重叠 %d 项 $\Rightarrow y[2]=3$' % len(ovk))
+    axes[1].set_title(r'第 ③ 步：翻转 $h[k]\to h[-k]$、右移 $n=2$、求重叠项之和')
+    axes[1].set_xlim(-1.2, 10.0)
+    axes[1].set_ylim(-0.08, 1.5)
+    axes[1].legend(loc='upper right', ncol=1, framealpha=0.92)
     clean(axes[1])
 
-    # 结果：三角
-    yv = np.convolve(np.ones(4), np.ones(3))
+    # 结果：真三角（等宽矩形卷积）
+    yv = np.convolve(np.ones(NW), np.ones(NW))
     yk = np.arange(0, len(yv))
     stem(axes[2], yk, yv, GREEN, label=r'$y[n]=x[n]*h[n]$')
     axes[2].axhline(0, color='#333', lw=1)
-    axes[2].set_title(r'结果：两个矩形卷积 $\Rightarrow$ 三角形（山形）')
+    axes[2].set_title(r'结果：等宽矩形卷积 $\Rightarrow$ 三角形（山形，无平顶）')
     axes[2].set_xlabel(r'$n$')
-    axes[2].set_xlim(-1.2, 7.2)
-    axes[2].set_ylim(-0.12, 3.7)
-    axes[2].annotate(r'长度 $4+3-1=6$，峰值 $\min(4,3)=3$',
-                     xy=(2, 3.0), xytext=(3.9, 2.1), fontsize=10.5, color=GREEN,
+    axes[2].set_xlim(-1.2, 8.8)
+    axes[2].set_ylim(-0.15, 5.05)
+    axes[2].annotate(r'长度 $4+4-1=7$，峰值 $=\min(4,4)=4$',
+                     xy=(3, 4.0), xytext=(0.05, 4.32), fontsize=10.5, color=GREEN,
                      arrowprops=dict(arrowstyle='->', color=GREEN, lw=1.2))
-    axes[2].legend(loc='lower right', framealpha=0.92)
+    axes[2].legend(loc='upper right', framealpha=0.92)
     clean(axes[2])
 
     fig.tight_layout(h_pad=1.8)
@@ -350,6 +352,36 @@ def p08():
     clean(ax)
     fig.tight_layout()
     save(fig, 'dsp08-response.svg')
+
+
+def p08b():
+    """（八）单位脉冲响应 h[n] 与单位阶跃响应 s[n] 的关系：s 是 h 的累加"""
+    fig, (a1, a2) = plt.subplots(2, 1, figsize=(8.4, 6.2))
+    n = np.arange(0, 11)
+    h = 0.6 ** n
+    s = np.cumsum(h)          # s[n] = Σ_{k=0}^{n} h[k] → 1/(1-0.6)=2.5
+
+    stem(a1, n, h, BLUE, label=r'单位脉冲响应 $h[n]=0.6^{\,n}u[n]$')
+    a1.set_title('单位脉冲响应 h[n]：输入一个 δ[n] 得到的输出')
+    a1.set_ylabel(r'幅度')
+    a1.set_ylim(-0.1, 1.25)
+    a1.set_xlim(-0.6, 10.6)
+    a1.legend(loc='upper right', framealpha=0.92)
+    clean(a1)
+
+    stem(a2, n, s, ORANGE, label=r'单位阶跃响应 $s[n]=\sum_{k=0}^{n}h[k]$')
+    a2.axhline(2.5, color=GREY, ls=':', lw=1.3)
+    a2.text(0.1, 2.62, r'稳态 $s[\infty]=\frac{1}{1-0.6}=2.5$', color=GREY, fontsize=10.5)
+    a2.set_title('单位阶跃响应 s[n]：输入一个 u[n] 得到的输出（逐点累加 h）')
+    a2.set_xlabel(r'$n$')
+    a2.set_ylabel(r'幅度')
+    a2.set_ylim(-0.15, 3.65)
+    a2.set_xlim(-0.6, 10.6)
+    a2.legend(loc='upper right', framealpha=0.92)
+    clean(a2)
+
+    fig.tight_layout(h_pad=2.0)
+    save(fig, 'dsp08-step.svg')
 
 
 # ---------------------------------------------------------------- 09 时域解法
@@ -681,7 +713,7 @@ def p17():
 def main():
     os.makedirs(OUT, exist_ok=True)
     print('生成中 ->', OUT)
-    for f in (p01, p02, p03, p04, p05, p06, p07, p08, p09,
+    for f in (p01, p02, p03, p04, p05, p06, p07, p08, p08b, p09,
               p10, p11, p12, p13, p14_roc, p15, p16, p17):
         f()
     print('全部完成')
