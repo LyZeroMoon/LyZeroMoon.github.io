@@ -495,35 +495,100 @@ def p11():
 
 # ---------------------------------------------------------------- 12 级联
 def p12():
-    fig, ax = plt.subplots(figsize=(8.4, 4.5))
-    w = np.linspace(-np.pi, np.pi, 1200)
+    """级联：低通 × 二阶陷波。陷波器零点在单位圆上的 e^{±jπ/2}，所以 ω=π/2 处真为 0。"""
+    fig, ax = plt.subplots(figsize=(8.4, 4.6))
+    w = np.linspace(-np.pi, np.pi, 2400)
     a = 0.85
     H1 = 1 / np.sqrt(1 - 2 * a * np.cos(w) + a * a)
-    H1 = H1 / H1[0]
-    r, w0 = 0.92, np.pi / 2
-    H2 = np.abs((1 - r * np.exp(1j * w0) * np.exp(-1j * w)) /
-                (1 - r * np.exp(-1j * w0) * np.exp(-1j * w)))
-    H2 = H2 / H2.max()
+    H1 = H1 / H1.max()                    # 直流归一化到 1
+
+    r, w0 = 0.80, np.pi / 2
+    z1 = np.exp(-1j * w)
+    num = 1 - 2 * np.cos(w0) * z1 + z1 ** 2          # 零点在 e^{±jω0}（单位圆上）
+    den = 1 - 2 * r * np.cos(w0) * z1 + r * r * z1 ** 2  # 极点在同一角度、半径 r
+    H2 = np.abs(num / den)
+    H2 = H2 / H2.max()                    # 陷波器通带归一化到 1
     Ht = H1 * H2
 
-    ax.plot(w, H1, color=GREY, lw=1.6, ls='--', label=r'$|H_1|$：一阶低通')
-    ax.plot(w, H2, color=ORANGE, lw=1.6, ls='--', label=r'$|H_2|$：陷波器')
-    ax.plot(w, Ht, color=BLUE, lw=2.8, label=r'级联 $|H|=|H_1|\cdot|H_2|$')
+    ax.plot(w, H1, color=GREY, lw=1.7, ls='--', label=r'$|H_1|$：一阶低通（极点在 0.85）')
+    ax.plot(w, H2, color=ORANGE, lw=1.7, ls='--', label=r'$|H_2|$：二阶陷波（零点 $e^{\pm j\pi/2}$）')
+    ax.plot(w, Ht, color=BLUE, lw=2.9, label=r'级联 $|H|=|H_1|\cdot|H_2|$')
     ax.axvline(np.pi / 2, color=RED, lw=1.3, ls=':')
-    ax.annotate(r'陷波频率 $\omega=\pi/2$', xy=(np.pi / 2, 0.12), xytext=(1.95, 0.42),
+    ax.annotate(r'陷波频率 $\omega_0=\pi/2$：$|H|=0$',
+                xy=(np.pi / 2, 0.0), xytext=(2.10, 0.55),
                 fontsize=10.5, color=RED,
                 arrowprops=dict(arrowstyle='->', color=RED, lw=1.2))
     ax.set_xlim(-np.pi, np.pi)
-    ax.set_ylim(0, 1.22)
+    ax.set_ylim(0, 1.24)
     ax.set_xticks([-np.pi, -np.pi / 2, 0, np.pi / 2, np.pi])
     ax.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$', r'$\pi/2$', r'$\pi$'])
     ax.set_xlabel(r'$\omega$')
-    ax.set_ylabel(r'幅度响应')
-    ax.set_title(r'级联：总幅频 = 各子系统幅频之积（对数域则相加）')
-    ax.legend(loc='lower left', framealpha=0.94)
+    ax.set_ylabel(r'幅度响应 $|H|$')
+    ax.set_title(r'级联：总幅频 = 各子系统幅频之积（取对数后就是相加）')
+    ax.legend(loc='upper left', framealpha=0.94)
     clean(ax)
     fig.tight_layout()
     save(fig, 'dsp12-cascade.svg')
+
+
+def p12b():
+    """反馈如何移动极点：G(z)=1/(1-0.5z^{-1})，常数反馈 F=k，p_cl = 0.5/(1±k)"""
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(9.6, 4.4))
+
+    # 左：极点位置随反馈增益 k 变化
+    k = np.linspace(0, 5, 800)
+    p_neg = 0.5 / (1 + k)                 # 负反馈：往原点拉
+    a1.plot(k, p_neg, color=GREEN, lw=2.6, label=r'负反馈 $p=\dfrac{0.5}{1+k}$')
+    kp = np.linspace(0, 0.94, 400)
+    a1.plot(kp, 0.5 / (1 - kp), color=ORANGE, lw=2.2,
+            label=r'正反馈 $p=\dfrac{0.5}{1-k}$')
+    a1.plot([1.2], [-2.5], 'o', ms=9, mfc='none', mec=RED, mew=2.2)
+    a1.annotate(r'$k=1.2$：$p=-2.5$，已出圈', xy=(1.2, -2.5), xytext=(1.7, -2.1),
+                fontsize=10.5, color=RED,
+                arrowprops=dict(arrowstyle='->', color=RED, lw=1.2))
+    a1.axhline(1, color=RED, lw=1.2, ls='--')
+    a1.axhline(-1, color=RED, lw=1.2, ls='--')
+    a1.axhspan(-1, 1, color=GREEN, alpha=0.09)
+    a1.text(4.1, 0.28, '稳定区\n|p|<1', fontsize=10.5, color=GREEN, ha='center')
+    a1.set_xlim(0, 5)
+    a1.set_ylim(-3, 6)
+    a1.set_xlabel(r'反馈增益 $k$（$F=k$ 为常数）')
+    a1.set_ylabel(r'闭环极点位置 $p$')
+    a1.set_title('常数反馈只沿实轴搬极点，不改角度')
+    a1.legend(loc='upper right', framealpha=0.94)
+
+    # 右：极点内移 = 带宽扩展 + 增益下降（增益换带宽）
+    w = np.linspace(0, np.pi, 2000)
+    base = 1 / (1 - 0.5)            # 开环直流增益 = 2，作为归一化基准
+    for kk, col, lb in ((0, GREY, r'开环 $G$：$p=0.5$'),
+                        (1, BLUE, r'闭环 $k=1$：$p=0.25$'),
+                        (3, ORANGE, r'闭环 $k=3$：$p=0.125$')):
+        p = 0.5 / (1 + kk)
+        Hc = (1 / (1 + kk)) / np.abs(1 - p * np.exp(-1j * w)) / base
+        a2.plot(w, Hc, color=col, lw=2.4, label=lb)
+        a2.plot([0], [Hc[0]], 'o', color=col, ms=7)
+        a2.annotate(f'{Hc[0]:.3f}'.rstrip('0').rstrip('.'), xy=(0, Hc[0]),
+                    xytext=(0.10, Hc[0] + 0.045), fontsize=10.5, color=col)
+    a2.axhline(1 / np.sqrt(2), color='#999', lw=1.1, ls=':')
+    a2.text(2.35, 1 / np.sqrt(2) + 0.025, r'$1/\sqrt{2}$：开环 $-3$ dB 线',
+            fontsize=10, color='#666')
+    a2.plot([0.723], [1 / np.sqrt(2)], 'v', color=GREY, ms=7)
+    a2.annotate(r'开环通带 $\omega\approx0.72$', xy=(0.723, 0.707), xytext=(0.95, 0.52),
+                fontsize=10, color='#555',
+                arrowprops=dict(arrowstyle='->', color='#888', lw=1.0))
+    a2.set_xlim(0, np.pi)
+    a2.set_ylim(0, 1.32)
+    a2.set_xticks([0, np.pi / 4, np.pi / 2, 3 * np.pi / 4, np.pi])
+    a2.set_xticklabels([r'$0$', r'$\pi/4$', r'$\pi/2$', r'$3\pi/4$', r'$\pi$'])
+    a2.set_xlabel(r'$\omega$')
+    a2.set_ylabel('幅度（以开环直流增益为 1）')
+    a2.set_title(r'极点内移换来的通带变宽，代价是直流增益下降')
+    a2.legend(loc='upper right', framealpha=0.94)
+
+    for a in (a1, a2):
+        clean(a)
+    fig.tight_layout()
+    save(fig, 'dsp12-feedback.svg')
 
 
 # ---------------------------------------------------------------- 13 z 平面
@@ -638,35 +703,47 @@ def p15():
 
 # ---------------------------------------------------------------- 16 单位圆↔DTFT
 def p16():
-    fig, ax = plt.subplots(figsize=(6.6, 5.6))
+    fig, ax = plt.subplots(figsize=(6.6, 5.9))
     th = np.linspace(0, 2 * np.pi, 400)
-    ax.plot(np.cos(th), np.sin(th), color=BLUE, lw=2.6, label=r'$z=e^{j\omega}$（单位圆）')
+
+    # ROC: |z| > 0.8 填充（因果序列，极点在 0.8）
+    R, T = np.meshgrid(np.linspace(0.8, 2.6, 2), th)
+    ax.contourf(R * np.cos(T), R * np.sin(T), R, levels=[0.8, 2.6],
+                colors=[ORANGE], alpha=0.14)
+
+    ax.plot(np.cos(th), np.sin(th), color=BLUE, lw=2.8)
     ax.axhline(0, color='#333', lw=1.0)
     ax.axvline(0, color='#333', lw=1.0)
+    ax.plot([0.8], [0], 'x', ms=13, mew=2.8, color=RED)
+    ax.text(0.80, -0.26, r'极点 $0.8$', ha='center', fontsize=10, color=RED)
 
     marks = [(0, r'$\omega=0$'), (np.pi / 2, r'$\pi/2$'), (np.pi, r'$\pi$'),
              (-np.pi / 2, r'$-\pi/2$')]
     for ang, lab in marks:
         ax.plot([np.cos(ang)], [np.sin(ang)], 'o', ms=7, color=RED, mec='white', mew=1.0)
-        r = 1.22
-        ax.text(r * np.cos(ang), r * np.sin(ang), lab, ha='center', va='center',
+        r = 1.24
+        dy = 0.15 if ang == 0 else 0.0
+        ax.text(r * np.cos(ang), r * np.sin(ang) + dy, lab, ha='center', va='center',
                 fontsize=10.5, color=RED)
 
     # 箭头示意逆时针扫描
-    arc = np.linspace(0.15, 1.45, 60)
-    ax.annotate('', xy=(np.cos(1.45) * 1.06, np.sin(1.45) * 1.06),
-                xytext=(np.cos(1.32) * 1.06, np.sin(1.32) * 1.06),
+    ax.annotate('', xy=(np.cos(1.45) * 1.08, np.sin(1.45) * 1.08),
+                xytext=(np.cos(1.30) * 1.08, np.sin(1.30) * 1.08),
                 arrowprops=dict(arrowstyle='-|>', color=GREEN, lw=2.0))
-    ax.text(-0.15, 1.42, r'$\omega$ 逆时针扫过 $2\pi$', color=GREEN,
+    ax.text(-0.46, 1.34, r'$\omega$ 逆时针扫过 $2\pi$', color=GREEN,
             ha='center', fontsize=10.5)
+    ax.text(1.56, 1.30, r'ROC: $|z|>0.8$', color=ORANGE, fontsize=11,
+            ha='right', va='center',
+            bbox=dict(fc='#fdf3e3', ec=ORANGE, lw=1.1, boxstyle='round,pad=0.3'))
+    ax.text(0, -1.56, r'单位圆落在 ROC 内 $\Rightarrow$ DTFT 存在', ha='center',
+            fontsize=10.5, color=BLUE)
 
     ax.set_xlim(-1.62, 1.62)
-    ax.set_ylim(-1.62, 1.62)
+    ax.set_ylim(-1.72, 1.52)
     ax.set_aspect('equal')
     ax.set_xlabel(r'$\mathrm{Re}(z)$')
     ax.set_ylabel(r'$\mathrm{Im}(z)$')
     ax.set_title(r'DTFT = Z 变换在单位圆上取值：$X(e^{j\omega})=X(z)|_{{z=e^{j\omega}}}$')
-    ax.legend(loc='lower right', framealpha=0.94, fontsize=10)
     clean(ax)
     fig.tight_layout()
     save(fig, 'dsp14-zcircle.svg')
@@ -674,39 +751,55 @@ def p16():
 
 # ---------------------------------------------------------------- 17 共轭对称
 def p17():
-    fig, (a1, a2) = plt.subplots(2, 1, figsize=(8.2, 5.8))
-    w = np.linspace(-np.pi, np.pi, 800)
-    # 模拟实序列的幅频（偶）与相频（奇）
-    mag = 1.0 + 1.6 * np.cos(w) + 0.7 * np.cos(2 * w)
-    phase = np.angle(np.exp(-1j * w) * (1 + 0.5 * np.exp(-1j * w)))
+    """实序列的共轭对称：时域 → 幅频（偶）→ 相频（奇），三栏并排"""
+    fig, (a0, a1, a2) = plt.subplots(1, 3, figsize=(11.2, 3.5))
+    a = 0.8
+    n = np.arange(0, 9)
+    x = a ** n
+    stem(a0, n, x, GREY, lw=1.5, ms=5.5)
+    a0.set_title(r'实序列 $x[n]=0.8^{\,n}u[n]$', fontsize=12.5)
+    a0.set_xlabel(r'$n$')
+    a0.set_ylabel(r'$x[n]$')
+    a0.set_ylim(0, 1.12)
+    clean(a0)
+
+    w = np.linspace(-np.pi, np.pi, 1200)
+    den = 1 - a * np.exp(-1j * w)
+    mag = np.abs(1 / den)
+    mag = mag / mag.max()
+    phase = -np.angle(den)
 
     a1.plot(w, mag, color=BLUE, lw=2.4)
     a1.fill_between(w, 0, mag, color=BLUE, alpha=0.12)
     a1.axvline(0, color='#333', lw=1.0)
-    a1.set_title(r'实序列：幅度谱 $| X(e^{j\omega})|$ 是偶函数（左右镜像）')
-    a1.set_ylabel(r'幅度')
+    a1.set_title(r'幅度谱 $|X|$：偶函数', fontsize=12.5)
+    a1.set_xlabel(r'$\omega$')
+    a1.set_ylabel(r'$|X|$（归一化）')
     a1.set_xlim(-np.pi, np.pi)
+    a1.set_ylim(0, 1.18)
     a1.set_xticks([-np.pi, -np.pi / 2, 0, np.pi / 2, np.pi])
     a1.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$', r'$\pi/2$', r'$\pi$'])
-    a1.annotate('', xy=(-1.2, 2.35), xytext=(1.2, 2.35),
+    a1.annotate('', xy=(-1.15, 1.06), xytext=(1.15, 1.06),
                 arrowprops=dict(arrowstyle='<->', color=RED, lw=1.2, ls='--'))
-    a1.text(0, 2.44, '镜像对称', color=RED, ha='center', fontsize=10.5)
-    a1.set_ylim(-0.6, 2.85)
+    a1.text(0, 1.10, '左右镜像', color=RED, ha='center', fontsize=10)
     clean(a1)
 
     a2.plot(w, phase, color=GREEN, lw=2.4)
     a2.axhline(0, color='#333', lw=1.0)
     a2.axvline(0, color='#333', lw=1.0, ls='--')
-    a2.set_title(r'实序列：相位谱 $\angle X(e^{j\omega})$ 是奇函数（过原点反演）')
+    a2.set_title(r'相位谱 $\angle X$：奇函数', fontsize=12.5)
     a2.set_xlabel(r'$\omega$')
-    a2.set_ylabel(r'相位 (rad)')
+    a2.set_ylabel('相位 (rad)')
     a2.set_xlim(-np.pi, np.pi)
-    a2.set_ylim(-3.4, 3.4)
+    a2.set_ylim(-0.95, 0.95)
     a2.set_xticks([-np.pi, -np.pi / 2, 0, np.pi / 2, np.pi])
     a2.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$', r'$\pi/2$', r'$\pi$'])
+    a2.annotate('', xy=(-2.4, 0.78), xytext=(-0.9, -0.72),
+                arrowprops=dict(arrowstyle='->', color=RED, lw=1.1, ls='--'))
+    a2.text(-2.95, 0.20, '过原点反演', color=RED, fontsize=10, ha='left')
     clean(a2)
 
-    fig.tight_layout(h_pad=1.8)
+    fig.tight_layout(w_pad=2.2)
     save(fig, 'dsp14-symmetry.svg')
 
 
@@ -714,7 +807,7 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     print('生成中 ->', OUT)
     for f in (p01, p02, p03, p04, p05, p06, p07, p08, p08b, p09,
-              p10, p11, p12, p13, p14_roc, p15, p16, p17):
+              p10, p11, p12, p12b, p13, p14_roc, p15, p16, p17):
         f()
     print('全部完成')
 
