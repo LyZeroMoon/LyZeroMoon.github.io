@@ -805,7 +805,7 @@ def p17():
 
 # ---------------------------------------------------------------- 18 正交性几何
 def p18():
-    """r≠0 时 N 个等幅向量首尾相接成闭合多边形，回到起点 ⇒ 和为 0；r=0 时同相加成 N"""
+    """r≠0 时 N 个等幅向量首尾相接成闭合多边形，回到起点 → 和为 0；r=0 时同相加成 N"""
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(9.8, 4.9))
     N = 8
     th = 2 * np.pi / N
@@ -894,11 +894,438 @@ def p19():
     save(fig, 'dsp15-proj.svg')
 
 
+# ---------------------------------------------------------------- 20 频率卷绕
+def p20():
+    """ω 与 2π-ω 是同一序列；ω 从 0 到 2π，有效振荡速率是三角折返"""
+    fig, (a1, a2) = plt.subplots(2, 1, figsize=(8.4, 6.0))
+
+    n = np.arange(0, 17)
+    ml, sl, bl = a1.stem(n, np.cos(np.pi / 4 * n), linefmt='-', markerfmt='o',
+                         basefmt=' ')
+    plt.setp(sl, color=BLUE, lw=1.7)
+    plt.setp(ml, color=BLUE, ms=7, mfc=BLUE, mec='white', mew=0.9)
+    ml.set_label(r'$\cos(\pi n/4)$')
+    # 叠加 ω = 2π - π/4 的取值：用红色空心圈覆盖，视觉上完全重合
+    ml2, sl2, bl2 = a1.stem(n, np.cos((2 * np.pi - np.pi / 4) * n),
+                            linefmt='--', markerfmt='o', basefmt=' ')
+    plt.setp(sl2, color=RED, lw=1.2, visible=False)
+    plt.setp(ml2, color=RED, ms=13, mfc='none', mec=RED, mew=1.6)
+    ml2.set_label(r'$\cos(7\pi n/4)$（红圈叠加）')
+    a1.axhline(0, color='#333', lw=1.0)
+    a1.set_xlim(-0.6, 16.6)
+    a1.set_ylim(-1.35, 1.35)
+    a1.xaxis.set_major_locator(MultipleLocator(2))
+    a1.set_ylabel('取值')
+    a1.set_title('ω 与 2π−ω 给出同一个序列：红圈处处落在蓝点上')
+    a1.legend(loc='upper right', ncol=2, framealpha=0.94)
+    clean(a1)
+
+    w = np.linspace(0, 2, 1000)
+    eff = np.minimum(w, 2 - w)
+    a2.plot(w, eff, color=BLUE, lw=2.6)
+    a2.fill_between(w, 0, eff, color=BLUE, alpha=0.14)
+    for xv, lab in ((0, r'$\omega=0$' + '\n直流'), (1, r'$\omega=\pi$' + '\n最快'),
+                    (2, r'$\omega=2\pi$' + '\n退回直流')):
+        a2.plot([xv], [min(xv, 2 - xv)], 'o', ms=8, color=RED, mec='white', mew=1.2,
+                zorder=5)
+        a2.text(xv, min(xv, 2 - xv) + 0.10, lab, ha='center', fontsize=10,
+                color=RED)
+    a2.annotate('', xy=(1.55, 0.45), xytext=(1.34, 0.66),
+                arrowprops=dict(arrowstyle='->', color=GREEN, lw=1.6))
+    a2.text(1.60, 0.36, '这段在变慢', color=GREEN, fontsize=10.5)
+    a2.text(0.62, 0.30, '这段在变快', color=GREEN, fontsize=10.5)
+    a2.set_xlim(-0.10, 2.35)
+    a2.set_ylim(0, 1.28)
+    a2.set_xticks([0, 0.5, 1, 1.5, 2])
+    a2.set_xticklabels([r'$0$', r'$\pi/2$', r'$\pi$', r'$3\pi/2$', r'$2\pi$'])
+    a2.set_xlabel(r'数字频率 $\omega$（占满一个 $2\pi$ 周期）')
+    a2.set_ylabel('有效振荡速率')
+    a2.set_title('"频率越大振荡越快"只对 0 到 π 成立，越过 π 就折返')
+    clean(a2)
+
+    fig.tight_layout(h_pad=1.9)
+    save(fig, 'dsp01-freq-wrap.svg')
+
+
+# ---------------------------------------------------------------- 21 线性叠加
+def p21():
+    """线性：输入按 a、b 叠加，输出也按 a、b 叠加（两条曲线完全重合）"""
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(10.0, 4.4))
+    n = np.arange(0, 12)
+    x1 = np.where(n == 2, 1.0, 0.0)          # δ[n-2]
+    x2 = 0.55 ** n                            # 0.55^n u[n]
+    a, b = 1.5, -1.0
+
+    def H(x):
+        y = np.zeros_like(x, dtype=float)
+        for k in range(len(x)):
+            y[k] = 2 * x[k] - (x[k - 1] if k >= 1 else 0)
+        return y
+
+    stem(a1, n, x1, BLUE, label=r'$x_1[n]=\delta[n-2]$')
+    stem(a1, n, x2, GREEN, label=r'$x_2[n]=0.55^{\,n}u[n]$')
+    stem(a1, n, a * x1 + b * x2, ORANGE, label=r'$1.5x_1-x_2$')
+    a1.axhline(0, color='#333', lw=1.0)
+    a1.set_title('输入端：两个输入按 1.5 与 −1 加权叠加')
+    a1.set_xlabel(r'$n$')
+    a1.set_ylabel('幅度')
+    a1.set_xlim(-0.6, 8.6)
+    a1.set_ylim(-1.35, 1.95)
+    a1.xaxis.set_major_locator(MultipleLocator(1))
+    a1.legend(loc='upper right', framealpha=0.94, fontsize=9.5)
+    clean(a1)
+
+    left = H(a * x1 + b * x2)
+    right = a * H(x1) + b * H(x2)
+    a2.plot(n, left, 'o-', color=BLUE, lw=2.6, ms=7, label='先叠加再进系统')
+    a2.plot(n, right, 's--', color=RED, lw=1.8, ms=9, mfc='none', mew=1.8,
+            label='先进系统再叠加')
+    a2.axhline(0, color='#333', lw=1.0)
+    a2.set_title('输出端：两条曲线处处重合 → 线性成立')
+    a2.set_xlabel(r'$n$')
+    a2.set_ylabel('幅度')
+    a2.set_xlim(-0.6, 8.6)
+    a2.legend(loc='upper right', framealpha=0.94, fontsize=9.5)
+    a2.text(0.02, 0.55, '差值为零\n（若差不为零则非线性）', transform=a2.transAxes,
+            fontsize=10, color=GREY, va='top')
+    clean(a2)
+
+    fig.tight_layout(w_pad=2.0)
+    save(fig, 'dsp02-super.svg')
+
+
+# ---------------------------------------------------------------- 22 时不变
+def p22():
+    """时不变：输入先移 2 点，输出也整体移 2 点；反例 y=nx[n] 移不动"""
+    fig, (a1, a2) = plt.subplots(2, 1, figsize=(8.4, 6.0))
+    n = np.arange(0, 14)
+    x = 0.7 ** n * (n < 7)
+    d = 3
+
+    def LTI(x):
+        y = np.zeros_like(x, dtype=float)
+        for k in range(len(x)):
+            y[k] = 0.5 * (x[k] + (x[k - 1] if k >= 1 else 0))
+        return y
+
+    y = LTI(x)
+    x_shift = np.zeros_like(x)
+    x_shift[d:] = x[:-d]
+    y_shift_in = LTI(x_shift)                 # 先移后算
+    y_shift_out = np.zeros_like(x)
+    y_shift_out[d:] = y[:-d]                  # 先算后移
+
+    a1.stem(n, y_shift_in, PURPLE, label='先移输入，再过系统')
+    ml, sl, _ = a1.stem(n, y_shift_out, linefmt='--', markerfmt='o', basefmt=' ')
+    plt.setp(sl, color=ORANGE, lw=1.2, visible=False)
+    plt.setp(ml, color=ORANGE, ms=13, mfc='none', mec=ORANGE, mew=1.6,
+             label='先过系统，再移输出')
+    a1.axhline(0, color='#333', lw=1.0)
+    a1.set_title('时不变系统（低通 $y[n]=0.5(x[n]+x[n-1])$）：两圈完全套在一起')
+    a1.set_xlim(-0.6, 13.6)
+    a1.set_ylim(-0.35, 1.25)
+    a1.set_xlabel(r'$n$')
+    a1.set_ylabel('幅度')
+    a1.legend(loc='upper right', ncol=2, framealpha=0.94, fontsize=9.5)
+    clean(a1)
+
+    def TV(x):
+        return n * x                       # y[n] = n x[n]，时变
+
+    yt = TV(x)
+    yt_in = TV(x_shift)
+    yt_out = np.zeros_like(x)
+    yt_out[d:] = yt[:-d]
+    stem(a2, n, yt_in, BLUE, label='先移输入，再过系统')
+    ml, sl, _ = a2.stem(n, yt_out, linefmt='--', markerfmt='s', basefmt=' ')
+    plt.setp(sl, color=RED, lw=1.2, visible=False)
+    plt.setp(ml, color=RED, ms=8, mfc='none', mec=RED, mew=1.6,
+             label='先过系统，再移输出')
+    a2.axhline(0, color='#333', lw=1.0)
+    a2.annotate('错位越来越大', xy=(9, yt_in[9]), xytext=(5.2, 2.35),
+                fontsize=10.5, color=RED,
+                arrowprops=dict(arrowstyle='->', color=RED, lw=1.2))
+    a2.set_title('时变系统 $y[n]=n\\,x[n]$：两圈错开 → 时不变性不成立')
+    a2.set_xlim(-0.6, 13.6)
+    a2.set_xlabel(r'$n$')
+    a2.set_ylabel('幅度')
+    a2.legend(loc='upper right', ncol=2, framealpha=0.94, fontsize=9.5)
+    clean(a2)
+
+    fig.tight_layout(h_pad=1.9)
+    save(fig, 'dsp02-ti.svg')
+
+
+# ---------------------------------------------------------------- 23 因果
+def p23():
+    """因果：输入到达之前输出必须为零；x[n+1] 会抢跑"""
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(10.0, 4.4))
+    n = np.arange(-4, 8)
+    x = np.where(n >= 0, 1.0, 0.0)            # u[n]
+
+    def cau(x):
+        y = np.zeros_like(x, dtype=float)
+        for k in range(len(x)):
+            y[k] = 0.5 * (y[k - 1] if k >= 1 else 0) + x[k]
+        return y     # 递推从 n=-4 起，等价于因果系统零初值
+
+    yc = cau(x)
+    ml, sl, _ = a1.stem(n, x, linefmt='-', markerfmt='s', basefmt=' ')
+    plt.setp(sl, color=GREY, lw=1.2)
+    plt.setp(ml, color=GREY, ms=9, mfc='none', mec=GREY, mew=1.4,
+             label=r'输入 $x[n]=u[n]$')
+    stem(a1, n, yc, BLUE, label=r'输出 $y[n]=0.5y[n-1]+x[n]$')
+    a1.axvline(-0.5, color=RED, lw=1.4, ls=':')
+    a1.text(-0.30, 1.62, '输入从这里开始', color=RED, fontsize=10)
+    a1.annotate('$n<0$ 输出全为 0', xy=(-2, 0.0), xytext=(-3.9, 0.75),
+                fontsize=10.5, color=GREEN,
+                arrowprops=dict(arrowstyle='->', color=GREEN, lw=1.2))
+    a1.set_title('因果系统：输入没来之前，输出一动不动')
+    a1.set_xlim(-4.4, 7.4)
+    a1.set_ylim(-0.14, 2.32)
+    a1.set_xlabel(r'$n$')
+    a1.set_ylabel('幅度')
+    a1.legend(loc='lower right', framealpha=0.94, fontsize=9.5)
+    clean(a1)
+
+    y_nc = np.zeros_like(x, dtype=float)
+    y_nc[:-1] = x[1:]                          # y[n] = x[n+1]
+    y_nc[-1] = 0
+    ml, sl, _ = a2.stem(n, x, linefmt='-', markerfmt='s', basefmt=' ')
+    plt.setp(sl, color=GREY, lw=1.2)
+    plt.setp(ml, color=GREY, ms=11, mfc='none', mec=GREY, mew=1.5,
+             label=r'输入 $x[n]=u[n]$')
+    stem(a2, n, y_nc, RED, label=r'输出 $y[n]=x[n+1]$')
+    a2.axvline(-0.5, color=RED, lw=1.4, ls=':')
+    a2.annotate('输入还没到，输出已经冒出 1', xy=(-1, 1.0), xytext=(-3.9, 1.45),
+                fontsize=10.5, color=RED,
+                arrowprops=dict(arrowstyle='->', color=RED, lw=1.2))
+    a2.set_title('非因果 $y[n]=x[n+1]$：输出比输入早一步')
+    a2.set_xlim(-4.4, 7.4)
+    a2.set_ylim(-0.12, 1.72)
+    a2.set_xlabel(r'$n$')
+    a2.set_ylabel('幅度')
+    a2.legend(loc='lower right', framealpha=0.94, fontsize=9.5)
+    clean(a2)
+
+    fig.tight_layout(w_pad=2.0)
+    save(fig, 'dsp02-causal.svg')
+
+
+# ---------------------------------------------------------------- 24 稳定
+def p24():
+    """稳定：有界输入下有界输出；极点跑到单位圆外就指数发散"""
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(10.0, 4.4))
+    n = np.arange(0, 14)
+    x = np.ones_like(n, dtype=float)          # 有界输入 |x|=1
+
+    y_stable = 0.55 ** n                      # 极点 0.55
+    y_unstable = 1.3 ** n                     # 极点 1.3（在单位圆外）
+
+    a1.axhline(1.0, color=GREY, lw=1.8, ls='--',
+               label=r'输入 $x[n]=u[n]$（上界 1）')
+    stem(a1, n, y_stable, BLUE, label=r'输出 $h[n]=0.55^{\,n}u[n]$')
+    a1.text(5.6, 1.07, '输入的上界', color=GREY, fontsize=10)
+    a1.set_title('稳定（极点在单位圆内）：输出不越界')
+    a1.set_xlim(-0.6, 13.6)
+    a1.set_ylim(0, 1.55)
+    a1.set_xlabel(r'$n$')
+    a1.set_ylabel('幅度')
+    a1.legend(loc='upper right', framealpha=0.94, fontsize=9.5)
+    clean(a1)
+
+    ns = np.arange(0, 21)
+    stem(a2, ns, 1.3 ** ns, RED, label=r'$h[n]=1.3^{\,n}u[n]$')
+    a2.axhline(1.0, color=GREEN, lw=1.2, ls='--')
+    a2.text(9.0, 1.4, '输入始终不超过 1', color=GREEN, fontsize=10)
+    a2.set_yscale('log')
+    a2.set_title('不稳定（极点 1.3 > 1）：输出指数冲顶')
+    a2.set_xlim(-0.6, 20.6)
+    a2.set_xlabel(r'$n$')
+    a2.set_ylabel('幅度（对数轴）')
+    a2.legend(loc='upper left', framealpha=0.94, fontsize=9.5)
+    clean(a2)
+
+    fig.tight_layout(w_pad=2.0)
+    save(fig, 'dsp02-stable.svg')
+
+
+# ---------------------------------------------------------------- 25 能量信号
+def p25():
+    """能量信号：部分和收敛到有限值，平均功率趋于 0"""
+    fig, (a1, a2) = plt.subplots(2, 1, figsize=(8.4, 5.8))
+    n = np.arange(0, 15)
+    x = 0.7 ** n
+    ml, sl, _ = a1.stem(n, x, linefmt='-', markerfmt='o', basefmt=' ')
+    plt.setp(sl, color=BLUE, lw=1.7)
+    plt.setp(ml, color=BLUE, ms=7, mfc=BLUE, mec='white', mew=0.9)
+    a1.axhline(0, color='#333', lw=1.0)
+    a1.set_title(r'能量信号 $x[n]=0.7^{\,n}u[n]$：幅度按指数衰减')
+    a1.set_xlim(-0.6, 14.6)
+    a1.set_ylim(0, 1.15)
+    a1.set_xlabel(r'$n$')
+    a1.set_ylabel('幅度')
+    clean(a1)
+
+    N = np.arange(1, 41)
+    E = np.cumsum(0.7 ** (2 * np.arange(0, 40)))
+    P = E / N
+    a2.plot(N, E, color=BLUE, lw=2.4, label=r'部分能量 $\sum_{n=0}^{N-1}x^2[n]$')
+    a2.axhline(1 / (1 - 0.49), color=BLUE, lw=1.3, ls='--')
+    a2.text(20, 1 / (1 - 0.49) + 0.10, r'极限 $1/(1-0.49)=1.96$（有限）',
+            color=BLUE, fontsize=10.5)
+    a2.plot(N, P, color=ORANGE, lw=2.2, label=r'部分平均功率 $\frac{1}{N}\sum x^2$')
+    a2.text(24, 0.28, '平均功率 → 0', color=ORANGE, fontsize=10.5)
+    a2.set_xlim(1, 40)
+    a2.set_ylim(0, 2.35)
+    a2.set_xlabel(r'累计点数 $N$')
+    a2.set_ylabel('能量 / 功率')
+    a2.set_title('能量收敛到有限值 → 能量信号；平均功率必然趋于 0')
+    a2.legend(loc='center right', framealpha=0.94, fontsize=9.5)
+    clean(a2)
+
+    fig.tight_layout(h_pad=1.9)
+    save(fig, 'dsp03-energysum.svg')
+
+
+# ---------------------------------------------------------------- 26 功率信号
+def p26():
+    """功率信号：能量线性发散，平均功率收敛"""
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(10.0, 4.4))
+    n = np.arange(0, 25)
+    x = np.cos(np.pi / 4 * n)
+    stem(a1, n, x, BLUE)
+    a1.axhline(0, color='#333', lw=1.0)
+    a1.set_title(r'功率信号 $x[n]=\cos(\pi n/4)$：永不衰减')
+    a1.set_xlim(-0.6, 24.6)
+    a1.set_ylim(-1.3, 1.52)
+    a1.set_xlabel(r'$n$')
+    a1.set_ylabel('幅度')
+    a1.text(0.4, 1.28, '周期 $N=8$，幅度恒定不衰减', color=GREY, fontsize=10.5)
+    clean(a1)
+
+    N = np.arange(1, 201)
+    E = np.cumsum(np.cos(np.pi / 4 * np.arange(0, 200)) ** 2)
+    P = E / N
+    l1, = a2.plot(N, E, color=RED, lw=2.0,
+                  label=r'部分能量 $\sum x^2$（线性增长、无上界）')
+    a2.set_xlim(1, 200)
+    a2.set_ylim(0, 118)
+    a2.set_xlabel(r'累计点数 $N$')
+    a2.set_ylabel('部分能量', color=RED)
+    a2.tick_params(axis='y', labelcolor=RED)
+    clean(a2)
+
+    a2b = a2.twinx()
+    l2, = a2b.plot(N, P, color=GREEN, lw=2.6,
+                  label=r'部分平均功率 $\frac{1}{N}\sum x^2$（收敛到 1/2）')
+    a2b.axhline(0.5, color=GREEN, lw=1.3, ls='--')
+    a2b.set_ylim(0, 1.18)
+    a2b.set_ylabel('平均功率', color=GREEN)
+    a2b.tick_params(axis='y', labelcolor=GREEN)
+    a2.set_title('能量发散、功率有限 → 功率信号')
+    a2.legend(handles=[l1, l2], loc='lower right', framealpha=0.94, fontsize=9.0)
+
+    fig.tight_layout(w_pad=2.0)
+    save(fig, 'dsp03-power.svg')
+
+
+# ---------------------------------------------------------------- 27 卷积滑动
+def p27():
+    """卷积的翻转-平移-相乘-求和：同一副图看 n=2 与 n=3 两步"""
+    fig, axes = plt.subplots(2, 2, figsize=(9.6, 6.2))
+    k = np.arange(0, 8, dtype=float)
+    x = np.array([1, 2, 3, 2, 1, 0, 0, 0], dtype=float)
+    h = np.array([1, 0.5, 0.25, 0, 0, 0, 0, 0], dtype=float)
+
+    def hk(nn):
+        v = np.zeros_like(k)
+        for kk in range(len(k)):
+            idx = nn - int(kk)
+            if 0 <= idx < len(h):
+                v[kk] = h[idx]
+        return v
+
+    for col, nn in enumerate((2, 3)):
+        g = hk(nn)
+        ax = axes[0][col]
+        ax.bar(k, x, width=0.42, color=BLUE, alpha=0.18)
+        ax.plot(k, x, 'o-', color=BLUE, lw=2.0, ms=7, label=r'$x[k]$')
+        if col == 0:
+            ax.plot(k, h, ':', color=GREY, lw=1.6, label=r'$h[k]$（原样，未翻转）')
+        ax.plot(k, g, 's--', color=ORANGE, lw=2.0, ms=7, mfc='none', mew=1.6,
+                label=r'$h[%d-k]$' % nn)
+        ax.set_xlim(-0.55, 7.55)
+        ax.set_ylim(-0.35, 3.35)
+        ax.set_title('第 %d 步：$h$ 先翻转成 $h[-k]$，再右移到 $n=%d$'
+                     % (col + 1, nn))
+        ax.legend(loc='upper right', framealpha=0.94, fontsize=9.0)
+        clean(ax)
+
+        axp = axes[1][col]
+        prod = x * g
+        axp.bar(k, prod, width=0.5, color=PURPLE, alpha=0.75)
+        axp.plot(k, prod, 'o', color=PURPLE, ms=6)
+        s = prod.sum()
+        axp.set_xlim(-0.5, 7.5)
+        axp.set_ylim(0, 3.35)
+        axp.set_title('逐点相乘再求和：$y[%d]=%g$' % (nn, s))
+        axp.set_xlabel(r'$k$')
+        clean(axp)
+
+    fig.tight_layout(h_pad=1.7, w_pad=1.8)
+    save(fig, 'dsp07-slide.svg')
+
+
+# ---------------------------------------------------------------- 28 可逆性
+def p28():
+    """差分器与累加器互逆：x -> 差分 -> 累加 -> 还原 x"""
+    fig, axes = plt.subplots(3, 1, figsize=(8.4, 6.6), sharex=True)
+    n = np.arange(0, 9)
+    x = np.array([1, 2, 3, 2, 1, 0, 0, 0, 0], dtype=float)
+    y = np.zeros_like(x)
+    for k in range(len(x)):
+        y[k] = x[k] - (x[k - 1] if k >= 1 else 0)
+    z = np.cumsum(y)
+
+    stem(axes[0], n, x, BLUE, label=r'$x[n]$')
+    axes[0].set_title('原序列：输入系统之前的样子')
+    axes[0].set_ylabel('幅度')
+    axes[0].set_ylim(-0.3, 3.5)
+    axes[0].legend(loc='upper right', framealpha=0.94)
+    clean(axes[0])
+
+    stem(axes[1], n, y, ORANGE, label=r'$y[n]=x[n]-x[n-1]$（一阶差分）')
+    axes[1].axhline(0, color='#333', lw=1.0)
+    axes[1].set_title('过差分器：形状变了，但信息没有丢')
+    axes[1].set_ylabel('幅度')
+    axes[1].set_ylim(-1.35, 1.35)
+    axes[1].legend(loc='upper right', framealpha=0.94)
+    clean(axes[1])
+
+    stem(axes[2], n, z, PURPLE, label=r'$\sum_{k\leq n}y[k]$（累加器）')
+    ml, sl, _ = axes[2].stem(n, x, linefmt='--', markerfmt='o', basefmt=' ')
+    plt.setp(sl, color=RED, lw=1.2, visible=False)
+    plt.setp(ml, color=RED, ms=14, mfc='none', mec=RED, mew=1.7,
+             label=r'原序列 $x[n]$（红圈叠加）')
+    axes[2].axhline(0, color='#333', lw=1.0)
+    axes[2].set_title('过累加器：红圈处处套住紫点，原序列被完整还原')
+    axes[2].set_xlabel(r'$n$')
+    axes[2].set_ylabel('幅度')
+    axes[2].set_ylim(-0.3, 3.5)
+    axes[2].legend(loc='upper right', framealpha=0.94)
+    clean(axes[2])
+
+    fig.tight_layout(h_pad=1.6)
+    save(fig, 'dsp02-inverse.svg')
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     print('生成中 ->', OUT)
     for f in (p01, p02, p03, p04, p05, p06, p07, p08, p08b, p09,
-              p10, p11, p12, p12b, p13, p14_roc, p15, p16, p17, p18, p19):
+              p10, p11, p12, p12b, p13, p14_roc, p15, p16, p17, p18, p19,
+              p20, p21, p22, p23, p24, p25, p26, p27, p28):
         f()
     print('全部完成')
 
