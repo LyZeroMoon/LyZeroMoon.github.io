@@ -128,3 +128,81 @@ a.wikilink:hover {
   background: var(--kb-tint-2);
   color: var(--sec-text-color);
 }
+
+/* ---------- 可折叠的知识点（正文里的 <details class="ly-fold">） ----------
+   收起时只占 summary 一行，给长图注 / 大段解读用。
+   配色全部走主题变量，明暗与皮肤自动跟随。
+   注意：折叠块内别用 ### 标题——tocbot 扫的是 DOM 里的 h1~h4，
+   标题进了目录，点过去内容却还收着。要用 **加粗句** 当小标题。 */
+
+.ly-fold {
+  margin: 1.15rem 0;
+  border: 1px solid var(--line-color);
+  border-left: 3px solid color-mix(in srgb, var(--post-link-color) 55%, var(--line-color));
+  border-radius: 6px;
+  background: var(--kb-tint);
+  transition: background .18s, border-color .18s;
+}
+
+.ly-fold > summary {
+  display: block;              /* 去掉默认 list-item 三角 */
+  list-style: none;
+  position: relative;
+  padding: .6rem 2.1rem .6rem .95rem;
+  font-size: .93rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-color);
+  cursor: pointer;
+  user-select: none;
+  border-radius: 5px;
+  transition: color .15s, background .15s;
+}
+.ly-fold > summary::-webkit-details-marker { display: none; }
+.ly-fold > summary::marker { content: ""; }
+
+/* 自己画的箭头：收起时指右，展开时指下 */
+.ly-fold > summary::after {
+  content: "";
+  position: absolute;
+  right: .95rem;
+  top: 50%;
+  width: .42rem;
+  height: .42rem;
+  margin-top: -.28rem;
+  border-right: 1.6px solid var(--sec-text-color);
+  border-bottom: 1.6px solid var(--sec-text-color);
+  transform: rotate(-45deg);
+  transition: transform .18s, margin-top .18s, border-color .18s;
+}
+
+.ly-fold > summary:hover { color: var(--post-link-color); }
+
+.ly-fold[open] {
+  background: var(--board-bg-color);
+  border-color: color-mix(in srgb, var(--post-link-color) 35%, var(--line-color));
+}
+.ly-fold[open] > summary {
+  color: var(--post-link-color);
+  border-bottom: 1px dashed var(--line-color);
+  border-radius: 5px 5px 0 0;
+}
+.ly-fold[open] > summary::after {
+  transform: rotate(45deg);
+  margin-top: -.14rem;
+  border-color: var(--post-link-color);
+}
+
+/* 展开后的正文：左右留白，首末块不留多余间距 */
+.ly-fold > :not(summary) {
+  margin-left: 1rem;
+  margin-right: 1rem;
+}
+.ly-fold > :nth-child(2) { margin-top: .85rem; }
+.ly-fold > :last-child { margin-bottom: .95rem; }
+
+/* 打印时强制展开，别把内容打成空白 */
+@media print {
+  .ly-fold { background: transparent; }
+  .ly-fold > :not(summary) { display: block; }
+}
