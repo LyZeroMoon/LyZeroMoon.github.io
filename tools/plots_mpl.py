@@ -429,6 +429,47 @@ def p08b():
     save(fig, 'dsp08-step.svg')
 
 
+def p08c():
+    """（八）应用：DC 阻断滤波器初值没对齐时的开机瞬态 y[n]=a^n（纯零输入响应）"""
+    fs, a = 48000.0, 0.999
+    n = np.arange(0, 6400)
+    t = n / fs * 1000.0                     # 毫秒
+    y = a ** n
+    n1pct = int(np.log(0.01) / np.log(a))   # 掉到 1% 所需样本数
+    tau_ms = 1.0 / (1 - a) / fs * 1000.0    # 时间常数
+
+    fig, ax = plt.subplots(figsize=(8.4, 4.5))
+    ax.plot(t, y, color=BLUE, lw=2.0,
+            label=r'默认零初值：$y[n]=a^{\,n}$，$a=0.999$')
+    ax.plot(t, np.zeros_like(t), color=ORANGE, lw=2.2, ls='--',
+            label=r'预置稳态初值：$y[n]\equiv 0$（听不到）')
+
+    ax.axhline(0.01, color=GREY, ls=':', lw=1.3)
+    ax.text(t[-1] * 0.985, 0.035, r'1%（$\approx-40$ dB），人耳已听不见',
+            color=GREY, fontsize=10, ha='right')
+
+    ax.axvline(tau_ms, color=GREY, ls=':', lw=1.1)
+    ax.text(tau_ms + 1.5, 0.86, r'$\tau=1/(1-a)=1000$ 样本 $=20.8$ ms',
+            color=GREY, fontsize=10.5)
+
+    ax.plot([n1pct / fs * 1000], [0.01], 'o', color=RED, ms=7, zorder=5)
+    ax.annotate(r'$a^{\,n}=1\%$：$n\approx4603$，即 $96$ ms',
+                xy=(n1pct / fs * 1000, 0.01), xytext=(52, 0.30),
+                fontsize=10.5, color=RED,
+                arrowprops=dict(arrowstyle='->', color=RED, lw=1.2))
+
+    ax.set_title(r'DC 阻断滤波器开机瞬态：初值没对齐，直流输入会吐出一段 $0.999^{\,n}$ 的"噗"')
+    ax.set_xlabel(r'时间 / ms（采样率 48 kHz）')
+    ax.set_ylabel(r'输出幅度')
+    ax.set_xlim(0, t[-1])
+    ax.set_ylim(-0.04, 1.10)
+    ax.legend(loc='upper right', framealpha=0.92)
+    clean(ax)
+
+    fig.tight_layout()
+    save(fig, 'dsp08-dc.svg')
+
+
 # ---------------------------------------------------------------- 09 时域解法
 def p09():
     fig, ax = plt.subplots(figsize=(8.4, 4.6))
@@ -1368,7 +1409,7 @@ def p28():
 def main():
     os.makedirs(OUT, exist_ok=True)
     print('生成中 ->', OUT)
-    for f in (p01, p02, p03, p04, p05, p06, p07, p08, p08b, p09,
+    for f in (p01, p02, p03, p04, p05, p06, p07, p08, p08b, p08c, p09,
               p10, p11, p12, p12b, p13, p14_roc, p15, p16, p17, p18, p19,
               p20, p21, p22, p23, p24, p25, p26, p27, p28):
         f()
