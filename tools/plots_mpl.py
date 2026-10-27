@@ -276,7 +276,8 @@ def p06():
 
 # ---------------------------------------------------------------- 07 卷积
 def p07():
-    fig, axes = plt.subplots(3, 1, figsize=(8.2, 7.2))
+    fig, axes = plt.subplots(3, 1, figsize=(8.4, 8.2),
+                             gridspec_kw=dict(height_ratios=[1.0, 1.55, 1.0]))
     # 两个等宽矩形序列（柱+茎区分，避免完全重叠遮挡）
     kx = np.arange(0, 4)
     kh = np.arange(0, 4)
@@ -287,26 +288,69 @@ def p07():
     axes[0].bar(kh, np.ones_like(kh, dtype=float), width=0.44, color=ORANGE,
                 alpha=0.45, edgecolor=ORANGE, lw=1.2,
                 label=r'$h[k]$：宽 4（$k=0\ldots3$）')
-    axes[0].set_title(r'两个等宽矩形序列（细柱为 $h$，带点茎为 $x$）')
-    axes[0].set_xlim(-1.2, 10.0)
-    axes[0].set_ylim(-0.08, 1.5)
+    axes[0].set_title(r'$x[k]$ 与 $h[k]$：两个等宽矩形（细柱为 $h$，带点茎为 $x$）')
+    axes[0].set_xlim(-4.6, 7.2)
+    axes[0].set_xticks(np.arange(-3, 8))
+    axes[0].set_ylim(-0.08, 1.45)
+    axes[0].set_yticks([0, 0.5, 1.0])
     axes[0].legend(loc='upper right', ncol=1, framealpha=0.92)
     clean(axes[0])
 
-    # 翻转平移示意（n=2）：h[2-k] 的支撑在 k=-1..2，与 x 重叠 k=0..2 共 3 项
+    # ②③④ 步：h 翻转 + 右移 n=2，与 x[k] 逐点相乘再求和
+    # 关键画法：x[k] 与 h[n-k] 的每根高度都是 1，若画在同一基线上会完全重合，
+    # 「右移 2 格」就看不出来 —— 所以分两层画，并用灰点标出翻转后【未移】的位置。
     n0 = 2
-    kf = np.arange(n0 - NW + 1, n0 + 1)     # k=-1,0,1,2
-    stem(axes[1], kx, np.ones_like(kx, dtype=float), BLUE, label=r'$x[k]$（不动）')
-    stem(axes[1], kf, np.ones_like(kf, dtype=float), RED,
-         label=r'$h[n-k]$（翻转后右移至 $n=2$）')
+    yx, yh = 0.0, 1.95              # 两层基线：x 在下、h 在上
+    kf = np.arange(n0 - NW + 1, n0 + 1)      # h[n-k] 非零处：k=-1,0,1,2
+    kg = np.arange(-(NW - 1), 1)             # h[-k] 非零处：k=-3..0（未右移）
+    ytop = yh + 1.0                          # 红茎顶端 = 2.95
+
+    # 两层同时有值的列（重叠列）—— 淡紫色竖条贯穿两层，说明"这 3 列相乘非零"
     ovk = np.intersect1d(kx, kf)
-    axes[1].bar(ovk, np.ones_like(ovk, dtype=float), width=0.38,
-                color=PURPLE, alpha=0.45,
-                label=r'重叠 %d 项 $\Rightarrow y[2]=3$' % len(ovk))
-    axes[1].set_title(r'第 ③ 步：翻转 $h[k]\to h[-k]$、右移 $n=2$、求重叠项之和')
-    axes[1].set_xlim(-1.2, 10.0)
-    axes[1].set_ylim(-0.08, 1.5)
-    axes[1].legend(loc='upper right', ncol=1, framealpha=0.92)
+    y0, y1 = -0.35, 3.55
+    for k in ovk:
+        axes[1].axvspan(k - 0.30, k + 0.30,
+                        ymin=(yx - y0) / (y1 - y0), ymax=(ytop - y0) / (y1 - y0),
+                        color=PURPLE, alpha=0.13, zorder=0)
+
+    # 下层 x[k]：填充柱 + 顶端圆点（柱是实心块，一眼看出是一段连续支撑）
+    axes[1].bar(kx, np.ones(4), bottom=yx, width=0.58, color=BLUE,
+                alpha=0.30, edgecolor=BLUE, lw=1.2, zorder=3,
+                label=r'$x[k]$：宽 4，不动')
+    axes[1].plot(kx, np.full(4, yx + 1.0), 'o', color=BLUE, ms=6.0,
+                 mfc=BLUE, mec='white', mew=0.8, zorder=4)
+    axes[1].axhline(yx, color='#555', lw=1.0, zorder=2)
+
+    # 上层 h[n-k]：灰点 = 翻转后【未移】的位置（k=-3..0），画矮一点，
+    # 这样 k=-1、0 两处即使与红茎同列，灰叉也不会被盖住 —— 否则"翻转"看不出来
+    axes[1].vlines(kg, yh, yh + 0.58, color=GREY, ls=':', lw=1.3, alpha=0.9, zorder=2)
+    axes[1].plot(kg, np.full(len(kg), yh + 0.58), 'x', color=GREY, ms=6.0,
+                 mew=1.4, label=r'$h[-k]$：翻转后未移', zorder=2)
+    axes[1].vlines(kf, yh, ytop, color=RED, lw=1.7, zorder=4)
+    axes[1].plot(kf, np.full(len(kf), ytop), 'o', color=RED, ms=6.0,
+                 mfc=RED, mec='white', mew=0.8, zorder=5,
+                 label=r'$h[n-k]$：再右移 $n=2$')
+    axes[1].axhline(yh, color='#555', lw=1.0, zorder=2)
+
+    # 「每根右移 2 格」的箭头：从灰点最左端 k=-3 指到红茎最左端 k=-1，恰好 2 格
+    axes[1].annotate('', xy=(-1.0, 1.42), xytext=(-3.0, 1.42),
+                     arrowprops=dict(arrowstyle='<->', color=ORANGE, lw=1.6))
+    axes[1].text(-2.0, 1.47, r'每根右移 $n=2$ 格', ha='center', va='bottom',
+                 fontsize=10.5, color=ORANGE)
+
+    # 左侧行标（代替 y 轴刻度：两层各自从 0 起，高度都是 1，纵轴数值无意义）
+    axes[1].text(-4.5, yx + 0.5, r'$x[k]$', ha='left', va='center',
+                 fontsize=12.5, color=BLUE)
+    axes[1].text(-4.5, yh + 0.5, r'$h[n-k]$', ha='left', va='center',
+                 fontsize=12.5, color=RED)
+    axes[1].set_title(r'翻转并右移 $n=2$ 后，只有 $k=0,1,2$ 三列两层同时有值'
+                      r' $\Rightarrow y[2]=1+1+1=3$')
+    axes[1].set_xlabel(r'$k$')
+    axes[1].set_xlim(-4.6, 7.2)
+    axes[1].set_ylim(y0, y1)
+    axes[1].set_yticks([])
+    axes[1].set_xticks(np.arange(-3, 8))
+    axes[1].legend(loc='upper right', ncol=1, framealpha=0.92, fontsize=9.8)
     clean(axes[1])
 
     # 结果：真三角（等宽矩形卷积）
@@ -314,17 +358,18 @@ def p07():
     yk = np.arange(0, len(yv))
     stem(axes[2], yk, yv, GREEN, label=r'$y[n]=x[n]*h[n]$')
     axes[2].axhline(0, color='#333', lw=1)
-    axes[2].set_title(r'结果：等宽矩形卷积 $\Rightarrow$ 三角形（山形，无平顶）')
+    axes[2].set_title(r'结果：宽 4 $\ast$ 宽 4 = 三角（$1,2,3,4,3,2,1$，无平顶）')
     axes[2].set_xlabel(r'$n$')
-    axes[2].set_xlim(-1.2, 8.8)
-    axes[2].set_ylim(-0.15, 5.05)
+    axes[2].set_xlim(-0.9, 7.2)
+    axes[2].set_ylim(-0.15, 5.35)
+    axes[2].set_xticks(np.arange(0, 7))
     axes[2].annotate(r'长度 $4+4-1=7$，峰值 $=\min(4,4)=4$',
-                     xy=(3, 4.0), xytext=(0.05, 4.32), fontsize=10.5, color=GREEN,
+                     xy=(3, 4.0), xytext=(0.15, 4.55), fontsize=10.5, color=GREEN,
                      arrowprops=dict(arrowstyle='->', color=GREEN, lw=1.2))
     axes[2].legend(loc='upper right', framealpha=0.92)
     clean(axes[2])
 
-    fig.tight_layout(h_pad=1.8)
+    fig.tight_layout(h_pad=2.0)
     save(fig, 'dsp07-conv.svg')
 
 
