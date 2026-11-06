@@ -55,6 +55,11 @@ function stats(lab) {
   return Array.from(lab.querySelectorAll('.rl-stat b')).map(s => s.textContent).join(' | ');
 }
 
+function cellsOf(lab) {
+  return Array.from(lab.querySelectorAll('.rl-cell'))
+    .map(c => c.querySelector('em').textContent + '=' + c.querySelector('b').textContent);
+}
+
 console.log('挂载点数量:', labs.length);
 console.log('实例 1 子节点:', L0.children.length, '| 实例 2 子节点:', L1.children.length);
 
@@ -65,10 +70,9 @@ console.log('\n[1] 进度条初始:', prog0.querySelector('span').textContent,
 
 drawn = [];
 hit(L0, 6);   // 点第 7 台（真值最高）
-const statsAfter1 = stats(L0);
-console.log('    点击一次后指标:', statsAfter1);
+console.log('    点击一次后指标:', stats(L0));
 console.log('    读数:', L0.querySelector('.rl-readout').textContent.trim().split('\n')[0]);
-console.log('    手动模式第 4 格（最优臂占比）display:',
+console.log('    手动模式第 4 格（押中率）display:',
   JSON.stringify(L0.querySelectorAll('.rl-stat')[3].style.display));
 console.log('    画布出现「真实均值」字样:', drawn.some(t => t.indexOf('真实均值') >= 0),
   '| 出现「真实最优」:', drawn.some(t => t.indexOf('真实最优') >= 0));
@@ -78,27 +82,23 @@ console.log('    画布出现「真实均值」字样:', drawn.some(t => t.index
 for (let i = 0; i < 30; i++) hit(L0, i % 10);
 for (let i = 0; i < 19; i++) hit(L0, 6);
 
-const prog49 = L0.querySelector('.rl-progress span').textContent;
-console.log('\n[2] 第 49 次后进度:', prog49);
+console.log('\n[2] 第 49 次后进度:', L0.querySelector('.rl-progress span').textContent);
 
 const result = L0.querySelector('.rl-result');
 console.log('    结算面板是否提前出现:', result.style.display !== 'none');
 
 hit(L0, 6);   // 第 50 次，触发结算
 
-const cells = Array.from(result.querySelectorAll('.rl-cell'))
-  .map(c => c.querySelector('em').textContent + '=' + c.querySelector('b').textContent);
 console.log('    第 50 次后结算面板显示:', result.style.display !== 'none');
-console.log('    结算数据:', cells.join(' | '));
+console.log('    结算数据:', cellsOf(L0).join(' | '));
 console.log('    评语:', result.querySelector('p').textContent);
 
 drawn = [];
 hit(L0, 3);   // 预算用完后继续点，应该无效
-const t_after = L0.querySelectorAll('.rl-stat b')[0].textContent;
-console.log('    结算后再点一次，试验次数:', t_after, '(应仍为 50)');
+console.log('    结算后再点一次，试验次数:',
+  L0.querySelectorAll('.rl-stat b')[0].textContent, '(应仍为 50)');
 
 /* ---------- 3. 结算后揭晓真值 ---------- */
-// 触发一次重绘
 window.dispatchEvent(new window.Event('resize'));
 console.log('\n[3] 揭晓后画布出现「真实均值」:', drawn.some(t => t.indexOf('真实均值') >= 0),
   '| 出现「真实最优」:', drawn.some(t => t.indexOf('真实最优') >= 0));
@@ -114,9 +114,9 @@ console.log('\n[4] 再来一局 → 面板隐藏:', result.style.display === 'no
    这个位置不可能每局都是最优，后悔值必然出现明显跳变。 */
 function playRound(armIdx) {
   for (let i = 0; i < 50; i++) hit(L0, armIdx);
-  const cells = Array.from(result.querySelectorAll('.rl-cell b')).map(b => b.textContent);
+  const vals = Array.from(result.querySelectorAll('.rl-cell b')).map(b => b.textContent);
   result.querySelector('.rl-btn').click();     // 再来一局
-  return parseFloat(cells[2]);                 // 后悔值
+  return parseFloat(vals[2]);                  // 后悔值
 }
 const regrets = [];
 for (let g = 0; g < 3; g++) regrets.push(playRound(6));
@@ -124,22 +124,58 @@ console.log('\n[4b] 连开三局都点同一位置，后悔值:', regrets.map(r 
 const shuffled = Math.max(...regrets) > 8;
 console.log('    洗牌生效（至少一局明显不是最优）:', shuffled);
 
-/* ---------- 5. 自动模式 ---------- */
-const btn = Array.from(L1.querySelectorAll('.rl-btn'))
-  .find(b => b.textContent.indexOf('训练') >= 0);
-console.log('\n[5] 自动模式按钮:', btn && btn.textContent,
-  '| 进度条隐藏:', L1.querySelector('.rl-progress').style.display === 'none');
+/* ---------- 5. 自动模式：跑满预算自动结算 ---------- */
+function runAuto(lab, waitMs) {
+  return new Promise(resolve => {
+    // 结算面板的按钮也在 .rl-btn.primary 里、且DOM顺序更靠前，
+    // 所以不能按 class 取，必须按文案定位训练按钮
+    const btnRun = Array.from(lab.querySelectorAll('.rl-btn'))
+      .find(b => b.textContent === '开始训练');
+    const segs = lab.querySelectorAll('.rl-seg');
+    segs[segs.length - 1].querySelectorAll('button')[2].click();  // 快档，40 步/帧
 
-drawn = [];
-btn.click();
+    console.log('\n[5] 自动模式进度:', lab.querySelector('.rl-progress span').textContent);
+    drawn = [];
+    btnRun.click();
 
-setTimeout(() => {
-  const st2 = L1.querySelectorAll('.rl-stat b');
-  console.log('    训练后指标:', Array.from(st2).map(s => s.textContent).join(' | '));
-  console.log('    自动模式画布出现「真实均值」:', drawn.some(t => t.indexOf('真实均值') >= 0));
+    setTimeout(() => {
+      const st = lab.querySelectorAll('.rl-stat b');
+      resolve({
+        btnRun,
+        steps: Number(st[0].textContent),
+        stats: Array.from(st).map(s => s.textContent).join(' | '),
+        result: lab.querySelector('.rl-result'),
+        cells: cellsOf(lab),
+        note: lab.querySelector('.rl-result p').textContent,
+        progress: lab.querySelector('.rl-progress span').textContent,
+        marked: drawn.filter(t => t.indexOf('它选的') >= 0).length
+      });
+    }, waitMs);
+  });
+}
 
-  const steps = Number(st2[0].textContent);
-  const ok = steps > 0 && result.style.display === 'none' && shuffled;
+(async () => {
+  const A = await runAuto(L1, 2500);
+
+  console.log('    训练步数:', A.steps, '(应等于 800)');
+  console.log('    进度:', A.progress);
+  console.log('    指标:', A.stats);
+  console.log('    结算面板显示:', A.result.style.display !== 'none');
+  console.log('    结算数据:', A.cells.join(' | '));
+  console.log('    结论:', A.note.replace(/\s+/g, ' ').slice(0, 90));
+  console.log('    训练按钮已禁用:', A.btnRun.disabled);
+  console.log('    成绩单位置（应紧跟读数）:',
+    A.result.previousElementSibling && A.result.previousElementSibling.className);
+
+  const learned = A.note.indexOf('学会了') === 0;
+  const ok = A.steps === 800 &&
+    A.result.style.display !== 'none' &&
+    A.cells.length === 4 &&
+    A.btnRun.disabled &&
+    A.result.previousElementSibling.className === 'rl-readout' &&
+    A.note.length > 20;
+
+  console.log('\n默认参数（ε=0.1）判为「学会了」:', learned);
   console.log('\n结果:', ok ? 'PASS' : 'FAIL');
   process.exit(ok ? 0 : 1);
-}, 400);
+})();

@@ -123,6 +123,15 @@
   // 50 次足够拉出高低，又不至于长到让人失去耐心。
   var BUDGET = 50;
 
+  // 自动模式同样要有终点。以前它是无限跑的：曲线一直在动、数字一直在涨，
+  // 但从来不告诉你「学成了没有」——读者只能盯着四个指标猜。
+  // 800 步足够三类策略都跑到收敛，又不会长到让人等。
+  var AUTO_STEPS = 800;
+
+  // 判「最近学得怎么样」的滑动窗口。用累计比例不行：开头那段必须瞎试，
+  // 累计值会被永久拖低，跑多久都到不了 100%，看不出收敛。
+  var WIN = 200;
+
   function mountBandit(root) {
     var P = palette();
     var rand = rng();
@@ -152,7 +161,9 @@
       emaV: 0,
       pulse: null,
       best: 0,                        // 最优臂被拉动的次数
-      done: false                     // 手动模式的预算是否用完
+      win: [],                        // 最近 WIN 步是否押中（1/0），判「学会」用
+      winSum: 0,
+      done: false                     // 预算是否用完（手动 50 次 / 自动 800 步）
     };
 
     var SPEEDS = [2, 10, 40];
@@ -184,6 +195,8 @@
       S.ema = [];
       S.emaV = 0;
       S.best = 0;
+      S.win = [];
+      S.winSum = 0;
       S.recent = null;
       S.pulse = null;
       S.done = false;
@@ -207,6 +220,13 @@
       S.t += 1;
       S.gain += r;
       if (a === BEST) S.best += 1;
+
+      // 滑动窗口：只留最近 WIN 步。这是「现在学得怎么样」的唯一证据，
+      // 累计值会把开头的探索成本永远记在账上。
+      var hit = (a === BEST) ? 1 : 0;
+      S.win.push(hit);
+      S.winSum += hit;
+      if (S.win.length > WIN) S.winSum -= S.win.shift();
 
       // 增量式更新：Q ← Q + (1/N)(R − Q)，等价于「到目前为止的样本均值」
       S.q[a] = before + (r - before) / S.n[a];
@@ -282,7 +302,7 @@
     tabs.appendChild(tabManual);
     tabs.appendChild(tabAuto);
 
-    // 剩余机会：手动模式才显示，自动模式不限步数
+    // 进度条：手动模式数机会，自动模式数训练步数——两者都必须有终点。
     var progress = el('div', 'rl-progress');
     var progressBar = el('div', 'bar');
     var progressFill = el('i');
@@ -418,7 +438,7 @@
       { k: 't', label: '试验次数' },
       { k: 'gain', label: '累计收益' },
       { k: 'avg', label: '近期均值' },
-      { k: 'best', label: '最优臂占比' }
+      { k: 'best', label: '近期押中率' }
     ];
     var statEls = {};
     statDefs.forEach(function (d) {
@@ -453,7 +473,7 @@
     function drawArms() {
       var f = fit(cvArms, 268);
       var ctx = f.ctx, W = f.w, H = f.h;
-      var padL = 34, padR = 14, padT = 26, padB = 64;
+      var padL = 34, padR = 14, padT = 34, padB = 64;
       var plotW = W - padL - padR, plotH = H - padT - padB;
       var yMax = 2.8, yMin = -2.4;
 
@@ -532,7 +552,16 @@
       // 真值最高的臂：自动模式跑够久才揭晓，手动模式等结算
       if ((S.mode === 'auto' && S.t > 60) || (S.mode === 'manual' && S.done)) {
         var bx = padL + gap * (BEST + 0.5);
-        label(ctx, '真实最优', bx, padT - 12, P.ink, 10);
+        label(ctx, '真实最优', bx, padT - 20, P.ink, 10);
+      }
+
+      // 自动模式结算后，如果它认定的最优臂不是真值最高那台，把错的那台也标出来。
+      // 这是「没学会」最直接的证据：两根柱子各挂一个名字，错位一眼看见。
+      if (S.mode === 'auto' && S.done) {
+        var pickA = argmaxQ();
+        if (pickA !== BEST) {
+          label(ctx, '它选的', padL + gap * (pickA + 0.5), padT - 6, P.accent, 10);
+        }
       }
 
       // 图例：放画布左上角。右侧要留给「真实最优」的标注，
@@ -671,18 +700,24 @@
       statEls.gain.textContent = f2(S.gain);
       var recentAvg = S.t > 0 ? S.emaV : 0;
       statEls.avg.textContent = f2(recentAvg);
-      statEls.best.textContent = S.t > 0
-        ? Math.round(S.best / S.t * 100) + '%' : '—';
+      // 报最近 WIN 步的押中率，不是全程累计。
+      // 累计值被开头的探索期永久拖低，读者会以为「它一直没学会」；
+      // 反而在真的收敛之后，这个数字才第一次有意义地往上爬。
+      statEls.best.textContent = S.win.length
+        ? Math.round(S.winSum / S.win.length * 100) + '%' : '—';
     }
 
     /* ---------------- 预算与结算 ---------------- */
     function syncProgress() {
-      progress.style.display = S.mode === 'manual' ? '' : 'none';
-      if (S.mode !== 'manual') return;
-      var used = Math.min(S.t, BUDGET);
-      progressFill.style.width = (used / BUDGET * 100) + '%';
-      progress.classList.toggle('full', used >= BUDGET);
-      progressTxt.textContent = '机会 ' + used + ' / ' + BUDGET;
+      var manual = S.mode === 'manual';
+      var total = manual ? BUDGET : AUTO_STEPS;
+      var used = Math.min(S.t, total);
+      progress.style.display = '';
+      progressFill.style.width = (used / total * 100) + '%';
+      progress.classList.toggle('full', used >= total);
+      progressTxt.textContent = manual
+        ? '机会 ' + used + ' / ' + BUDGET
+        : '训练 ' + used + ' / ' + AUTO_STEPS + ' 步';
     }
 
     // 评语按「每拉一次平均亏掉多少」分档，不按绝对后悔值——
@@ -731,9 +766,106 @@
       hint.textContent = '刚才那些黑线就是每台的真实均值——现在你看到答案了。' +
         '再来一局，这次你知道该怎么分配机会。';
 
+      btnAgain.textContent = '再来一局';
+      // 结论紧跟画布：读者刚点完，眼睛还在柱子上
+      root.insertBefore(resultBox, controls);
       cvArms.classList.remove('clickable');
       drawArms();
       syncButtons();
+    }
+
+    /* ---------------- 自动模式结算：它到底学会了没有 ---------------- */
+    // 「学会」要拆成两问，因为它们会分别坏掉：
+    //   认对 —— argmax Q 指向的是不是真实最优（搞没搞清楚哪台好）
+    //   用上 —— 最近 WIN 步的押中率（有没有真的照着做）
+    // 只问其中一问，就会把「知道却不做」和「压根不知道」混成一件事。
+    //
+    // 0.75 这条线不是拍的：ε = 0.1 的 ε-greedy 收敛后押中率约
+    // (1-ε) + ε/10 ≈ 0.91；ε = 0.3 时约 0.73。所以 0.75 正好把
+    // 「探索还在浪费机会」和「探索已经收敛」分开。
+    function finishAuto() {
+      S.done = true;
+      S.running = false;
+
+      var pick = argmaxQ();
+      var hit = S.win.length ? S.winSum / S.win.length : 0;
+      var known = (pick === BEST);
+      var applied = (hit >= 0.75);
+      var pct = Math.round(hit * 100);
+
+      resultHd.textContent = '训练 ' + AUTO_STEPS + ' 步结束';
+
+      resultRow.innerHTML = '';
+      [
+        ['它认定最好', '第 ' + (pick + 1) + ' 台'],
+        ['真实最优', '第 ' + (BEST + 1) + ' 台'],
+        ['近期押中率', pct + '%'],
+        ['它估的值', f2(S.q[pick])]
+      ].forEach(function (c) {
+        var box = el('div', 'rl-cell');
+        box.appendChild(el('em', null, c[0]));
+        box.appendChild(el('b', null, c[1]));
+        resultRow.appendChild(box);
+      });
+
+      var l1, l2;
+      if (known && applied) {
+        l1 = '学会了。它认对了哪台最好，并把 ' + pct + '% 的机会压在它身上。';
+        l2 = '它给这台估的值是 ' + f2(S.q[pick]) + '，真值是 ' + f2(MU[pick]) +
+          '。这个数字不是谁告诉它的，是八百次拉动平均出来的。';
+      } else if (known) {
+        l1 = '认对了，但没照着做。它知道第 ' + (pick + 1) + ' 台最好，' +
+          '只给了它 ' + pct + '% 的机会。';
+        l2 = '探索率压不下来：它一边知道答案，一边把机会继续分给已知更差的机器。' +
+          '把 ε 调小（或 c 调小）再跑一次，这个数字会上去。';
+      } else {
+        l1 = '没学会。它认定第 ' + (pick + 1) + ' 台最好，' +
+          '但真正最好的是第 ' + (BEST + 1) + ' 台。';
+
+        // 归因要分两种情况，否则会说错：
+        // 对选中那台「严重高估」= 被开头几次运气骗了；
+        // 「估得很准却还是选错」= 它压根没认真试过别的台。
+        var over = S.q[pick] - MU[pick];
+        var tried = S.n[BEST];
+        var triedTxt = tried === 0 ? '一次都没拉过'
+          : '只被拉了 ' + tried + ' 次';
+        if (over > 0.2) {
+          l2 = '它给第 ' + (pick + 1) + ' 台估了 ' + f2(S.q[pick]) +
+            '，真值只有 ' + f2(MU[pick]) + '——高估了。头几次运气把估计抬上去，' +
+            '之后机会一直往这台倾斜，它就再没回过头。八百步里第 ' + (BEST + 1) +
+            ' 台' + triedTxt + '。';
+        } else {
+          l2 = '它对第 ' + (pick + 1) + ' 台的估计其实很准（' + f2(S.q[pick]) +
+            '，真值 ' + f2(MU[pick]) + '），问题不在这里——它只是从没试过第 ' +
+            (BEST + 1) + ' 台：八百步里' + triedTxt + '，' +
+            '而那里才是 ' + f2(MU[BEST]) + '。这是探索不足。';
+        }
+      }
+      resultNote.innerHTML = '';
+      resultNote.appendChild(el('span', 'lead', l1));
+      resultNote.appendChild(el('span', 'd', l2));
+      resultBox.style.display = '';
+
+      hint.textContent = '跑满了。下面这块是它的成绩单——认没认对，用没用上。';
+
+      btnAgain.textContent = '换一副牌重跑';
+      root.insertBefore(resultBox, controls);
+      renderStats();
+      syncProgress();
+      syncButtons();
+
+      // 读者点「开始训练」时视口停在按钮上，而成绩单在画布下方，
+      // 不滚一下就会漏掉——「跑完了然后呢」正是这里最容易断的地方。
+      // 「露出 30px 也算在视口里」是不行的，那点高度连标题都读不全，
+      // 所以判据是「有没有完整露出来」。
+      // 放在最后并包起来：万一环境不支持 scrollIntoView 的 options 形式，
+      // 也不能让已经算好的结论卡在半成品状态。
+      try {
+        var rc = resultBox.getBoundingClientRect();
+        if (rc.top < 8 || rc.bottom > window.innerHeight - 8) {
+          resultBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+      } catch (e) { /* 不支持就退化成不滚动，结论照样在画布下方 */ }
     }
 
     /* ---------------- 主循环 ---------------- */
@@ -749,14 +881,19 @@
 
       if (S.running) {
         var n = SPEEDS[S.speed];
-        for (var i = 0; i < n; i++) pull(choose());
+        for (var i = 0; i < n; i++) {
+          // 一帧里可能跑多步，必须逐步检查，否则最后一步会冲过预算
+          if (S.mode === 'auto' && S.t >= AUTO_STEPS) break;
+          pull(choose());
+        }
+        if (S.mode === 'auto' && S.t >= AUTO_STEPS) finishAuto();
         alive = true;
       }
       if (S.pulse && ts - S.pulse.t0 < 440) alive = true;
 
       drawArms();
       drawCurve();
-      if (S.running) { renderReadout(); renderStats(); }
+      if (S.running) { renderReadout(); renderStats(); syncProgress(); }
 
       if (alive) raf = requestAnimationFrame(loop);
     }
@@ -791,7 +928,9 @@
 
     function syncButtons() {
       btnRun.textContent = S.running ? '暂停' : (S.mode === 'manual' ? '自动跑' : '开始训练');
-      btnRun.disabled = false;
+      // 跑完就锁住：要么重置重跑，要么换一副牌。让按钮还能继续点，
+      // 读者会以为「再跑几步」能改结论——预算用完了就是没有更多证据了。
+      btnRun.disabled = S.done;
       btnReset.disabled = false;
     }
 
@@ -807,7 +946,7 @@
       cvArms.classList.toggle('clickable', !auto && !S.done);
       syncProgress();
       hint.textContent = auto
-        ? '算法自己跑。看柱子怎么长到黑线附近——那就是估计在收敛到真值。'
+        ? '跑满 ' + AUTO_STEPS + ' 步会自动停，然后告诉你它学会了没有。'
         : '有 ' + BUDGET + ' 次机会，点柱子拉一次。目标只有一个：累计拿到最多的钱。';
     }
 

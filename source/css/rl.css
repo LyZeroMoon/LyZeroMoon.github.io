@@ -176,6 +176,7 @@
 }
 
 .rl-result p span { display: block; }
+.rl-result p .lead { font-weight: 600; }
 .rl-result p .d { margin-top: 0.35rem; font-size: 0.76rem; color: var(--rl-faint); }
 
 /* ---------------------------------------------------------------- 画布区 */
