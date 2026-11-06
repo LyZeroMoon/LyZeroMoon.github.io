@@ -504,3 +504,224 @@ a.rl-card:hover {
 @supports not (border: 1px solid color-mix(in srgb, red 40%, transparent)) {
   .rl-card.live::after { border-color: var(--line-color); }
 }
+
+/* =====================================================================
+   可点击选择题（js/rl/quiz.js）
+   ---------------------------------------------------------------------
+   点选项即判对错，解析就地展开。不用提交、不用后端。
+   颜色只加两个局部变量（对 / 错），其余全读主题变量。
+   选择器统一带 .rl-quiz 前缀：文章正文的 .markdown-body p 一类规则
+   特异性不低，不加前缀会被主题的行距和 margin 改掉。
+   ===================================================================== */
+
+.rl-quiz {
+  --qz-ok: #2f8f5b;
+  --qz-no: #c0453b;
+  --rl-edge: var(--line-color, #e3e3e3);
+  --rl-faint: var(--sec-text-color, #888);
+  --rl-ink: var(--text-color, #333);
+  --rl-accent: var(--post-link-color, #2c6eb5);
+
+  margin: 1.4rem 0 0.4rem;
+  font-size: 0.94rem;
+  line-height: 1.7;
+  color: var(--rl-ink);
+}
+
+.rl-quiz *,
+.rl-quiz *::before,
+.rl-quiz *::after { box-sizing: border-box; }
+
+/* .markdown-body details 把所有子元素的光标设成了手型，这里收回 */
+.rl-quiz,
+.rl-quiz * { cursor: default; }
+
+/* ---------------------------------------------------------------- 头部 */
+.rl-quiz .qz-hd {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--rl-edge);
+}
+
+.rl-quiz .qz-title {
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+}
+
+.rl-quiz .qz-score {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--rl-faint);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- 题目 */
+.rl-quiz .qz-q { padding: 1rem 0 0.15rem; }
+
+.rl-quiz .qz-q + .qz-q {
+  border-top: 1px dashed var(--rl-edge);
+  margin-top: 0.9rem;
+}
+
+.rl-quiz p.qz-stem {
+  margin: 0 0 0.62rem;
+  line-height: 1.78;
+  color: var(--rl-ink);
+}
+
+.rl-quiz .qz-no {
+  display: inline-block;
+  min-width: 1.45em;
+  margin-right: 0.42em;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--rl-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- 选项 */
+.rl-quiz .qz-opts {
+  display: grid;
+  gap: 0.34rem;
+}
+
+.rl-quiz button.qz-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.46rem 0.7rem;
+  border: 1px solid var(--rl-edge);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--rl-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.62;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.16s, background-color 0.16s, opacity 0.16s;
+}
+
+.rl-quiz button.qz-opt:hover:not(:disabled) {
+  border-color: var(--rl-accent);
+  background: color-mix(in srgb, var(--rl-accent) 6%, transparent);
+}
+
+.rl-quiz button.qz-opt:focus-visible {
+  outline: 2px solid var(--rl-accent);
+  outline-offset: 2px;
+}
+
+.rl-quiz .qz-key {
+  flex: 0 0 auto;
+  min-width: 1.15em;
+  font-weight: 600;
+  color: var(--rl-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.rl-quiz .qz-txt { flex: 1 1 auto; }
+
+.rl-quiz button.qz-opt:disabled { cursor: default; opacity: 0.46; }
+
+.rl-quiz button.qz-opt.ok,
+.rl-quiz button.qz-opt.ok:disabled {
+  opacity: 1;
+  border-color: var(--qz-ok);
+  background: color-mix(in srgb, var(--qz-ok) 11%, transparent);
+}
+
+.rl-quiz button.qz-opt.ok .qz-key { color: var(--qz-ok); }
+
+.rl-quiz button.qz-opt.no {
+  opacity: 1;
+  border-color: var(--qz-no);
+  background: color-mix(in srgb, var(--qz-no) 10%, transparent);
+}
+
+.rl-quiz button.qz-opt.no .qz-key { color: var(--qz-no); }
+
+/* ---------------------------------------------------------------- 解析 */
+.rl-quiz p.qz-why {
+  margin: 0.6rem 0 0.2rem;
+  padding: 0.55rem 0.8rem;
+  border-left: 2px solid var(--rl-edge);
+  font-size: 0.84rem;
+  line-height: 1.74;
+  color: var(--rl-ink);
+}
+
+/* 主题里有给 p 设 display 的规则时，hidden 会被顶掉，这里兜一道 */
+.rl-quiz p.qz-why[hidden] { display: none; }
+
+.rl-quiz p.qz-why.ok { border-left-color: var(--qz-ok); }
+.rl-quiz p.qz-why.no { border-left-color: var(--qz-no); }
+.rl-quiz p.qz-why.ok > b { color: var(--qz-ok); }
+.rl-quiz p.qz-why.no > b { color: var(--qz-no); }
+
+.rl-quiz p.qz-why > b {
+  display: block;
+  font-size: 0.82rem;
+  margin-bottom: 0.2rem;
+}
+
+.rl-quiz .qz-why-t { color: var(--rl-ink); }
+
+/* ---------------------------------------------------------------- 底部 */
+.rl-quiz .qz-ft {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-top: 1.1rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--rl-edge);
+}
+
+.rl-quiz .qz-hint {
+  flex: 1 1 14rem;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--rl-faint);
+}
+
+.rl-quiz button.qz-again {
+  flex: 0 0 auto;
+  padding: 0.24rem 0.78rem;
+  border: 1px solid var(--rl-edge);
+  border-radius: 99px;
+  background: transparent;
+  color: var(--rl-faint);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.16s, color 0.16s;
+}
+
+.rl-quiz button.qz-again:hover {
+  border-color: var(--rl-accent);
+  color: var(--rl-accent);
+}
+
+@supports not (background: color-mix(in srgb, red 6%, transparent)) {
+  .rl-quiz button.qz-opt:hover:not(:disabled) { background: rgba(128, 128, 128, 0.07); }
+  .rl-quiz button.qz-opt.ok { background: rgba(47, 143, 91, 0.12); }
+  .rl-quiz button.qz-opt.no { background: rgba(192, 69, 59, 0.12); }
+}
+
+@media (max-width: 600px) {
+  .rl-quiz button.qz-opt { font-size: 0.86rem; padding: 0.42rem 0.6rem; }
+  .rl-quiz .qz-hd { gap: 0.35rem; }
+  .rl-quiz .qz-score { margin-left: 0; }
+}

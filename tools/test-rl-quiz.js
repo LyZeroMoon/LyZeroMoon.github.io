@@ -1,0 +1,95 @@
+/* 回归测试：验证 rl/quiz.js 能渲染题库、判对错、展开解析、计分、重做。
+ *
+ * 依赖 jsdom（不进 package.json，按需安装）：
+ *   npm install jsdom --no-save
+ *   node tools/test-rl-quiz.js
+ */
+const { JSDOM } = require('jsdom');
+const fs = require('fs');
+const path = require('path');
+
+const html = `<!DOCTYPE html><html><head></head><body>
+<div class="rl-quiz" data-quiz="rl1"></div>
+</body></html>`;
+
+const dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: true });
+const { window } = dom;
+const { document } = window;
+
+const code = fs.readFileSync(path.join(__dirname, '..', 'source/js/rl/quiz.js'), 'utf8');
+window.eval(code);
+
+const root = document.querySelector('.rl-quiz');
+const qs = [...root.querySelectorAll('.qz-q')];
+const score = root.querySelector('.qz-score');
+const hint = root.querySelector('.qz-hint');
+const again = root.querySelector('.qz-again');
+
+let pass = 0, fail = 0;
+function ok(name, cond, extra) {
+  if (cond) { pass++; console.log('  ✓ ' + name); }
+  else { fail++; console.log('  ✗ ' + name + (extra ? '  → ' + extra : '')); }
+}
+
+console.log('渲染');
+ok('12 道题', qs.length === 12, qs.length);
+const optCounts = qs.map(q => q.querySelectorAll('.qz-opt').length);
+ok('每题 4 个选项', optCounts.every(n => n === 4), optCounts.join(','));
+ok('解析初始隐藏', qs.every(q => q.querySelector('.qz-why').hidden));
+ok('选项初始可点', qs.every(q => [...q.querySelectorAll('.qz-opt')].every(b => !b.disabled)));
+ok('样式表已注入', !!document.querySelector('link[data-rl-css]'));
+ok('初始计分为 0 / 12', score.textContent === '已答 0 / 12', score.textContent);
+
+console.log('\n答错一题（第 1 题选 A，正确答案 B）');
+const q0 = qs[0];
+const opts0 = [...q0.querySelectorAll('.qz-opt')];
+opts0[0].dispatchEvent(new window.Event('click'));
+ok('选错项标 no', opts0[0].classList.contains('no'));
+ok('正确项标 ok', opts0[1].classList.contains('ok'));
+ok('全部选项被禁用', opts0.every(b => b.disabled));
+const why0 = q0.querySelector('.qz-why');
+ok('解析已展开', !why0.hidden && why0.className.indexOf('no') > -1);
+ok('解析含正确答案', /答错，正确答案是 B/.test(why0.textContent), why0.textContent.slice(0, 24));
+ok('解析有实质内容', why0.textContent.length > 40, why0.textContent.length);
+ok('计分 1/12 答对 0', score.textContent === '已答 1 / 12 · 答对 0', score.textContent);
+
+console.log('\n重复点击同一题不重复计分');
+opts0.forEach(b => b.dispatchEvent(new window.Event('click')));
+ok('仍为已答 1', score.textContent === '已答 1 / 12 · 答对 0', score.textContent);
+
+console.log('\n答对一题（第 2 题选 A）');
+const opts1 = [...qs[1].querySelectorAll('.qz-opt')];
+opts1[0].dispatchEvent(new window.Event('click'));
+ok('标 ok', opts1[0].classList.contains('ok'));
+ok('无 no 项', !opts1.some(b => b.classList.contains('no')));
+ok('解析提示答对', /^答对/.test(qs[1].querySelector('.qz-why').textContent));
+ok('计分 2/12 答对 1', score.textContent === '已答 2 / 12 · 答对 1', score.textContent);
+
+console.log('\n答完全部 12 题');
+const ANSWERS = [1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3];
+
+// 题库里的 a 值必须与预期答案一致，否则做题人会被判错
+const src = fs.readFileSync(path.join(__dirname, '..', 'source/js/rl/quiz.js'), 'utf8');
+const bankA = [...src.matchAll(/\n\s+a: (\d),/g)].map(m => Number(m[1]));
+ok('题库答案与预期一致', JSON.stringify(bankA) === JSON.stringify(ANSWERS), bankA.join(','));
+
+qs.forEach((q, i) => {
+  const bs = [...q.querySelectorAll('.qz-opt')];
+  if (!bs[0].disabled) bs[ANSWERS[i]].dispatchEvent(new window.Event('click'));
+});
+ok('全部标记完成', root.getAttribute('data-done') === '1');
+// 第 1 题已答错、第 2 题已答对，其余 10 题按预期答案作答
+ok('计分 12/12 答对 11', score.textContent === '已答 12 / 12 · 答对 11', score.textContent);
+ok('给出总评', /主干已经立住/.test(hint.textContent), hint.textContent);
+
+console.log('\n重做');
+again.dispatchEvent(new window.Event('click'));
+ok('计分清零', score.textContent === '已答 0 / 12', score.textContent);
+ok('选项恢复可点', qs.every(q => [...q.querySelectorAll('.qz-opt')].every(b => !b.disabled)));
+ok('答案标记清空', root.querySelectorAll('.ok, .no').length === 0);
+ok('解析重新隐藏', qs.every(q => q.querySelector('.qz-why').hidden));
+ok('data-done 已移除', !root.hasAttribute('data-done'));
+
+console.log('\n' + (fail ? '✗ 失败 ' + fail + ' 项' : '✓ 全部通过') +
+  '（通过 ' + pass + '）');
+process.exit(fail ? 1 : 0);
