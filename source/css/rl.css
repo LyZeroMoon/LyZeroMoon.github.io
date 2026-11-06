@@ -568,9 +568,12 @@ a.rl-card:hover {
 }
 
 .rl-quiz p.qz-stem {
-  margin: 0 0 0.62rem;
+  margin: 0 0 0.72rem;
+  font-size: 0.965rem;
+  font-weight: 600;
   line-height: 1.78;
-  color: var(--rl-ink);
+  letter-spacing: 0.01em;
+  color: var(--post-heading-color, var(--rl-ink));
 }
 
 .rl-quiz .qz-no {
@@ -629,7 +632,27 @@ a.rl-card:hover {
   font-variant-numeric: tabular-nums;
 }
 
-.rl-quiz .qz-txt { flex: 1 1 auto; }
+.rl-quiz .qz-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  flex: 1 1 auto;
+}
+
+.rl-quiz .qz-label { display: block; }
+
+/* 逐项说明：答完后每项各补一句，错的也说清错在哪 */
+.rl-quiz .qz-note {
+  display: block;
+  font-size: 0.775rem;
+  font-weight: 400;
+  line-height: 1.62;
+  color: var(--rl-faint);
+}
+
+/* 混一点正文色：浅色下更深、深色下更亮，两种皮肤都够对比 */
+.rl-quiz .qz-note.yes { color: color-mix(in srgb, var(--qz-ok) 76%, var(--rl-ink)); }
+.rl-quiz .qz-note.bad { color: color-mix(in srgb, var(--qz-no) 76%, var(--rl-ink)); }
 
 .rl-quiz button.qz-opt:disabled { cursor: default; opacity: 0.46; }
 

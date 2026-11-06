@@ -51,6 +51,16 @@ const why0 = q0.querySelector('.qz-why');
 ok('解析已展开', !why0.hidden && why0.className.indexOf('no') > -1);
 ok('解析含正确答案', /答错，正确答案是 B/.test(why0.textContent), why0.textContent.slice(0, 24));
 ok('解析有实质内容', why0.textContent.length > 40, why0.textContent.length);
+
+// 每个选项都要有逐项说明，不能只解释正确答案
+const notes0 = opts0.map(b => b.querySelector('.qz-note'));
+ok('四个选项各有说明', notes0.length === 4 && notes0.every(Boolean), notes0.filter(Boolean).length);
+ok('说明都有实质内容', notes0.every(n => n && n.textContent.length > 15),
+  notes0.map(n => n && n.textContent.length).join(','));
+ok('说明带对错符号', notes0.every(n => /^[✔✘]/.test(n.textContent)));
+ok('正确项说明标 yes', notes0[1].classList.contains('yes'));
+ok('误选项说明标 bad', notes0[0].classList.contains('bad'));
+ok('未选项说明无标', !notes0[2].classList.contains('yes') && !notes0[2].classList.contains('bad'));
 ok('计分 1/12 答对 0', score.textContent === '已答 1 / 12 · 答对 0', score.textContent);
 
 console.log('\n重复点击同一题不重复计分');
@@ -78,6 +88,9 @@ qs.forEach((q, i) => {
   if (!bs[0].disabled) bs[ANSWERS[i]].dispatchEvent(new window.Event('click'));
 });
 ok('全部标记完成', root.getAttribute('data-done') === '1');
+ok('每题四个选项都有说明', qs.every(q => q.querySelectorAll('.qz-note').length === 4),
+  qs.map(q => q.querySelectorAll('.qz-note').length).join(','));
+ok('没有缺失字段', !/undefined/.test(root.textContent));
 // 第 1 题已答错、第 2 题已答对，其余 10 题按预期答案作答
 ok('计分 12/12 答对 11', score.textContent === '已答 12 / 12 · 答对 11', score.textContent);
 ok('给出总评', /主干已经立住/.test(hint.textContent), hint.textContent);
@@ -87,6 +100,7 @@ again.dispatchEvent(new window.Event('click'));
 ok('计分清零', score.textContent === '已答 0 / 12', score.textContent);
 ok('选项恢复可点', qs.every(q => [...q.querySelectorAll('.qz-opt')].every(b => !b.disabled)));
 ok('答案标记清空', root.querySelectorAll('.ok, .no').length === 0);
+ok('逐项说明已清空', root.querySelectorAll('.qz-note').length === 0);
 ok('解析重新隐藏', qs.every(q => q.querySelector('.qz-why').hidden));
 ok('data-done 已移除', !root.hasAttribute('data-done'));
 
