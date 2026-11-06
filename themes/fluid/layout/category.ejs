@@ -7,6 +7,13 @@ page.banner_img_height = theme.category.banner_img_height
 page.banner_mask_alpha = theme.category.banner_mask_alpha
 
 var cat = site.categories.find({name: page.category}).filter(cat => cat.length).data[0]
+
+/* 专栏页按「顺序」排，不按时间排：排序键取标题里的序号（支持中文/阿拉伯/
+   罗马/英文四种写法，也可用 front-matter 的 order 显式指定），详见
+   scripts/column-order.js。这里拿的是该分类下的全部文章，不再用 page.posts —— 
+   分页和「整体正序/倒序」是冲突的（分页只会翻转当前一页），
+   所以专栏页一页放完，分页路由由 column-order.js 在构建时移除。 */
+var rows = cat ? colSortedPosts(cat.posts.toArray()) : []
 %>
 
-<%- partial('_partials/archive-list.ejs', { params: { key: page.layout, postTotal: cat ? cat.posts.length : 0 } }) %>
+<%- partial('_partials/column-list.ejs', { rows: rows }) %>
