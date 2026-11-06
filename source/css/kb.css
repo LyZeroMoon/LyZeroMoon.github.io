@@ -201,6 +201,40 @@ a.wikilink:hover {
 .ly-fold > :nth-child(2) { margin-top: .85rem; }
 .ly-fold > :last-child { margin-bottom: .95rem; }
 
+/* ---------- 公式旁的逐符号解释（.ly-fold.eq-note） ----------
+   每篇正文的显示公式后面紧跟一个，收起时只占一行细条，
+   与正文里的大段折叠区分开：字号更小、左边框更细、底色更淡。
+   配色仍走主题变量，深色皮肤自动跟随。 */
+.ly-fold.eq-note {
+  margin: .5rem 0 1.05rem;
+  border-left-width: 2px;
+  background: transparent;
+}
+.ly-fold.eq-note > summary {
+  padding: .34rem 1.8rem .34rem .8rem;
+  font-size: .84rem;
+  font-weight: 500;
+  color: var(--sec-text-color);
+}
+.ly-fold.eq-note > summary::after {
+  right: .8rem;
+  width: .36rem;
+  height: .36rem;
+  border-width: 1.2px;
+}
+.ly-fold.eq-note[open] { background: var(--kb-tint); }
+.ly-fold.eq-note[open] > summary {
+  font-size: .86rem;
+  border-bottom-style: dotted;
+}
+.ly-fold.eq-note > :not(summary) {
+  margin-left: .8rem;
+  margin-right: .8rem;
+  font-size: .9rem;
+  line-height: 1.72;
+}
+.ly-fold.eq-note > :last-child { margin-bottom: .7rem; }
+
 /* 打印时强制展开，别把内容打成空白 */
 @media print {
   .ly-fold { background: transparent; }
