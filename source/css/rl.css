@@ -1,0 +1,434 @@
+/*!
+ * 强化学习实验室（RL Lab）
+ * ---------------------------------------------------------------------------
+ * 文章里写 <div class="rl-lab" data-lab="xxx"></div> 就能挂一个交互实验，
+ * 样式由 js/rl/lab.js 按需注入（不读这类文章的访客一个字节都不用下）。
+ *
+ * 配色全部走 Fluid 的 CSS 变量（--text-color / --line-color / --post-link-color
+ * ...），所以换皮肤、切暗色都不用改这里一行。
+ * ---------------------------------------------------------------------------
+ */
+
+.rl-lab {
+  --rl-accent: var(--post-link-color, #2c6eb5);
+  --rl-faint: var(--sec-text-color, #888);
+  --rl-edge: var(--line-color, #e3e3e3);
+  --rl-ink: var(--text-color, #333);
+  --rl-bg: var(--board-bg-color, #fff);
+
+  margin: 2.2rem 0;
+  border: 1px solid var(--rl-edge);
+  border-radius: 12px;
+  background: var(--rl-bg);
+  overflow: hidden;
+  font-size: 0.94rem;
+  line-height: 1.7;
+}
+
+.rl-lab *,
+.rl-lab *::before,
+.rl-lab *::after { box-sizing: border-box; }
+
+/* ---------------------------------------------------------------- 头部 */
+.rl-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--rl-edge);
+}
+
+.rl-head b {
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+
+.rl-head span {
+  color: var(--rl-faint);
+  font-size: 0.83rem;
+}
+
+.rl-badge {
+  margin-left: auto;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  padding: 0.1rem 0.5rem;
+  border-radius: 99px;
+  border: 1px solid var(--rl-edge);
+  color: var(--rl-faint);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- 标签页 */
+.rl-tabs {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.7rem 1.1rem 0;
+  flex-wrap: wrap;
+}
+
+.rl-tab {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.28rem 0.85rem;
+  border-radius: 99px;
+  border: 1px solid var(--rl-edge);
+  background: transparent;
+  color: var(--rl-faint);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+
+.rl-tab:hover { color: var(--rl-ink); border-color: var(--rl-faint); }
+
+.rl-tab.on {
+  color: var(--rl-bg);
+  background: var(--rl-ink);
+  border-color: var(--rl-ink);
+}
+
+.rl-tab:focus-visible,
+.rl-btn:focus-visible {
+  outline: 2px solid var(--rl-accent);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- 预算进度 */
+.rl-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0 1.1rem 0.35rem;
+  font-size: 0.73rem;
+  color: var(--rl-faint);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.rl-progress .bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--rl-edge);
+  overflow: hidden;
+}
+
+.rl-progress .bar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: var(--rl-accent);
+  transition: width 0.14s linear;
+}
+
+.rl-progress.full { color: var(--rl-accent); }
+
+/* ---------------------------------------------------------------- 结算面板 */
+.rl-result {
+  margin: 0 1.1rem 0.9rem;
+  padding: 0.85rem 1rem 0.95rem;
+  border-radius: 10px;
+  border: 1px solid var(--rl-edge);
+  border-left: 3px solid var(--rl-accent);
+  background: color-mix(in srgb, var(--rl-accent) 6%, transparent);
+}
+
+@supports not (background: color-mix(in srgb, red 6%, transparent)) {
+  .rl-result { background: transparent; }
+}
+
+.rl-result-hd {
+  font-size: 0.86rem;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+}
+
+.rl-result-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.9rem;
+  margin-bottom: 0.7rem;
+}
+
+.rl-cell em {
+  display: block;
+  font-style: normal;
+  font-size: 0.7rem;
+  color: var(--rl-faint);
+  margin-bottom: 0.12rem;
+}
+
+.rl-cell b {
+  display: block;
+  font-size: 1.08rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--rl-ink);
+}
+
+.rl-result p {
+  margin: 0 0 0.8rem;
+  font-size: 0.81rem;
+  line-height: 1.72;
+  color: var(--rl-ink);
+}
+
+.rl-result p span { display: block; }
+.rl-result p .d { margin-top: 0.35rem; font-size: 0.76rem; color: var(--rl-faint); }
+
+/* ---------------------------------------------------------------- 画布区 */
+.rl-stage { padding: 0.5rem 0.8rem 0; }
+
+.rl-canvas {
+  display: block;
+  width: 100%;
+  touch-action: manipulation;
+}
+
+.rl-canvas.clickable { cursor: pointer; }
+
+.rl-hint {
+  padding: 0 1.1rem 0.55rem;
+  font-size: 0.82rem;
+  color: var(--rl-faint);
+  min-height: 1.5em;
+}
+
+/* ---------------------------------------------------------------- 公式读数 */
+.rl-readout {
+  margin: 0 1.1rem 0.9rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--rl-edge);
+  background: color-mix(in srgb, var(--rl-ink) 3%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.95;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+/* color-mix 不支持的浏览器退回透明底 */
+@supports not (background: color-mix(in srgb, red 3%, transparent)) {
+  .rl-readout { background: transparent; }
+}
+
+.rl-readout .k { color: var(--rl-accent); }
+.rl-readout .d { color: var(--rl-faint); }
+
+/* ---------------------------------------------------------------- 控制区 */
+.rl-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.5rem;
+  padding: 0 1.1rem 0.9rem;
+  align-items: flex-end;
+}
+
+/* 策略选择那组按钮文字长，给它更宽的基础宽度，避免挤成两行 */
+.rl-field { flex: 1 1 168px; min-width: 0; }
+.rl-field.wide { flex: 1 1 286px; }
+
+.rl-field > label {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--rl-faint);
+  letter-spacing: 0.02em;
+  margin-bottom: 0.25rem;
+}
+
+.rl-field > label b {
+  color: var(--rl-ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.rl-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--rl-edge);
+  outline: none;
+  margin: 0.45rem 0;
+}
+
+.rl-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--rl-accent);
+  cursor: pointer;
+  border: 2px solid var(--rl-bg);
+  box-shadow: 0 0 0 1px var(--rl-accent);
+}
+
+.rl-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--rl-accent);
+  cursor: pointer;
+  border: 2px solid var(--rl-bg);
+}
+
+.rl-btns {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: 1 1 100%;
+}
+
+.rl-btn {
+  font: inherit;
+  font-size: 0.84rem;
+  padding: 0.4rem 1.05rem;
+  border-radius: 7px;
+  border: 1px solid var(--rl-edge);
+  background: transparent;
+  color: var(--rl-ink);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.rl-btn:hover { border-color: var(--rl-faint); }
+.rl-btn:disabled { opacity: 0.42; cursor: not-allowed; }
+
+.rl-btn.primary {
+  background: var(--rl-ink);
+  border-color: var(--rl-ink);
+  color: var(--rl-bg);
+}
+
+.rl-btn.primary:hover { opacity: 0.86; }
+
+/* ---------------------------------------------------------------- 指标条 */
+.rl-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 0.5rem;
+  padding: 0 1.1rem 0.9rem;
+}
+
+.rl-stat {
+  border: 1px solid var(--rl-edge);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+}
+
+.rl-stat em {
+  display: block;
+  font-style: normal;
+  font-size: 0.72rem;
+  color: var(--rl-faint);
+  letter-spacing: 0.03em;
+}
+
+.rl-stat b {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- 曲线区 */
+.rl-curve-box {
+  border-top: 1px solid var(--rl-edge);
+  padding: 0.6rem 0.8rem 0.4rem;
+}
+
+.rl-curve-cap {
+  font-size: 0.78rem;
+  color: var(--rl-faint);
+  padding: 0 0.3rem 0.2rem;
+}
+
+/* 窄屏：控制项单列，公式字号收一点 */
+@media (max-width: 560px) {
+  .rl-head { padding: 0.7rem 0.85rem; }
+  .rl-badge { display: none; }
+  .rl-readout { font-size: 0.72rem; margin: 0 0.85rem 0.8rem; }
+  .rl-controls { padding: 0 0.85rem 0.8rem; }
+  .rl-stats { padding: 0 0.85rem 0.8rem; }
+}
+
+/* ==========================================================================
+   实验室入口页（/rl/）
+   这里不挂 .rl-lab，所以 --rl-* 系列变量不存在，直接用主题变量。
+   ========================================================================== */
+
+.rl-index {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 0.75rem;
+  margin: 1.7rem 0 1.2rem;
+}
+
+.rl-card {
+  display: block;
+  position: relative;
+  padding: 0.95rem 1.05rem 1rem;
+  border: 1px solid var(--line-color);
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--text-color);
+  background: transparent;
+  transition: border-color 0.18s, transform 0.18s, background-color 0.18s;
+}
+
+a.rl-card:hover {
+  border-color: var(--post-link-color);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.rl-card em {
+  display: block;
+  font-style: normal;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--sec-text-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.rl-card b {
+  display: block;
+  font-size: 0.97rem;
+  margin: 0.28rem 0 0.32rem;
+  font-weight: 600;
+}
+
+.rl-card span {
+  display: block;
+  font-size: 0.81rem;
+  line-height: 1.6;
+  color: var(--sec-text-color);
+}
+
+.rl-card.soon {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.rl-card.live::after {
+  content: "可玩";
+  position: absolute;
+  top: 0.85rem;
+  right: 0.95rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  padding: 0.06rem 0.42rem;
+  border-radius: 99px;
+  color: var(--post-link-color);
+  border: 1px solid color-mix(in srgb, var(--post-link-color) 40%, transparent);
+}
+
+@supports not (border: 1px solid color-mix(in srgb, red 40%, transparent)) {
+  .rl-card.live::after { border-color: var(--line-color); }
+}

@@ -23,3 +23,8 @@
   description: 浏览器、JavaScript 与工程化的日常实践。
   icon: "iconfont icon-code"
   color: "#7F77DD"
+
+- name: 强化学习RL
+  description: 每个概念配一个能动手的实验，自己调参，看算法一步步学出来。
+  icon: "iconfont icon-books"
+  color: "#B45309"
