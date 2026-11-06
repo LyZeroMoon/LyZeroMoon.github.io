@@ -235,6 +235,15 @@ a.wikilink:hover {
 }
 .ly-fold.eq-note > :last-child { margin-bottom: .7rem; }
 
+/* 折叠内的选项列表（自测选择题 A/B/C/D）：一行一个，行距收紧，
+   否则 12 道题 × 4 个选项会把折叠拉得过长。 */
+.ly-fold > ul > li {
+  margin-top: .1rem;
+  margin-bottom: .1rem;
+  line-height: 1.62;
+}
+.ly-fold > ul { margin-top: .35rem; margin-bottom: .9rem; }
+
 /* 打印时强制展开，别把内容打成空白 */
 @media print {
   .ly-fold { background: transparent; }
