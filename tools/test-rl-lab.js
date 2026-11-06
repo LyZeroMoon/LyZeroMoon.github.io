@@ -167,13 +167,26 @@ function runAuto(lab, waitMs) {
   console.log('    成绩单位置（应紧跟读数）:',
     A.result.previousElementSibling && A.result.previousElementSibling.className);
 
+  /* 对比表：结算后应出现，三行，且有一行被标为最优 */
+  const cmp = L1.querySelector('.rl-compare');
+  const rows = cmp ? Array.from(cmp.querySelectorAll('tbody tr')).map(tr =>
+    Array.from(tr.querySelectorAll('td'))
+      .map(td => td.textContent.replace(/\s+/g, ' ').trim()).join(' | ')) : [];
+  console.log('    对比表显示:', !!cmp && cmp.style.display !== 'none');
+  rows.forEach(r => console.log('      ', r));
+  const winRow = cmp && cmp.querySelector('tbody tr.win');
+  console.log('    被标为最优的行:', winRow ? winRow.textContent.replace(/\s+/g, ' ').trim() : '无');
+  console.log('    对比结论:', cmp ? cmp.querySelector('.rl-compare-note')
+    .textContent.replace(/\s+/g, ' ').slice(0, 80) : '无');
+
   const learned = A.note.indexOf('学会了') === 0;
   const ok = A.steps === 800 &&
     A.result.style.display !== 'none' &&
     A.cells.length === 4 &&
     A.btnRun.disabled &&
     A.result.previousElementSibling.className === 'rl-readout' &&
-    A.note.length > 20;
+    A.note.length > 20 &&
+    !!cmp && cmp.style.display !== 'none' && rows.length === 3 && !!winRow;
 
   console.log('\n默认参数（ε=0.1）判为「学会了」:', learned);
   console.log('\n结果:', ok ? 'PASS' : 'FAIL');

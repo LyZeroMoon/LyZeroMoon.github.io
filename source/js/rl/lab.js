@@ -132,6 +132,69 @@
   // 累计值会被永久拖低，跑多久都到不了 100%，看不出收敛。
   var WIN = 200;
 
+  /* ---------------- 横向对比用的离线模拟 ----------------
+   * 三种策略在同一副真实均值上各跑 REPEAT 次取平均。
+   * 用独立的随机源：借用面板那份 rand 会打乱读者正在跑的这局。
+   * 后悔值按期望算（μ* − μ_a），不含单次奖励噪声——否则同一策略
+   * 跑两次能差出一倍，比较表看起来像在掷骰子。 */
+  function argmaxOf(q, rd) {
+    var m = -Infinity, cand = [];
+    for (var i = 0; i < q.length; i++) {
+      if (q[i] > m + 1e-12) { m = q[i]; cand = [i]; }
+      else if (Math.abs(q[i] - m) <= 1e-12) { cand.push(i); }
+    }
+    return cand[Math.floor(rd() * cand.length)];
+  }
+
+  function simulatePolicy(kind, mu, steps, opt, seed) {
+    var rd = rng(seed);
+    var gs = gaussFactory(rd);
+    var k = mu.length;
+    var best = 0;
+    for (var i = 1; i < k; i++) if (mu[i] > mu[best]) best = i;
+
+    var q = [], n = [];
+    for (i = 0; i < k; i++) {
+      q[i] = (kind === 'optimistic') ? OPTIMISTIC_Q0 : 0;
+      n[i] = 0;
+    }
+
+    var regret = 0, win = [], winSum = 0;
+
+    for (var t = 1; t <= steps; t++) {
+      var a;
+      if (kind === 'ucb') {
+        var bestA = -1, bestV = -Infinity, untried = -1;
+        for (i = 0; i < k; i++) {
+          if (n[i] === 0) { untried = i; break; }
+          var v = q[i] + opt.c * Math.sqrt(Math.log(t + 1) / n[i]);
+          if (v > bestV) { bestV = v; bestA = i; }
+        }
+        a = untried >= 0 ? untried : bestA;
+      } else if (kind === 'optimistic') {
+        a = argmaxOf(q, rd);
+      } else {
+        a = (rd() < opt.eps) ? Math.floor(rd() * k) : argmaxOf(q, rd);
+      }
+
+      var r = mu[a] + gs();
+      n[a] += 1;
+      q[a] = q[a] + (r - q[a]) / n[a];
+      regret += mu[best] - mu[a];
+
+      var hit = (a === best) ? 1 : 0;
+      win.push(hit);
+      winSum += hit;
+      if (win.length > WIN) winSum -= win.shift();
+    }
+
+    return {
+      pick: argmaxOf(q, rd),
+      hit: win.length ? winSum / win.length : 0,
+      regret: regret
+    };
+  }
+
   function mountBandit(root) {
     var P = palette();
     var rand = rng();
@@ -202,6 +265,7 @@
       S.done = false;
       if (hard) { S.running = false; }
       resultBox.style.display = 'none';
+      compareBox.style.display = 'none';
       syncProgress();
       cvArms.classList.toggle('clickable', S.mode === 'manual');
       renderReadout();
@@ -331,6 +395,12 @@
     resultBox.appendChild(resultRow);
     resultBox.appendChild(resultNote);
     resultBox.appendChild(btnAgain);
+
+    // 三种策略的横向对比：只在自动模式结算后出现。
+    // 单跑一种只能得到一个数，看不出差在哪；并排才看得出
+    // 「探索的钱花去了哪里」这件事上的区别。
+    var compareBox = el('div', 'rl-compare');
+    compareBox.style.display = 'none';
 
     var controls = el('div', 'rl-controls');
 
@@ -465,6 +535,7 @@
     root.appendChild(hint);
     root.appendChild(readout);
     root.appendChild(resultBox);
+    root.appendChild(compareBox);
     root.appendChild(controls);
     root.appendChild(stats);
     root.appendChild(curveBox);
@@ -846,10 +917,15 @@
       resultNote.appendChild(el('span', 'd', l2));
       resultBox.style.display = '';
 
-      hint.textContent = '跑满了。下面这块是它的成绩单——认没认对，用没用上。';
+      hint.textContent = '跑满了。第一块是这次训练的成绩单，第二块是三种策略在同一副牌上的对比。';
 
       btnAgain.textContent = '换一副牌重跑';
-      root.insertBefore(resultBox, controls);
+      // 插到对比表之前，而不是 controls 之前：后者会越过对比表，
+      // 把成绩单排到比较表下面去。
+      root.insertBefore(resultBox, compareBox);
+      // 成绩单只判这一种策略；横向比一比才知道差在哪
+      renderCompare();
+      compareBox.style.display = '';
       renderStats();
       syncProgress();
       syncButtons();
@@ -866,6 +942,104 @@
           resultBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
         }
       } catch (e) { /* 不支持就退化成不滚动，结论照样在画布下方 */ }
+    }
+
+    /* ---------------- 三种策略的横向对比 ---------------- */
+    // 成绩单判的是「当前这一种」跑得怎么样，回答不了「换个策略会不会更好」。
+    // 同一副真实均值上各跑 REPEAT 次取平均，才比得出探索方式的差别。
+    // 30 次不够：乐观初值锁错一次就多出五百点后悔，30 次里锁错次数
+    // 抖 ±3 就足以让排名翻面。100 次才把这张表的结论压稳。
+    var REPEAT = 100;
+
+    // 第 i 次重复时，三种策略共用同一段随机流（公共随机数）。
+    // 这样比较的是策略差异，而不是三份独立运气；否则光是噪声
+    // 就能让排名在两个方向之间来回跳。种子按大素数错开，
+    // 避免线性同余的相邻种子产生相似序列。
+    var SIM_SEED = 991;
+    var SEED_STEP = 7919;
+
+    function renderCompare() {
+      var defs = [
+        { id: 'egreedy', name: 'ε-greedy', note: 'ε = ' + f2(S.eps) },
+        { id: 'optimistic', name: '乐观初值', note: 'Q₀ = 5' },
+        { id: 'ucb', name: 'UCB', note: 'c = ' + f2(S.c) }
+      ];
+
+      defs.forEach(function (d) {
+        var known = 0, hit = 0, reg = 0;
+        for (var i = 0; i < REPEAT; i++) {
+          var o = simulatePolicy(d.id, MU, AUTO_STEPS,
+            { eps: S.eps, c: S.c }, SIM_SEED + i * SEED_STEP);
+          if (o.pick === BEST) known++;
+          hit += o.hit;
+          reg += o.regret;
+        }
+        d.known = known;
+        d.hit = hit / REPEAT;
+        d.regret = reg / REPEAT;
+      });
+
+      var sorted = defs.slice().sort(function (a, b) { return a.regret - b.regret; });
+      var bestD = sorted[0];
+
+      // 推荐谁：先看「认对的次数」，再看押中率。平均后悔值不能当唯一判据，
+      // 它会把偶尔锁死的灾难摊薄成一个不难看的数。
+      var rec = defs.slice().sort(function (a, b) {
+        if (b.known !== a.known) return b.known - a.known;
+        return b.hit - a.hit;
+      })[0];
+
+      compareBox.innerHTML = '';
+      compareBox.appendChild(el('div', 'rl-compare-hd',
+        '同一副牌，三种策略各跑 ' + REPEAT + ' 次'));
+      compareBox.appendChild(el('div', 'rl-compare-sub',
+        '每次 ' + AUTO_STEPS + ' 步，取平均。后悔值越低越好。'));
+
+      var tb = el('table', 'rl-compare-tb');
+      var thead = el('thead');
+      var trh = el('tr');
+      ['策略', '认出最优', '近期押中率', '后悔值'].forEach(function (h) {
+        trh.appendChild(el('th', null, h));
+      });
+      thead.appendChild(trh);
+      tb.appendChild(thead);
+
+      var tbody = el('tbody');
+      defs.forEach(function (d) {
+        var tr = el('tr');
+        if (d === rec) tr.className = 'win';
+        var td0 = el('td');
+        td0.appendChild(el('b', null, d.name));
+        td0.appendChild(el('span', 'sub', d.note));
+        tr.appendChild(td0);
+        tr.appendChild(el('td', null, d.known + ' / ' + REPEAT));
+        tr.appendChild(el('td', null, Math.round(d.hit * 100) + '%'));
+        tr.appendChild(el('td', null, f2(d.regret)));
+        tbody.appendChild(tr);
+      });
+      tb.appendChild(tbody);
+      compareBox.appendChild(tb);
+
+      var p = el('p', 'rl-compare-note');
+      var txt = '如果只能选一个，选 <b>' + rec.name + '</b>：' + REPEAT + ' 次里认对 ' +
+        rec.known + ' 次，押中率 ' + Math.round(rec.hit * 100) + '%。';
+
+      if (bestD === rec) {
+        txt += '它的平均后悔值也是三者中最低的（' + f2(bestD.regret) + '）。';
+      } else if (bestD.known < REPEAT) {
+        txt += '平均后悔值最低的是 <b>' + bestD.name + '</b>（' + f2(bestD.regret) +
+          '），但它有 ' + (REPEAT - bestD.known) + ' 次锁死在错的臂上，之后几百步全压在那里——' +
+          '平均分好看，是因为失败被摊薄了。';
+      } else {
+        txt += '平均后悔值最低的是 <b>' + bestD.name + '</b>（' + f2(bestD.regret) + '）。';
+      }
+
+      txt += '三者的差别不在谁更聪明，而在探索的钱花到了哪里：' +
+        'UCB 只往不确定的地方试，ε-greedy 按固定比例乱试，乐观初值每个臂只试一次就再不回头。' +
+        '<span class="d">这是十臂、奖励平稳、八百步的成绩。臂数变多或奖励会漂移时排序会变——' +
+        '乐观初值每臂只有一次观测，最先掉队。</span>';
+      p.innerHTML = txt;
+      compareBox.appendChild(p);
     }
 
     /* ---------------- 主循环 ---------------- */
