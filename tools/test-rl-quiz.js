@@ -79,9 +79,34 @@ console.log('\n答完全部 12 题');
 const ANSWERS = [1, 0, 2, 3, 1, 0, 2, 3, 1, 2, 0, 3];
 
 // 题库里的 a 值必须与预期答案一致，否则做题人会被判错
+// 注意：quiz.js 现在有多个题库（rl1 / rl2 / dsp8…），必须先按 key 切段，
+// 否则会把别篇的答案拼进来，断言必然失败。
 const src = fs.readFileSync(path.join(__dirname, '..', 'source/js/rl/quiz.js'), 'utf8');
-const bankA = [...src.matchAll(/\n\s+a: (\d),/g)].map(m => Number(m[1]));
+const rl1Src = src.split(/\n\s+rl2:\s*\{/)[0];
+const bankA = [...rl1Src.matchAll(/\n\s+a: (\d),/g)].map(m => Number(m[1]));
 ok('题库答案与预期一致', JSON.stringify(bankA) === JSON.stringify(ANSWERS), bankA.join(','));
+
+// rl2 的结构自检：12 题、每题 4 选项、4 条逐项说明、答案下标合法且分布均匀
+const rl2Src = (src.split(/\n\s+rl2:\s*\{/)[1] || '').split(/\n\s+dsp8:\s*\{/)[0];
+const rl2A = [...rl2Src.matchAll(/\n\s+a: (\d),/g)].map(m => Number(m[1]));
+const rl2Opts = (rl2Src.match(/o: \[/g) || []).length;
+const rl2E = (rl2Src.match(/e: \[/g) || []).length;
+ok('rl2 题数为 12', rl2A.length === 12, String(rl2A.length));
+ok('rl2 每题 4 选项', rl2Opts === 12, String(rl2Opts));
+ok('rl2 每题 4 条说明', rl2E === 12, String(rl2E));
+ok('rl2 答案下标合法', rl2A.every(v => v >= 0 && v <= 3), rl2A.join(','));
+ok('rl2 答案分布均匀', [0, 1, 2, 3].every(i => rl2A.filter(v => v === i).length === 3), rl2A.join(','));
+
+// dsp8 的结构自检：8 题、每题 4 选项、每题 4 条逐项说明、答案下标合法
+const dsp8Src = (src.split(/\n\s+dsp8:\s*\{/)[1] || '').split(/\n\s+\}\s*\n\s*\};/)[0];
+const dsp8A = [...dsp8Src.matchAll(/\n\s+a: (\d),/g)].map(m => Number(m[1]));
+const dsp8Opts = (dsp8Src.match(/o: \[/g) || []).length;
+const dsp8E = (dsp8Src.match(/e: \[/g) || []).length;
+ok('dsp8 题数为 8', dsp8A.length === 8, String(dsp8A.length));
+ok('dsp8 每题 4 选项', dsp8Opts === 8, String(dsp8Opts));
+ok('dsp8 每题 4 条说明', dsp8E === 8, String(dsp8E));
+ok('dsp8 答案下标合法', dsp8A.every(v => v >= 0 && v <= 3), dsp8A.join(','));
+ok('dsp8 答案分布均匀', [0, 1, 2, 3].every(i => dsp8A.filter(v => v === i).length === 2), dsp8A.join(','));
 
 qs.forEach((q, i) => {
   const bs = [...q.querySelectorAll('.qz-opt')];

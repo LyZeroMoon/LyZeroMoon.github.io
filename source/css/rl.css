@@ -9,12 +9,34 @@
  * ---------------------------------------------------------------------------
  */
 
+/* 文章里的 ASCII 地图。不用 markdown 代码块，因为全站开了行号，
+   行号会插在左边把坐标轴挤歪。 */
+.rl-map {
+  margin: 1.5rem 0;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--line-color, #e3e3e3);
+  border-radius: 8px;
+  background: rgba(128, 128, 128, 0.055);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  letter-spacing: 0;
+  overflow-x: auto;
+  color: var(--text-color, #333);
+}
+
 .rl-lab {
   --rl-accent: var(--post-link-color, #2c6eb5);
   --rl-faint: var(--sec-text-color, #888);
   --rl-edge: var(--line-color, #e3e3e3);
   --rl-ink: var(--text-color, #333);
   --rl-bg: var(--board-bg-color, #fff);
+
+  /* 网格实验用的三个语义色：拿到钥匙 / 过关失败 / 门。
+     不直接用 accent，是因为这三样要能互相区分，而主题色只有一个。 */
+  --rl-gold: #b8862b;
+  --rl-warn: #b5473a;
+  --rl-door: #6f63a8;
 
   margin: 2.2rem 0;
   border: 1px solid var(--rl-edge);
@@ -23,6 +45,12 @@
   overflow: hidden;
   font-size: 0.94rem;
   line-height: 1.7;
+}
+
+[data-user-color-scheme="dark"] .rl-lab {
+  --rl-gold: #d8a94a;
+  --rl-warn: #e0705f;
+  --rl-door: #a094d8;
 }
 
 .rl-lab *,

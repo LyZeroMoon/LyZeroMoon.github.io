@@ -22,11 +22,11 @@ comment: false
 <span>亲手拉，再让三种策略自己拉，对比探索与利用</span>
 </a>
 
-<div class="rl-card soon">
+<a class="rl-card live" href="/2026/11/07/强化学习rl二马尔可夫决策过程/">
 <em>02</em>
-<b>网格世界</b>
-<span>把状态加回来，看 (s, a, r, s′) 怎么串成轨迹</span>
-</div>
+<b>钥匙门</b>
+<span>同一格两种命运：状态里漏一个比特，成功率从 100% 掉到 0</span>
+</a>
 
 <div class="rl-card soon">
 <em>03</em>

@@ -1226,8 +1226,453 @@
     });
   }
 
+  /* =======================================================================
+     实验二：网格世界 —— 状态里到底该放什么
+     -----------------------------------------------------------------------
+     同一张地图、同一套 Q-learning、同样的回合数，只改一件事：
+     状态编码里含不含钥匙。
+     含：一百次全部走到终点。不含：一次也走不到。
+     差别只来自一处「别名状态」——站在门口时，带没带钥匙是两件事，
+     坐标却只有一个。把两件事压成一个状态，任何算法都救不回来。
+     ======================================================================= */
+
+  var G_MAP = [
+    '....###',   // y = 4
+    '....#G#',   // y = 3
+    '....D.#',   // y = 2
+    '....###',   // y = 1
+    'S..K...'    // y = 0
+  ];
+  var G_W = 7;
+  var G_H = 5;
+  var G_DIR = [[0, 1], [0, -1], [1, 0], [-1, 0]];   // 上 下 右 左
+  var G_START = { x: 0, y: 0 };
+  var G_EPISODE = 300;
+  var G_MAXSTEP = 80;
+  var G_GAMMA = 0.95;
+  var G_ALPHA = 0.15;
+  var G_SEED = 20261107;      // 固定种子：文章里写的数字，和面板上跑出来的一致
+
+  function gCell(x, y) {
+    if (x < 0 || y < 0 || x >= G_W || y >= G_H) return '#';
+    return G_MAP[G_H - 1 - y].charAt(x);
+  }
+
+  function gStep(s, a, noKey) {
+    var nx = s.x + G_DIR[a][0], ny = s.y + G_DIR[a][1];
+    var c = gCell(nx, ny);
+    var t = { x: s.x, y: s.y, key: s.key };
+    if (c === '#') return { s2: t, r: -3, done: 0, kind: 'wall' };
+    if (c === 'D' && !s.key) return { s2: t, r: -6, done: 0, kind: 'door' };
+    t.x = nx; t.y = ny;
+    if (c === 'K' && !noKey) t.key = 1;
+    if (c === 'G') return { s2: t, r: 50, done: 1, kind: 'goal' };
+    return { s2: t, r: -1, done: 0, kind: '' };
+  }
+
+  // 状态编码。naive 只记坐标，strict 才把钥匙算进去。
+  function gCode(s, naive) {
+    return naive ? s.x + ',' + s.y : s.x + ',' + s.y + ',' + s.key;
+  }
+
+  function gTrain(naive, seed) {
+    var rand = rng(seed || G_SEED);  // 两种定义共用一段随机流，比较的才是编码本身
+    var Q = {};
+    var seen = {};
+    var states = {};
+    var clashN = 0;
+    var clashKey = '';
+
+    function get(k, a) {
+      var v = Q[k + '|' + a];
+      return v === undefined ? 0 : v;
+    }
+    function put(k, a, v) { Q[k + '|' + a] = v; }
+    function maxQ(k) {
+      var m = -Infinity;
+      for (var i = 0; i < 4; i++) { var v = get(k, i); if (v > m) m = v; }
+      return m;
+    }
+    function greedy(k) {
+      var m = -Infinity, ba = 0;
+      for (var i = 0; i < 4; i++) {
+        var v = get(k, i);
+        if (v > m + 1e-9) { m = v; ba = i; }
+      }
+      return ba;
+    }
+    function exploreA(k) {
+      var m = -Infinity, c = [];
+      for (var i = 0; i < 4; i++) {
+        var v = get(k, i);
+        if (v > m + 1e-9) { m = v; c = [i]; }
+        else if (Math.abs(v - m) <= 1e-9) c.push(i);
+      }
+      return c[Math.floor(rand() * c.length)];
+    }
+
+    for (var ep = 0; ep < G_EPISODE; ep++) {
+      var eps = 0.30 + (0.05 - 0.30) * ep / (G_EPISODE - 1);
+      var s = { x: G_START.x, y: G_START.y, key: 0 };
+      for (var t = 0; t < G_MAXSTEP; t++) {
+        var k = gCode(s, naive);
+        states[k] = 1;
+
+        var a = (rand() < eps) ? Math.floor(rand() * 4) : exploreA(k);
+        var r = gStep(s, a, false);
+        var k2 = gCode(r.s2, naive);
+
+        // 歧义检测：同一个状态、同一个动作，出现了两种不同的结果
+        var ck = k + '|' + a;
+        var sig = r.s2.x + ',' + r.s2.y + ':' + r.r;
+        if (!seen[ck]) seen[ck] = {};
+        if (!seen[ck][sig]) {
+          seen[ck][sig] = 1;
+          var n = 0;
+          for (var z in seen[ck]) n++;
+          if (n === 2) {
+            clashN++;
+            if (!clashKey) clashKey = ck;
+          }
+        }
+
+        var tgt = r.done ? r.r : r.r + G_GAMMA * maxQ(k2);
+        put(k, a, get(k, a) + G_ALPHA * (tgt - get(k, a)));
+
+        s = r.s2;
+        if (r.done) break;
+      }
+    }
+
+    // 训练完用纯贪心跑一百局：探不探索已经不是变量了，这里只看学到的策略
+    var win = 0, len = 0;
+    for (var e = 0; e < 100; e++) {
+      var s2 = { x: G_START.x, y: G_START.y, key: 0 };
+      for (var t2 = 0; t2 < G_MAXSTEP; t2++) {
+        var rr = gStep(s2, greedy(gCode(s2, naive)), false);
+        s2 = rr.s2;
+        if (rr.done) { win++; len += t2 + 1; break; }
+      }
+    }
+
+    return {
+      naive: naive,
+      states: Object.keys(states).length,
+      clash: clashN,
+      clashKey: clashKey,
+      rate: win / 100,
+      len: win ? len / win : 0
+    };
+  }
+
+  // 演示轨迹：一条拿到钥匙，一条没有。两条前七步完全相同。
+  var G_PATH_KEY = [[0, 0], [1, 0], [2, 0], [3, 0], [3, 1], [3, 2], [4, 2], [5, 2], [5, 3]];
+  var G_PATH_NOKEY = [[0, 0], [1, 0], [2, 0], [3, 0], [3, 1], [3, 2], [4, 2]];
+
+  function mountGrid(root) {
+    var P = palette();
+    var GOLD = cssVar('--rl-gold', '#b8862b');
+    var WARN = cssVar('--rl-warn', '#c0533f');
+    var DOOR = cssVar('--rl-door', '#6f63a8');
+
+    var S = { naive: true };
+    var M = null;                     // 训练过一次之后才有
+    var seedUsed = 0;
+
+    root.innerHTML = '';
+
+    var hd = el('div', 'rl-head');
+    hd.appendChild(el('b', null, '网格世界 · 状态里该放什么'));
+    hd.appendChild(el('span', null, '同一张地图，同一套 Q-learning，只改状态编码'));
+    root.appendChild(hd);
+
+    var stage = el('div', 'rl-stage');
+    var cv = el('canvas', 'rl-canvas');
+    stage.appendChild(cv);
+    root.appendChild(stage);
+
+    var legend = el('p', 'rl-hint');
+    legend.innerHTML =
+      '<span style="color:' + GOLD + '">━ 拿到钥匙的路线</span>　' +
+      '<span style="color:' + P.faint + '">┅ 没拿到钥匙时走的路</span>　' +
+      '<span style="color:' + WARN + '">✕ 过不去</span>';
+    root.appendChild(legend);
+
+    var ctrl = el('div', 'rl-controls');
+
+    var fld = el('div', 'rl-field wide');
+    fld.appendChild(el('label', null, '状态里含钥匙吗'));
+    var tabs = el('div', 'rl-tabs');
+    var tabNaive = el('button', 'rl-tab on', '只有坐标');
+    var tabFull = el('button', 'rl-tab', '坐标 + 钥匙');
+    tabNaive.type = 'button';
+    tabFull.type = 'button';
+    tabs.appendChild(tabNaive);
+    tabs.appendChild(tabFull);
+    fld.appendChild(tabs);
+    ctrl.appendChild(fld);
+
+    var btns = el('div', 'rl-btns');
+    var btnRun = el('button', 'rl-btn primary', '训练 ' + G_EPISODE + ' 回合');
+    btnRun.type = 'button';
+    btns.appendChild(btnRun);
+    ctrl.appendChild(btns);
+
+    root.appendChild(ctrl);
+
+    var readout = el('p', 'rl-readout');
+    root.appendChild(readout);
+
+    var hint = el('p', 'rl-hint');
+    root.appendChild(hint);
+
+    var resultBox = el('div', 'rl-result');
+    resultBox.style.display = 'none';
+    root.appendChild(resultBox);
+
+    /* ---------------- 画布 ---------------- */
+
+    function geo(w, h) {
+      var cw = Math.min((w - 34) / G_W, 54);
+      return {
+        cw: cw,
+        ox: (w - cw * G_W) / 2,
+        oy: (h - cw * G_H) / 2
+      };
+    }
+
+    function draw() {
+      var g0 = fit(cv, G_H * 54 + 26);
+      var ctx = g0.ctx, w = g0.w, h = g0.h;
+      var G = geo(w, h);
+      var cw = G.cw, ox = G.ox, oy = G.oy;
+
+      function CX(x) { return ox + (x + 0.5) * cw; }
+      function CY(y) { return oy + (G_H - 1 - y + 0.5) * cw; }
+
+      // 底格
+      for (var y = 0; y < G_H; y++) {
+        for (var x = 0; x < G_W; x++) {
+          var c = gCell(x, y);
+          var px = ox + x * cw, py = oy + (G_H - 1 - y) * cw;
+          ctx.fillStyle = (c === '#') ? 'rgba(128,128,128,0.13)' : 'transparent';
+          ctx.fillRect(px, py, cw, cw);
+
+          if (c === '#') {
+            // 墙：细斜纹，和地面区分开，又不至于压过路线
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(px, py, cw, cw);
+            ctx.clip();
+            ctx.strokeStyle = P.edge;
+            ctx.lineWidth = 1;
+            for (var k = -cw; k < cw * 2; k += 7) {
+              ctx.beginPath();
+              ctx.moveTo(px + k, py);
+              ctx.lineTo(px + k + cw, py + cw);
+              ctx.stroke();
+            }
+            ctx.restore();
+          }
+        }
+      }
+
+      // 网格线
+      ctx.strokeStyle = P.edge;
+      ctx.lineWidth = 1;
+      for (var i = 0; i <= G_W; i++) {
+        ctx.beginPath();
+        ctx.moveTo(ox + i * cw, oy);
+        ctx.lineTo(ox + i * cw, oy + G_H * cw);
+        ctx.stroke();
+      }
+      for (var j = 0; j <= G_H; j++) {
+        ctx.beginPath();
+        ctx.moveTo(ox, oy + j * cw);
+        ctx.lineTo(ox + G_W * cw, oy + j * cw);
+        ctx.stroke();
+      }
+
+      // 两条路线：没钥匙的在下层（虚线），拿钥匙的在上层（实线）
+      function poly(pts, color, dash, off) {
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.4;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        if (dash) ctx.setLineDash(dash);
+        ctx.beginPath();
+        for (var n = 0; n < pts.length; n++) {
+          var X = CX(pts[n][0]) + off;
+          var Y = CY(pts[n][1]) + off;
+          if (n) ctx.lineTo(X, Y); else ctx.moveTo(X, Y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      poly(G_PATH_NOKEY, P.faint, [4, 3], -3.4);
+      poly(G_PATH_KEY, GOLD, null, 3.4);
+
+      // 终点
+      var gx = CX(5), gy = CY(3);
+      ctx.save();
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(gx, gy, cw * 0.3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // 门：两条路线在这里分岔，正是全图的病灶
+      var dx = CX(4), dy = CY(2);
+      ctx.save();
+      ctx.fillStyle = DOOR;
+      ctx.globalAlpha = 0.14;
+      ctx.fillRect(dx - cw / 2 + 1, dy - cw / 2 + 1, cw - 2, cw - 2);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = DOOR;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(dx - cw * 0.1, dy - cw / 2 + 3);
+      ctx.lineTo(dx - cw * 0.1, dy + cw / 2 - 3);
+      ctx.stroke();
+      ctx.restore();
+
+      // 没钥匙时撞门：门右侧画叉
+      var mx = CX(4) + cw * 0.42, my = CY(2);
+      ctx.save();
+      ctx.strokeStyle = WARN;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(mx - 4, my - 4); ctx.lineTo(mx + 4, my + 4);
+      ctx.moveTo(mx + 4, my - 4); ctx.lineTo(mx - 4, my + 4);
+      ctx.stroke();
+      ctx.restore();
+
+      // 起点、钥匙、终点字母
+      label(ctx, 'S', CX(0), CY(0), P.ink, 13, 'center');
+      label(ctx, 'K', CX(3), CY(0), GOLD, 13, 'center');
+      label(ctx, 'G', CX(5), CY(3), GOLD, 13, 'center');
+
+      // 门格上的两种画法：一个状态，还是两个
+      if (S.naive) {
+        ctx.save();
+        ctx.strokeStyle = WARN;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 3]);
+        ctx.strokeRect(dx - cw / 2 + 1, dy - cw / 2 + 1, cw - 2, cw - 2);
+        ctx.restore();
+        // 一个格子只能存一个值，这里画 1 表示「一种状态」
+        label(ctx, '1', dx, dy, WARN, 13, 'center');
+      } else {
+        ctx.save();
+        ctx.strokeStyle = DOOR;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(dx - cw / 2 + 5, dy);
+        ctx.lineTo(dx + cw / 2 - 5, dy);
+        ctx.stroke();
+        ctx.restore();
+        // 拆成两个：上 0 下 1，对应有没有钥匙
+        label(ctx, '0', dx, dy - cw * 0.24, DOOR, 11, 'center');
+        label(ctx, '1', dx, dy + cw * 0.24, DOOR, 11, 'center');
+      }
+    }
+
+    /* ---------------- 读数与对比表 ---------------- */
+
+    function renderReadout() {
+      if (!M) {
+        readout.innerHTML = '还没训练。上面两个标签只改状态的写法，' +
+          '点右边的按钮才真的学一遍。';
+        return;
+      }
+      var m = S.naive ? M.naive : M.full;
+      readout.innerHTML =
+        '状态数 <b>' + m.states + '</b>　·　' +
+        '歧义处 <b style="color:' + (m.clash ? WARN : P.ink) + '">' + m.clash + '</b>　·　' +
+        '训练后成功 <b>' + Math.round(m.rate * 100) + '%</b>';
+    }
+
+    function renderTable() {
+      resultBox.innerHTML = '';
+      resultBox.appendChild(el('div', 'rl-compare-hd',
+        '各训练 ' + G_EPISODE + ' 回合，再用学到的策略跑 100 局'));
+
+      var tb = el('table', 'rl-compare-tb');
+      var thead = el('thead');
+      var trh = el('tr');
+      ['状态定义', '状态数', '歧义处', '成功率', '平均步数'].forEach(function (t) {
+        trh.appendChild(el('th', null, t));
+      });
+      thead.appendChild(trh);
+      tb.appendChild(thead);
+
+      var body = el('tbody');
+      [
+        { m: M.naive, name: '只有坐标', note: '(x, y)', on: S.naive },
+        { m: M.full, name: '坐标 + 钥匙', note: '(x, y, key)', on: !S.naive }
+      ].forEach(function (d) {
+        var tr = el('tr');
+        if (d.on) tr.className = 'win';
+        var td0 = el('td');
+        td0.appendChild(el('b', null, d.name));
+        td0.appendChild(el('span', 'sub', d.note));
+        tr.appendChild(td0);
+        tr.appendChild(el('td', null, String(d.m.states)));
+        tr.appendChild(el('td', null, String(d.m.clash)));
+        tr.appendChild(el('td', null, Math.round(d.m.rate * 100) + '%'));
+        tr.appendChild(el('td', null, d.m.len ? f2(d.m.len) : '—'));
+        body.appendChild(tr);
+      });
+      tb.appendChild(body);
+      resultBox.appendChild(tb);
+
+      var note = el('p', 'rl-compare-note');
+      note.innerHTML = '两行的算法、奖励、回合数、随机种子完全相同，' +
+        '唯一的差别是第二行把钥匙写进了状态。' +
+        '<span class="d">成功率是训练结束后关掉探索、用学到的策略跑出来的。</span>';
+      resultBox.appendChild(note);
+    }
+
+    function syncHint() {
+      hint.innerHTML = S.naive
+        ? '门只有一格，坐标也只有一组，红框里那个 1 就是它的全部身份。' +
+          '带没带钥匙被压进同一个状态，于是「在门口往右」这一个动作对应两种结果——算法只能看到两者的平均值。'
+        : '把钥匙写进状态，门口那一格被一条线分成上下两半：0 是没钥匙，1 是有钥匙。' +
+          '同一动作只剩一种结果，这个数才有意义。';
+    }
+
+    function sync() {
+      tabNaive.classList.toggle('on', S.naive);
+      tabFull.classList.toggle('on', !S.naive);
+      renderReadout();
+      syncHint();
+      draw();
+      if (resultBox.style.display !== 'none') renderTable();
+    }
+
+    tabNaive.onclick = function () { S.naive = true; sync(); };
+    tabFull.onclick = function () { S.naive = false; sync(); };
+
+    btnRun.onclick = function () {
+      // 第一次用文章里的种子，复现文章中的数字；之后每次换一个，
+      // 用来确认结论不是某一串随机数碰巧凑出来的
+      seedUsed = seedUsed ? (seedUsed * 7919) % 2147483647 : G_SEED;
+      M = { naive: gTrain(true, seedUsed), full: gTrain(false, seedUsed) };
+      resultBox.style.display = '';
+      btnRun.textContent = '换个种子再训一次';
+      sync();
+    };
+
+    redraws.push(draw);
+    sync();
+  }
+
   window.LY_RL = { register: register, boot: boot };
   register('bandit', mountBandit);
+  register('grid', mountGrid);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
