@@ -1,0 +1,599 @@
+/* ==========================================================================
+   小游戏：游戏中心页 + 机台（Game Kit）
+   ---------------------------------------------------------------------------
+   分成两半：
+
+   1. **页面部分（.gm-*）** —— 走主题变量，所以 10 套皮肤、明暗模式都自动跟随，
+      它只是站点里普通的一页。
+   2. **机台部分（.gk-*）** —— 刻意**不**走皮肤变量，用一套固定的霓虹配色：
+      它是一台「设备」而不是页面的一块内容，从任何皮肤点开都应该是同一个样子。
+
+   这个文件只由真的需要游戏的页面引入（游戏中心页 + 街机皮肤的快捷入口），
+   不挂到全站 `custom_css` 上 —— 不玩游戏的人不该下载这 20KB。
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   游戏中心页
+   -------------------------------------------------------------------------- */
+
+/* 一个可选的包裹层：想把游戏中心当组件嵌进别的页面时，用它圈住就行 */
+.gm-app {
+  width: 100%;
+}
+
+.gm-hero {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line-color, rgba(127, 127, 127, 0.25));
+}
+
+.gm-hero-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
+.gm-hero-title svg {
+  width: 1.4rem;
+  height: 1.4rem;
+  flex: 0 0 auto;
+  color: var(--post-link-color, currentColor);
+}
+
+.gm-hero-lead {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--sec-text-color, inherit);
+}
+
+.gm-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  margin-top: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--sec-text-color, inherit);
+}
+
+.gm-notice {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.8rem;
+  border-left: 3px solid #ef4444;
+  background-color: color-mix(in srgb, #ef4444 10%, transparent);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.gm-notice[hidden] {
+  display: none;
+}
+
+.gm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+  gap: 1rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.gm-card {
+  --gm-accent: var(--post-link-color, #2f4154);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--line-color, rgba(127, 127, 127, 0.28));
+  border-radius: 0.75rem;
+  background-color: var(--board-bg-color, #fff);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.gm-card:hover,
+.gm-card:focus-visible {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--gm-accent) 60%, var(--line-color, #999));
+  box-shadow: 0 10px 26px -12px color-mix(in srgb, var(--gm-accent) 70%, transparent);
+  outline: none;
+}
+
+.gm-card[data-loading='1'] {
+  opacity: 0.62;
+  pointer-events: none;
+}
+
+.gm-card-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 5.2rem;
+  background-image: linear-gradient(135deg,
+    color-mix(in srgb, var(--gm-accent) 88%, #000) 0%,
+    color-mix(in srgb, var(--gm-accent) 42%, #05010f) 100%);
+  overflow: hidden;
+}
+
+/* 网格线底纹：让色块看着像「屏幕」而不是一块纯色 */
+.gm-card-top::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.12) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 1px, transparent 1px 6px);
+}
+
+.gm-card-glyph {
+  position: relative;
+  color: #fff;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+}
+
+.gm-card-glyph svg {
+  display: block;
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.gm-card-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background-color: rgba(5, 1, 15, 0.6);
+  color: #ffd60a;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+}
+
+.gm-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: 0.35rem;
+  padding: 0.7rem 0.8rem 0.8rem;
+}
+
+.gm-card-name {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.gm-card-desc {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--sec-text-color, inherit);
+}
+
+.gm-card-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: var(--sec-text-color, inherit);
+}
+
+.gm-tag {
+  padding: 1px 6px;
+  border-radius: 20px;
+  background-color: color-mix(in srgb, var(--gm-accent) 16%, transparent);
+  color: color-mix(in srgb, var(--gm-accent) 78%, var(--text-color, #333));
+  font-size: 0.68rem;
+}
+
+.gm-best {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.gm-keys {
+  flex: 1 1 100%;
+  font-size: 0.68rem;
+  opacity: 0.85;
+}
+
+/* 街机皮肤下的快捷入口（导航栏那根摇杆） */
+:root[data-ui='arcade'] #arcade-game-btn .nav-link:hover .nav-svg-ico {
+  filter: drop-shadow(0 0 8px rgba(255, 46, 151, 0.95));
+}
+
+@media (max-width: 575px) {
+  .gm-hero-title {
+    font-size: 1.3rem;
+  }
+
+  .gm-grid {
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    gap: 0.75rem;
+  }
+
+  .gm-card-top {
+    height: 4.2rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   机台本体
+   -------------------------------------------------------------------------- */
+
+.gk-mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1090;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(2, 0, 8, 0.86);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  font-family: "Courier New", "Cascadia Mono", Consolas, "PingFang SC", "Microsoft YaHei", monospace;
+}
+
+.gk-mask.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+body.gk-lock {
+  overflow: hidden;
+}
+
+.gk-cabinet {
+  position: relative;
+  width: 100%;
+  max-width: 26rem;
+  box-sizing: border-box;
+  padding: 0.85rem 0.9rem 0.75rem;
+  background-color: #140a2e;
+  background-image: linear-gradient(160deg, #1c0f3d 0%, #0d0420 60%, #12082b 100%);
+  border: 1px solid #00f5d4;
+  color: #e6e2ff;
+  box-shadow:
+    0 0 0 1px rgba(0, 245, 212, 0.25),
+    0 0 34px rgba(0, 245, 212, 0.3),
+    0 0 90px rgba(123, 92, 255, 0.25);
+  transform: translateY(10px) scale(0.98);
+  transition: transform 0.22s cubic-bezier(0.22, 0.9, 0.3, 1);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  outline: none;
+}
+
+.gk-mask.show .gk-cabinet {
+  transform: none;
+}
+
+/* 四角 L 形角标：不用 clip-path —— 它会把元素自身的阴影光晕一起裁掉 */
+.gk-cabinet::before,
+.gk-cabinet::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+
+.gk-cabinet::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid #ffd60a;
+  border-left: 2px solid #ffd60a;
+}
+
+.gk-cabinet::after {
+  right: -1px;
+  bottom: -1px;
+  border-right: 2px solid #ff2e97;
+  border-bottom: 2px solid #ff2e97;
+}
+
+.gk-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.gk-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #00f5d4;
+  text-shadow: 2px 0 rgba(255, 46, 151, 0.8), -2px 0 rgba(255, 214, 10, 0.5),
+    0 0 16px rgba(0, 245, 212, 0.7);
+}
+
+.gk-close {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(0, 245, 212, 0.5);
+  background-color: transparent;
+  color: #00f5d4;
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gk-close:hover {
+  border-color: #ff2e97;
+  color: #ff2e97;
+}
+
+.gk-hud {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.55rem;
+}
+
+.gk-hud-cell {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid rgba(123, 92, 255, 0.45);
+  background-color: rgba(123, 92, 255, 0.1);
+  text-align: center;
+}
+
+.gk-hud-cell span {
+  display: block;
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
+  color: #9d93c9;
+}
+
+.gk-hud-cell b {
+  display: block;
+  overflow: hidden;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  color: #ffd60a;
+  text-shadow: 0 0 10px rgba(255, 214, 10, 0.6);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gk-screen {
+  position: relative;
+  border: 1px solid rgba(0, 245, 212, 0.45);
+  background-color: #05010f;
+  box-shadow: inset 0 0 40px rgba(0, 245, 212, 0.12);
+  touch-action: none;
+}
+
+.gk-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* 屏幕上的扫描线，和街机皮肤的 CRT 层呼应 */
+.gk-screen::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(180deg,
+    rgba(0, 0, 0, 0.3) 0, rgba(0, 0, 0, 0.3) 1px,
+    rgba(0, 0, 0, 0) 1px, rgba(0, 0, 0, 0) 3px);
+}
+
+.gk-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+  background-color: rgba(5, 1, 15, 0.78);
+}
+
+.gk-overlay-text {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffd60a;
+  text-shadow: 0 0 16px rgba(255, 214, 10, 0.7);
+}
+
+.gk-overlay-text.is-over {
+  color: #ff2e97;
+  text-shadow: 0 0 18px rgba(255, 46, 151, 0.8);
+}
+
+.gk-overlay-tip {
+  max-width: 22rem;
+  font-size: 0.62rem;
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+  color: #9d93c9;
+}
+
+/* --- 方向键面板：左边十字，右边一颗大键 --- */
+
+.gk-pad {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.gk-dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0.3rem;
+  width: 9.5rem;
+  flex: 0 0 auto;
+}
+
+.gk-btn {
+  padding: 0.35rem 0;
+  border: 1px solid rgba(0, 245, 212, 0.45);
+  background-color: rgba(0, 245, 212, 0.08);
+  color: #00f5d4;
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.gk-btn i {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.5rem;
+  font-style: normal;
+  letter-spacing: 0.04em;
+  color: #9d93c9;
+}
+
+.gk-btn.on,
+.gk-btn:active {
+  background-color: rgba(0, 245, 212, 0.3);
+}
+
+.gk-btn-up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.gk-btn-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.gk-btn-down {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.gk-btn-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.gk-btn-confirm {
+  flex: 1 1 auto;
+  padding: 0.4rem 0.5rem;
+  border-color: #ffd60a;
+  background-color: rgba(255, 214, 10, 0.1);
+  color: #ffd60a;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+}
+
+.gk-btn-confirm.on,
+.gk-btn-confirm:active {
+  background-color: rgba(255, 214, 10, 0.3);
+}
+
+.gk-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+}
+
+.gk-foot button {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #00f5d4;
+  background-color: transparent;
+  color: #00f5d4;
+  font-family: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.gk-foot button:hover {
+  background-color: rgba(0, 245, 212, 0.16);
+}
+
+.gk-foot button:disabled {
+  border-color: rgba(157, 147, 201, 0.4);
+  color: #6b6390;
+  cursor: default;
+  background-color: transparent;
+}
+
+.gk-hint {
+  flex: 1 1 100%;
+  font-size: 0.62rem;
+  line-height: 1.5;
+  color: #9d93c9;
+}
+
+@media (max-width: 400px) {
+  .gk-cabinet {
+    padding: 0.7rem 0.65rem 0.65rem;
+  }
+
+  .gk-dpad {
+    width: 8rem;
+  }
+
+  .gk-hint {
+    font-size: 0.58rem;
+  }
+}
+
+/* 触屏上「按住」的手感更接近机台按键，顺便去掉移动端点击高亮 */
+@media (hover: none) {
+  .gk-btn {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
