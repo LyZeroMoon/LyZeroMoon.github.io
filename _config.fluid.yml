@@ -249,6 +249,10 @@ custom_css:
   - /css/kb.css
   # 界面风格（皮肤）。皮肤清单与默认值在 source/_data/ui.json，由后台「外观」页维护
   - /css/skins.css
+  # 强化学习专栏：实验面板、交互选择题、开篇位置图。全部选择器带 .rl-/.qz- 前缀，
+  # 不会串到别的文章。曾经只在 source/rl/index.md 里用 <link> 引过，
+  # 结果文章页一直没样式——别再删这一行。
+  - /css/rl.css
 
 # 网页访问统计
 # Analysis of website visitors

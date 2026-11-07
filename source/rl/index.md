@@ -6,8 +6,6 @@ permalink: rl/
 comment: false
 ---
 
-<link rel="stylesheet" href="/css/rl.css">
-
 这里的实验都能直接操作：拖参数、单步执行、换策略，看算法一步步学出来。
 
 不是录屏，不是动图。页面上跑的是真的程序，每一次更新都算在浏览器里。
