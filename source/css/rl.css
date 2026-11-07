@@ -776,3 +776,126 @@ a.rl-card:hover {
   .rl-quiz .qz-hd { gap: 0.35rem; }
   .rl-quiz .qz-score { margin-left: 0; }
 }
+
+/* ---------- 开篇位置图：上一篇 → 本篇 → 下一篇 ---------- */
+.rl-pos {
+  margin: 1.5rem 0 1.2rem;
+  padding: 0.95rem 1rem 0.8rem;
+  border: 1px solid var(--line-color, #e3e3e3);
+  border-radius: 10px;
+  background: var(--board-bg-color, #fff);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.rl-pos-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.rl-pos-card {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.5rem 0.62rem 0.55rem;
+  border: 1px solid var(--line-color, #e3e3e3);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.rl-pos-card em {
+  font-style: normal;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: var(--sec-text-color, #999);
+}
+
+.rl-pos-card b {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-color, #333);
+  line-height: 1.35;
+}
+
+.rl-pos-card .f {
+  font-size: 0.84rem;
+  color: var(--post-link-color, #2c6eb5);
+  font-family: "Cambria Math", Georgia, serif;
+  letter-spacing: 0.01em;
+}
+
+.rl-pos-card .n {
+  font-size: 0.8rem;
+  color: var(--sec-text-color, #888);
+  line-height: 1.45;
+}
+
+.rl-pos-card.prev,
+.rl-pos-card.next {
+  opacity: 0.72;
+}
+
+.rl-pos-card.now {
+  border-color: var(--post-link-color, #2c6eb5);
+  border-width: 1.5px;
+  padding: 0.48rem 0.6rem 0.53rem;
+  opacity: 1;
+}
+
+@supports (background: color-mix(in srgb, red 6%, transparent)) {
+  .rl-pos-card.now {
+    background: color-mix(in srgb, var(--post-link-color, #2c6eb5) 7%, transparent);
+  }
+}
+
+.rl-pos-card.now em {
+  color: var(--post-link-color, #2c6eb5);
+}
+
+.rl-pos-arrow {
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--sec-text-color, #aaa);
+  font-size: 1rem;
+  user-select: none;
+}
+
+.rl-pos-foot {
+  margin-top: 0.7rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--line-color, #e3e3e3);
+  font-size: 0.8rem;
+  line-height: 1.9;
+  color: var(--sec-text-color, #888);
+}
+
+.rl-pos-foot i {
+  font-style: normal;
+  display: inline-block;
+  margin: 0 0.3rem 0 0.75rem;
+  padding: 0 0.32rem;
+  border-radius: 4px;
+  background: var(--line-color, #eee);
+  color: var(--text-color, #444);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.rl-pos-foot i:first-child {
+  margin-left: 0;
+}
+
+@media (max-width: 620px) {
+  .rl-pos-row {
+    flex-direction: column;
+  }
+  .rl-pos-arrow {
+    transform: rotate(90deg);
+    align-self: center;
+  }
+  .rl-pos-foot i {
+    margin-left: 0;
+  }
+}
