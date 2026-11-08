@@ -37,6 +37,7 @@
   --rl-gold: #b8862b;
   --rl-warn: #b5473a;
   --rl-door: #6f63a8;
+  --rl-good: #2f7d55;
 
   margin: 2.2rem 0;
   border: 1px solid var(--rl-edge);
@@ -51,6 +52,7 @@
   --rl-gold: #d8a94a;
   --rl-warn: #e0705f;
   --rl-door: #a094d8;
+  --rl-good: #56b383;
 }
 
 .rl-lab *,
@@ -210,6 +212,79 @@
 /* -------------------------------------------------------- 三种策略对比表
    结算后才出现。表格要比成绩单卡片更密，因为这里放的是「横向比较」，
    不是「这一局的结论」，字号小一档、边框弱一档。 */
+/* ------------------------------------------------------------ 结论块
+   点完训练先看到这个，两行大字说清「过没过」。表格放后面当细节，
+   不让读者自己去比对数字。 */
+.rl-verdict {
+  margin: 0 1.1rem 0.7rem;
+  padding: 0.8rem 1rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--rl-edge);
+  background: color-mix(in srgb, var(--rl-ink) 4%, transparent);
+}
+
+@supports not (background: color-mix(in srgb, red 4%, transparent)) {
+  .rl-verdict { background: transparent; }
+}
+
+.rl-verdict-hd {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--rl-faint);
+  margin-bottom: 0.45rem;
+}
+
+.rl-verdict-row {
+  padding: 0.45rem 0;
+  border-top: 1px dashed color-mix(in srgb, var(--rl-edge) 75%, transparent);
+}
+.rl-verdict-row:first-of-type { border-top: 0; padding-top: 0.1rem; }
+
+.v-name {
+  display: flex;
+  align-items: baseline;
+  gap: 0.42rem;
+  font-size: 0.84rem;
+  color: var(--rl-ink);
+}
+.v-name b { font-weight: 600; }
+.v-name .sub {
+  font-size: 0.7rem;
+  color: var(--rl-faint);
+}
+
+.v-rate {
+  margin-top: 0.12rem;
+  font-size: 0.8rem;
+  color: var(--rl-ink);
+}
+.v-rate b {
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-right: 0.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.rl-verdict-row.good .v-rate b { color: var(--rl-good); }
+.rl-verdict-row.bad .v-rate b { color: var(--rl-warn); }
+
+.v-why {
+  margin-top: 0.12rem;
+  font-size: 0.76rem;
+  line-height: 1.65;
+  color: var(--rl-faint);
+}
+
+/* 结果第一次出现时轻轻上浮一下，提醒「下面有东西」 */
+@keyframes rl-fresh-in {
+  from { opacity: 0; transform: translateY(-7px); }
+  to { opacity: 1; transform: none; }
+}
+.rl-result.rl-fresh {
+  animation: rl-fresh-in 0.32s ease-out both;
+}
+
 .rl-compare {
   margin: 0 1.1rem 1rem;
   padding: 0.9rem 1rem 1rem;

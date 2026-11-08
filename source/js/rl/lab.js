@@ -1188,6 +1188,11 @@
   }
 
   function ensureCss() {
+    // 线上由 custom_css 全站注入，这里只是兜底：已经引过就不再插第二个
+    var links = document.querySelectorAll('link[rel="stylesheet"]');
+    for (var i = 0; i < links.length; i++) {
+      if (links[i].href && links[i].href.indexOf(CSS_HREF) >= 0) return;
+    }
     if (document.querySelector('link[data-rl-css]')) return;
     var l = document.createElement('link');
     l.rel = 'stylesheet';
@@ -1355,13 +1360,26 @@
       }
     }
 
+    // 再从起点按学到的策略走一局，把每一步记下来：地图上要画的就是这条线
+    var trace = [{ x: G_START.x, y: G_START.y }];
+    var ts = { x: G_START.x, y: G_START.y, key: 0 };
+    var reached = false;
+    for (var t3 = 0; t3 < 40; t3++) {
+      var r3 = gStep(ts, greedy(gCode(ts, naive)), false);
+      ts = r3.s2;
+      trace.push({ x: ts.x, y: ts.y });
+      if (r3.done) { reached = true; break; }
+    }
+
     return {
       naive: naive,
       states: Object.keys(states).length,
       clash: clashN,
       clashKey: clashKey,
       rate: win / 100,
-      len: win ? len / win : 0
+      len: win ? len / win : 0,
+      trace: trace,
+      reached: reached
     };
   }
 
@@ -1450,6 +1468,32 @@
       function CX(x) { return ox + (x + 0.5) * cw; }
       function CY(y) { return oy + (G_H - 1 - y + 0.5) * cw; }
 
+      // 格心一支箭头，a 用 G_DIR 的下标（0 上 1 下 2 右 3 左）。
+      // 字母已经挪到格子左上角，这里可以占满中心
+      function arrowCell(x, y, a, color) {
+        var X = CX(x), Y = CY(y);
+        var vx = G_DIR[a][0], vy = -G_DIR[a][1];   // 画布 y 朝下
+        var L = cw * 0.26;
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 1.9;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(X - vx * L * 0.62, Y - vy * L * 0.62);
+        ctx.lineTo(X + vx * L * 0.2, Y + vy * L * 0.2);
+        ctx.stroke();
+        var tipX = X + vx * L * 0.52, tipY = Y + vy * L * 0.52;
+        var px = -vy, py = vx;
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(tipX - vx * 4.2 + px * 3.2, tipY - vy * 4.2 + py * 3.2);
+        ctx.lineTo(tipX - vx * 4.2 - px * 3.2, tipY - vy * 4.2 - py * 3.2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
       // 底格
       for (var y = 0; y < G_H; y++) {
         for (var x = 0; x < G_W; x++) {
@@ -1511,8 +1555,40 @@
         ctx.restore();
       }
 
-      poly(G_PATH_NOKEY, P.faint, [4, 3], -3.4);
-      poly(G_PATH_KEY, GOLD, null, 3.4);
+      // 训练前画「两条理想路线」当铺垫；训练后换成学到的走法，两者只在图上占同一块地方
+      var model = null;
+      if (M) model = S.naive ? M.naive : M.full;
+
+      if (!model) {
+        poly(G_PATH_NOKEY, P.faint, [4, 3], -3.4);
+        poly(G_PATH_KEY, GOLD, null, 3.4);
+      } else {
+        // 每个走过的格子画一支箭头，指向学到的那一步。
+        // 打转的地方会留下两支相对的箭头——这正是「学不会」的样子。
+        var seenStep = {};
+        for (var q = 0; q + 1 < model.trace.length; q++) {
+          var p0 = model.trace[q], p1 = model.trace[q + 1];
+          var sk = p0.x + ',' + p0.y;
+          if (seenStep[sk]) continue;
+          seenStep[sk] = 1;
+          var ddx = p1.x - p0.x, ddy = p1.y - p0.y;
+          var ai = ddy > 0 ? 0 : (ddy < 0 ? 1 : (ddx > 0 ? 2 : 3));
+          arrowCell(p0.x, p0.y, ai, model.reached ? GOLD : WARN);
+        }
+        // 没走到终点：最后一格上打叉，说明这一局就停在这里
+        if (!model.reached) {
+          var lp = model.trace[model.trace.length - 1];
+          var lx = CX(lp.x), ly = CY(lp.y);
+          ctx.save();
+          ctx.strokeStyle = WARN;
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.moveTo(lx - 5, ly - 5); ctx.lineTo(lx + 5, ly + 5);
+          ctx.moveTo(lx + 5, ly - 5); ctx.lineTo(lx - 5, ly + 5);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
 
       // 终点
       var gx = CX(5), gy = CY(3);
@@ -1550,12 +1626,13 @@
       ctx.stroke();
       ctx.restore();
 
-      // 起点、钥匙、终点字母
-      label(ctx, 'S', CX(0), CY(0), P.ink, 13, 'center');
-      label(ctx, 'K', CX(3), CY(0), GOLD, 13, 'center');
-      label(ctx, 'G', CX(5), CY(3), GOLD, 13, 'center');
+      // 起点、钥匙、终点字母：放在格子左上角，把格心让给箭头
+      var lx0 = cw * 0.3, ly0 = cw * 0.26;
+      label(ctx, 'S', CX(0) - lx0, CY(0) - ly0, P.ink, 12, 'center');
+      label(ctx, 'K', CX(3) - lx0, CY(0) - ly0, GOLD, 12, 'center');
+      label(ctx, 'G', CX(5) - lx0, CY(3) - ly0, GOLD, 12, 'center');
 
-      // 门格上的两种画法：一个状态，还是两个
+      // 门格上的两种画法：一个状态，还是两个。训练后让位给箭头
       if (S.naive) {
         ctx.save();
         ctx.strokeStyle = WARN;
@@ -1565,7 +1642,7 @@
         ctx.restore();
         // 一个格子只能存一个值，这里画 1 表示「一种状态」
         label(ctx, '1', dx, dy, WARN, 13, 'center');
-      } else {
+      } else if (!model) {
         ctx.save();
         ctx.strokeStyle = DOOR;
         ctx.lineWidth = 1.2;
@@ -1580,25 +1657,81 @@
       }
     }
 
-    /* ---------------- 读数与对比表 ---------------- */
+    /* ---------------- 读数、结论与对比表 ---------------- */
+
+    // 没走到终点时，找出它在哪两格之间反复横跳
+    function stuckPair(trace) {
+      var cnt = {}, best = '', bn = 0;
+      for (var i = 1; i < trace.length; i++) {
+        var a = trace[i - 1], b = trace[i];
+        var k = a.x + ',' + a.y + '|' + b.x + ',' + b.y;
+        cnt[k] = (cnt[k] || 0) + 1;
+        if (cnt[k] > bn) { bn = cnt[k]; best = k; }
+      }
+      if (!best) return null;
+      var p = best.split('|');
+      return { a: p[0], b: p[1], n: bn };
+    }
+
+    function syncLegend() {
+      legend.innerHTML = M
+        ? '<span style="color:' + GOLD + '">→ 学到的一步</span>　' +
+          '<span style="color:' + WARN + '">✕ 停在这里</span>　' +
+          '<span style="color:' + P.faint + '">箭头从 S 出发，按学到的策略走 40 步</span>'
+        : '<span style="color:' + GOLD + '">━ 拿到钥匙的路线</span>　' +
+          '<span style="color:' + P.faint + '">┅ 没拿到钥匙时走的路</span>　' +
+          '<span style="color:' + WARN + '">✕ 过不去</span>';
+    }
 
     function renderReadout() {
       if (!M) {
         readout.innerHTML = '还没训练。上面两个标签只改状态的写法，' +
-          '点右边的按钮才真的学一遍。';
+          '点右边的按钮才真的学一遍，结果会出现在按钮下面。';
         return;
       }
       var m = S.naive ? M.naive : M.full;
-      readout.innerHTML =
-        '状态数 <b>' + m.states + '</b>　·　' +
-        '歧义处 <b style="color:' + (m.clash ? WARN : P.ink) + '">' + m.clash + '</b>　·　' +
-        '训练后成功 <b>' + Math.round(m.rate * 100) + '%</b>';
+      readout.innerHTML = '地图上画的是 <b>' + (S.naive ? '只有坐标' : '坐标 + 钥匙') +
+        '</b> 学到的走法：共 ' + m.states + ' 个状态' +
+        (m.clash
+          ? '，其中 <b style="color:' + WARN + '">' + m.clash + ' 处</b>同一个状态对应两种结果'
+          : '，没有一处歧义');
     }
 
-    function renderTable() {
+    function renderResult() {
       resultBox.innerHTML = '';
-      resultBox.appendChild(el('div', 'rl-compare-hd',
-        '各训练 ' + G_EPISODE + ' 回合，再用学到的策略跑 100 局'));
+
+      // 先给结论，再给表格。表格是细节，读者不该被迫自己比对
+      var vd = el('div', 'rl-verdict');
+      vd.appendChild(el('div', 'rl-verdict-hd', '这一轮的结果'));
+
+      function addRow(d) {
+        var r = el('div', 'rl-verdict-row ' + (d.m.reached ? 'good' : 'bad'));
+
+        var nm = el('div', 'v-name');
+        nm.appendChild(el('b', null, d.name));
+        nm.appendChild(el('span', 'sub', d.note));
+        r.appendChild(nm);
+
+        var rt = el('div', 'v-rate');
+        rt.innerHTML = '<b>' + Math.round(d.m.rate * 100) + '</b>/100 局到终点';
+        r.appendChild(rt);
+
+        var why = el('div', 'v-why');
+        if (d.m.reached) {
+          why.textContent = '平均 ' + f2(d.m.len) + ' 步走完';
+        } else {
+          var sp = stuckPair(d.m.trace);
+          why.textContent = sp
+            ? '走 40 步，在 (' + sp.a + ') 与 (' + sp.b + ') 之间来回 ' + sp.n + ' 次'
+            : '走 40 步也没到终点';
+        }
+        r.appendChild(why);
+        return r;
+      }
+
+      vd.appendChild(addRow({ m: M.naive, name: '只有坐标', note: '(x, y)' }));
+      vd.appendChild(addRow({ m: M.full, name: '坐标 + 钥匙', note: '(x, y, key)' }));
+      resultBox.appendChild(vd);
 
       var tb = el('table', 'rl-compare-tb');
       var thead = el('thead');
@@ -1638,8 +1771,8 @@
 
     function syncHint() {
       hint.innerHTML = S.naive
-        ? '门只有一格，坐标也只有一组，红框里那个 1 就是它的全部身份。' +
-          '带没带钥匙被压进同一个状态，于是「在门口往右」这一个动作对应两种结果——算法只能看到两者的平均值。'
+        ? '门只有一格，红框里那个 1 就是它的全部身份。带没带钥匙被压进同一个状态，' +
+          '于是「在门口往右」这一个动作对应两种结果——算法只能看到两者的平均值。'
         : '把钥匙写进状态，门口那一格被一条线分成上下两半：0 是没钥匙，1 是有钥匙。' +
           '同一动作只剩一种结果，这个数才有意义。';
     }
@@ -1647,10 +1780,11 @@
     function sync() {
       tabNaive.classList.toggle('on', S.naive);
       tabFull.classList.toggle('on', !S.naive);
+      syncLegend();
       renderReadout();
       syncHint();
       draw();
-      if (resultBox.style.display !== 'none') renderTable();
+      if (M) renderResult();
     }
 
     tabNaive.onclick = function () { S.naive = true; sync(); };
@@ -1661,9 +1795,21 @@
       // 用来确认结论不是某一串随机数碰巧凑出来的
       seedUsed = seedUsed ? (seedUsed * 7919) % 2147483647 : G_SEED;
       M = { naive: gTrain(true, seedUsed), full: gTrain(false, seedUsed) };
-      resultBox.style.display = '';
       btnRun.textContent = '换个种子再训一次';
+      resultBox.style.display = '';
+      resultBox.classList.remove('rl-fresh');
+      void resultBox.offsetWidth;          // 重启动画，第二次点也有淡入
+      resultBox.classList.add('rl-fresh');
       sync();
+
+      // 结果在按钮下面，笔记本竖屏时常常正好在可视区外
+      if (resultBox.scrollIntoView) {
+        var rect = resultBox.getBoundingClientRect();
+        var vh = window.innerHeight || 800;
+        if (rect.bottom > vh - 24 || rect.top < 0) {
+          resultBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+      }
     };
 
     redraws.push(draw);
