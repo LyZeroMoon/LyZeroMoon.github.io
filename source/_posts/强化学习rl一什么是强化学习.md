@@ -21,7 +21,7 @@ categories:
 <div class="rl-pos-arrow">→</div>
 <div class="rl-pos-card now"><em>本篇 · 第 1 篇</em><b>只剩一个分数</b><span class="f">Q(a)</span><span class="n">把「反复决策、事后拿到一点评价」写成可优化的问题</span></div>
 <div class="rl-pos-arrow">→</div>
-<div class="rl-pos-card next"><em>第 2 篇</em><b>把局面加回来</b><span class="f">Q(s,a)</span><span class="n">动作的后果开始依赖当前局面，先得定义局面</span></div>
+<div class="rl-pos-card next"><em>第 2 篇</em><b>把状态加回来</b><span class="f">Q(s,a)</span><span class="n">动作的后果开始依赖当前状态</span></div>
 </div>
 <div class="rl-pos-foot"><i>拿掉</i>标准答案 · 固定分布<i>仍假设</i>只有一个状态<i>不碰</i>状态 · 转移 · 回合</div>
 </div>
@@ -30,7 +30,7 @@ categories:
 
 问题因此变成：怎样把「反复做决策、每次收回一点反馈」写成一个可以优化的问题；以及在这个最简形态里，探索与利用该怎么权衡。
 
-为了把这两件事单独露出来，本篇只保留一个状态：一排机器，每次面对的局面完全相同，回报服从一个固定但未知的分布，与之前做过什么无关。这是全篇唯一的简化，第 2 篇负责拿掉它。
+为了把这两件事单独露出来，本篇只保留一个状态：一排机器，回报服从一个固定但未知的分布，与之前做过什么无关。这是全篇唯一的简化，第 2 篇负责拿掉它。
 
 **读完能做什么。** 遇到「没有标准答案、只能看结果好坏」的任务，能判断它属于强化学习而不是监督学习；能说清一台老虎机为什么值得反复拉、什么时候该停；看到一条训练曲线，能分清它是在试新臂，还是在学最优臂。
 
