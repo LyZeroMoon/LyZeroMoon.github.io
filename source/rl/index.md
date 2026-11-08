@@ -23,7 +23,7 @@ comment: false
 <a class="rl-card" href="/2026/11/07/强化学习rl二马尔可夫决策过程/">
 <em>02</em>
 <b>钥匙门</b>
-<span>同一格两种命运：状态里漏一个变量，同一个动作就有了两种后果</span>
+<span>从一条判据出发，一层层搭到 MDP；最后一扇锁着的门验收</span>
 </a>
 
 <div class="rl-card soon">
