@@ -461,6 +461,9 @@
   flex: 1 1 100%;
 }
 
+/* 只有一个按钮的面板（网格世界）：跟着标签并排，不独占一行 */
+.rl-btns.one { flex: 0 0 auto; }
+
 .rl-btn {
   font: inherit;
   font-size: 0.84rem;

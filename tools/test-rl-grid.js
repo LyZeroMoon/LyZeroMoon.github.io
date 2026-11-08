@@ -65,7 +65,7 @@ tabNaive().click();
 
 drawn = [];
 fills = 0;
-btn.click();
+lab._runBatch();          // 真按钮走 setTimeout，测试里直接同步跑
 console.log('\n[2] 训练后读数:', readout());
 rows().forEach(r => console.log('      ', r.join(' | ')));
 console.log('    按钮文案:', btn.textContent);
@@ -73,8 +73,8 @@ console.log('    说明:', lab.querySelector('.rl-compare-note').textContent.rep
 
 const r = rows();
 const naive = r[0], full = r[1];
-const okNaive = naive[1] === '25' && naive[2] === '1' && naive[3] === '0%';
-const okFull = full[1] === '44' && full[2] === '0' && full[3] === '100%';
+const okNaive = naive[1] === '25' && naive[2] === '1' && naive[3] === '2/20';
+const okFull = full[1] === '44' && full[2] === '0' && full[3] === '20/20' && full[4] === '8.00';
 
 /* 结论块：先给输赢，再说卡在哪 */
 const vd = lab.querySelector('.rl-verdict');
@@ -83,13 +83,13 @@ const vText = vd ? vd.textContent.replace(/\s+/g, ' ').trim() : '';
 console.log('\n[3] 结论块:', vText);
 const okVerdict = vRows.length === 2 &&
   vRows[0].classList.contains('bad') && vRows[1].classList.contains('good') &&
-  vRows[0].textContent.indexOf('0/100') >= 0 &&
-  vRows[1].textContent.indexOf('100/100') >= 0 &&
-  /来回 \d+ 次/.test(vRows[0].textContent);
+  vRows[0].textContent.indexOf('2/20 次走通') >= 0 &&
+  vRows[1].textContent.indexOf('20/20 次走通') >= 0 &&
+  /卡在 \(\d,\d\) 与 \(\d,\d\) 之间/.test(vRows[0].textContent);
 
-/* 训练后地图上应出现箭头（每次 fill 一支），且不再画示范路线上的 0/1 */
+/* 训练后地图上应出现箭头（每次 fill 一支），门格不再压一个「1」 */
 console.log('\n[4] 训练后箭头数:', fills, '| 画布文字:', drawn.join(','));
-const okArrow = fills >= 4;
+const okArrow = fills >= 4 && drawn.indexOf('1') >= 0;   // 门格的「1」要留着，正文第二节引用了它
 
 /* 切到「坐标 + 钥匙」看它学到的那条路 */
 drawn = [];
@@ -101,13 +101,15 @@ const okArrow2 = fills >= 4;
 console.log('    win 行跟着切换:', lab.querySelector('.rl-compare-tb tr.win')
   ? lab.querySelector('.rl-compare-tb tr.win').textContent.replace(/\s+/g, ' ').trim() : '无');
 
-/* 换种子重训 */
-btn.click();
+/* 换一批种子重训：结论不能翻面 */
+lab._runBatch();
 const r2 = rows();
 console.log('\n[5] 换种子后:', r2[0].join(' | '), '||', r2[1].join(' | '));
-const stable = Number(r2[1][3].replace('%', '')) >= 90 && Number(r2[0][3].replace('%', '')) <= 10;
-console.log('    结论稳定（full ≥ 90%，naive ≤ 10%）:', stable);
-console.log('    平均步数（full）:', r2[1][4]);
+const naiveWon = Number(r2[0][3].split('/')[0]);
+const fullWon = Number(r2[1][3].split('/')[0]);
+const stable = fullWon === 20 && naiveWon <= 4;
+console.log('    结论稳定（full 20/20，naive ≤ 4）:', stable);
+console.log('    走通时步数（full）:', r2[1][4]);
 
 const ok = okNaive && okFull && gate01 && okVerdict && okArrow && okArrow2 && stable;
 console.log('\n结果:', ok ? 'PASS' : 'FAIL');

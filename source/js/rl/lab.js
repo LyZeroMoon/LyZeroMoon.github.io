@@ -1254,6 +1254,8 @@
   var G_START = { x: 0, y: 0 };
   var G_EPISODE = 300;
   var G_MAXSTEP = 80;
+  var G_ROLLOUT = 40;         // 训练后走一局，最多记 40 步
+  var G_BATCH = 20;           // 一次统计里训几遍（不同种子）
   var G_GAMMA = 0.95;
   var G_ALPHA = 0.15;
   var G_SEED = 20261107;      // 固定种子：文章里写的数字，和面板上跑出来的一致
@@ -1262,6 +1264,19 @@
     if (x < 0 || y < 0 || x >= G_W || y >= G_H) return '#';
     return G_MAP[G_H - 1 - y].charAt(x);
   }
+
+  /* 训练时每一步都去 charAt 一次会慢到点一次按钮卡三秒，
+     所以开局把地图摊平成整数表，之后只做整数运算。 */
+  var G_TILE = (function () {
+    var code = { '.': 0, '#': 1, 'D': 2, 'K': 3, 'G': 4 };
+    var a = new Uint8Array(G_W * G_H);
+    for (var y = 0; y < G_H; y++) {
+      for (var x = 0; x < G_W; x++) {
+        a[y * G_W + x] = code[G_MAP[G_H - 1 - y].charAt(x)] || 0;
+      }
+    }
+    return a;
+  })();
 
   function gStep(s, a, noKey) {
     var nx = s.x + G_DIR[a][0], ny = s.y + G_DIR[a][1];
@@ -1280,106 +1295,145 @@
     return naive ? s.x + ',' + s.y : s.x + ',' + s.y + ',' + s.key;
   }
 
-  function gTrain(naive, seed) {
-    var rand = rng(seed || G_SEED);  // 两种定义共用一段随机流，比较的才是编码本身
-    var Q = {};
-    var seen = {};
-    var states = {};
-    var clashN = 0;
-    var clashKey = '';
+  /* Q 存成定长数组，下标 = ((y*W + x)*2 + key)*4 + 动作。
+     naive 只占 key=0 那一半，容量差一倍，正好对应「状态数 25 vs 44」。 */
+  function gSlot(x, y, key, naive) {
+    return ((y * G_W + x) * 2 + (naive ? 0 : key)) * 4;
+  }
 
-    function get(k, a) {
-      var v = Q[k + '|' + a];
-      return v === undefined ? 0 : v;
-    }
-    function put(k, a, v) { Q[k + '|' + a] = v; }
-    function maxQ(k) {
-      var m = -Infinity;
-      for (var i = 0; i < 4; i++) { var v = get(k, i); if (v > m) m = v; }
-      return m;
-    }
-    function greedy(k) {
-      var m = -Infinity, ba = 0;
-      for (var i = 0; i < 4; i++) {
-        var v = get(k, i);
-        if (v > m + 1e-9) { m = v; ba = i; }
-      }
-      return ba;
-    }
-    function exploreA(k) {
-      var m = -Infinity, c = [];
-      for (var i = 0; i < 4; i++) {
-        var v = get(k, i);
-        if (v > m + 1e-9) { m = v; c = [i]; }
-        else if (Math.abs(v - m) <= 1e-9) c.push(i);
-      }
-      return c[Math.floor(rand() * c.length)];
-    }
+  var G_NCELL = G_W * G_H * 2;          // 状态槽数（含带钥匙 / 不带钥匙）
+
+  function gTrain(naive, seed) {
+    var rand = rng(seed || G_SEED);   // 两种定义共用一段随机流，比较的才是编码本身
+    var Q = new Float64Array(G_NCELL * 4);
+    var visited = new Uint8Array(G_NCELL);
+    // 每个「状态—动作」只记第一次见到的结果；见到第二种就记一笔歧义
+    var seenSig = new Int32Array(G_NCELL * 4).fill(-1);
+    var MARK = 0x7fffffff;
+    var clashN = 0;
 
     for (var ep = 0; ep < G_EPISODE; ep++) {
       var eps = 0.30 + (0.05 - 0.30) * ep / (G_EPISODE - 1);
-      var s = { x: G_START.x, y: G_START.y, key: 0 };
+      var x = G_START.x, y = G_START.y, key = 0;
       for (var t = 0; t < G_MAXSTEP; t++) {
-        var k = gCode(s, naive);
-        states[k] = 1;
+        var base = gSlot(x, y, key, naive);
+        var cellIdx = base >> 2;
+        visited[cellIdx] = 1;
 
-        var a = (rand() < eps) ? Math.floor(rand() * 4) : exploreA(k);
-        var r = gStep(s, a, false);
-        var k2 = gCode(r.s2, naive);
-
-        // 歧义检测：同一个状态、同一个动作，出现了两种不同的结果
-        var ck = k + '|' + a;
-        var sig = r.s2.x + ',' + r.s2.y + ':' + r.r;
-        if (!seen[ck]) seen[ck] = {};
-        if (!seen[ck][sig]) {
-          seen[ck][sig] = 1;
-          var n = 0;
-          for (var z in seen[ck]) n++;
-          if (n === 2) {
-            clashN++;
-            if (!clashKey) clashKey = ck;
+        // 两条随机数：一条决定探不探索，一条决定选哪个动作——和旧版一格不差
+        var a;
+        if (rand() < eps) {
+          a = (rand() * 4) | 0;
+        } else {
+          var best = Q[base];
+          for (var i = 1; i < 4; i++) if (Q[base + i] > best) best = Q[base + i];
+          var ties = 0;
+          for (var j = 0; j < 4; j++) if (Math.abs(Q[base + j] - best) <= 1e-9) ties++;
+          var pick = (rand() * ties) | 0, seenTie = 0;
+          a = 0;
+          for (var k2 = 0; k2 < 4; k2++) {
+            if (Math.abs(Q[base + k2] - best) <= 1e-9) {
+              if (seenTie === pick) { a = k2; break; }
+              seenTie++;
+            }
           }
         }
 
-        var tgt = r.done ? r.r : r.r + G_GAMMA * maxQ(k2);
-        put(k, a, get(k, a) + G_ALPHA * (tgt - get(k, a)));
+        // 一步转移（与 gStep 等价，只是为了快，不建对象）
+        var nx = x + G_DIR[a][0], ny = y + G_DIR[a][1];
+        var tile = (nx < 0 || ny < 0 || nx >= G_W || ny >= G_H) ? 1 : G_TILE[ny * G_W + nx];
+        var r, done = 0, sx = x, sy = y;
+        if (tile === 1) {
+          r = -3;                                   // 撞墙，原地不动
+        } else if (tile === 2 && !key) {
+          r = -6;                                   // 没钥匙撞门，原地不动
+        } else {
+          x = nx; y = ny; sx = nx; sy = ny;
+          if (tile === 3) key = 1;                  // 捡钥匙
+          if (tile === 4) { r = 50; done = 1; }
+          else r = -1;
+        }
 
-        s = r.s2;
-        if (r.done) break;
+        // 歧义检测：同一个状态、同一个动作，出现了两种不同的结果
+        var sig = (sy * G_W + sx) * 5 + (r === -3 ? 0 : r === -6 ? 1 : r === -1 ? 2 : 3);
+        var ck = base + a, prev = seenSig[ck];
+        if (prev < 0) {
+          seenSig[ck] = sig;
+        } else if (prev !== sig && prev !== MARK) {
+          clashN++;
+          seenSig[ck] = MARK;                       // 同一处只记一次
+        }
+
+        var nb = gSlot(x, y, key, naive);
+        var mx = Q[nb];
+        for (var q = 1; q < 4; q++) if (Q[nb + q] > mx) mx = Q[nb + q];
+        var tgt = done ? r : r + G_GAMMA * mx;
+        Q[ck] += G_ALPHA * (tgt - Q[ck]);
+
+        if (done) break;
       }
     }
 
-    // 训练完用纯贪心跑一百局：探不探索已经不是变量了，这里只看学到的策略
-    var win = 0, len = 0;
-    for (var e = 0; e < 100; e++) {
-      var s2 = { x: G_START.x, y: G_START.y, key: 0 };
-      for (var t2 = 0; t2 < G_MAXSTEP; t2++) {
-        var rr = gStep(s2, greedy(gCode(s2, naive)), false);
-        s2 = rr.s2;
-        if (rr.done) { win++; len += t2 + 1; break; }
-      }
-    }
-
-    // 再从起点按学到的策略走一局，把每一步记下来：地图上要画的就是这条线
+    /* 训练完关掉探索，用学到的策略从起点走一局。
+       走法一定，结果就一定——同一个种子跑一百遍是一模一样的，
+       所以「成功率」不该按一百局算：要数的是「换成不同种子，几次能走通」。 */
     var trace = [{ x: G_START.x, y: G_START.y }];
     var ts = { x: G_START.x, y: G_START.y, key: 0 };
     var reached = false;
-    for (var t3 = 0; t3 < 40; t3++) {
-      var r3 = gStep(ts, greedy(gCode(ts, naive)), false);
+    for (var t3 = 0; t3 < G_ROLLOUT; t3++) {
+      var gb = gSlot(ts.x, ts.y, ts.key, naive);
+      var ba = 0, bm = Q[gb];
+      for (var g2 = 1; g2 < 4; g2++) if (Q[gb + g2] > bm + 1e-9) { bm = Q[gb + g2]; ba = g2; }
+      var r3 = gStep(ts, ba, false);
       ts = r3.s2;
       trace.push({ x: ts.x, y: ts.y });
       if (r3.done) { reached = true; break; }
     }
 
+    var nStates = 0;
+    for (var v = 0; v < G_NCELL; v++) if (visited[v]) nStates++;
+
     return {
       naive: naive,
-      states: Object.keys(states).length,
+      states: nStates,
       clash: clashN,
-      clashKey: clashKey,
-      rate: win / 100,
-      len: win ? len / win : 0,
+      won: reached,
+      len: reached ? trace.length - 1 : 0,
       trace: trace,
       reached: reached
+    };
+  }
+
+  /* 一次训练看不出名堂：同一个算法换个种子，结果可能翻面。
+     所以按「一批种子」统计——数这批里有几次能走通，
+     再挑一条没走通的轨迹画到地图上。 */
+  function gBatch(naive, seeds) {
+    var won = 0, stepSum = 0, fails = 0, states = 0, clash = 0;
+    var failTrace = null, okTrace = null, failSeed = 0;
+    for (var i = 0; i < seeds.length; i++) {
+      var m = gTrain(naive, seeds[i]);
+      states = m.states;
+      clash = m.clash;
+      if (m.reached) {
+        won++;
+        stepSum += m.len;
+        if (!okTrace) okTrace = m.trace;
+      } else {
+        fails++;
+        if (!failTrace) { failTrace = m.trace; failSeed = i + 1; }
+      }
+    }
+    return {
+      won: won,
+      of: seeds.length,
+      fails: fails,
+      failSeed: failSeed,
+      len: won ? stepSum / won : 0,
+      states: states,
+      clash: clash,
+      // 地图优先画「没走通」的那一条：打转的样子比走通更有信息量
+      trace: failTrace || okTrace,
+      reached: !failTrace
     };
   }
 
@@ -1395,27 +1449,17 @@
 
     var S = { naive: true };
     var M = null;                     // 训练过一次之后才有
-    var seedUsed = 0;
+    var batchNo = 0;
 
     root.innerHTML = '';
 
     var hd = el('div', 'rl-head');
-    hd.appendChild(el('b', null, '网格世界 · 状态里该放什么'));
-    hd.appendChild(el('span', null, '同一张地图，同一套 Q-learning，只改状态编码'));
+    hd.appendChild(el('b', null, '网格世界 · 同一个世界，两种记法'));
+    hd.appendChild(el('span', null, '只改一件事：状态里写不写「有没有钥匙」'));
     root.appendChild(hd);
 
-    var stage = el('div', 'rl-stage');
-    var cv = el('canvas', 'rl-canvas');
-    stage.appendChild(cv);
-    root.appendChild(stage);
-
-    var legend = el('p', 'rl-hint');
-    legend.innerHTML =
-      '<span style="color:' + GOLD + '">━ 拿到钥匙的路线</span>　' +
-      '<span style="color:' + P.faint + '">┅ 没拿到钥匙时走的路</span>　' +
-      '<span style="color:' + WARN + '">✕ 过不去</span>';
-    root.appendChild(legend);
-
+    /* 控件放在地图上面：点完按钮，眼睛往下就是地图，
+       不用为了看结果把页面滚走，也不会把刚看过的地方弄丢。 */
     var ctrl = el('div', 'rl-controls');
 
     var fld = el('div', 'rl-field wide');
@@ -1430,13 +1474,25 @@
     fld.appendChild(tabs);
     ctrl.appendChild(fld);
 
-    var btns = el('div', 'rl-btns');
-    var btnRun = el('button', 'rl-btn primary', '训练 ' + G_EPISODE + ' 回合');
+    var btns = el('div', 'rl-btns one');
+    var btnRun = el('button', 'rl-btn primary', '训练 ' + G_BATCH + ' 次');
     btnRun.type = 'button';
     btns.appendChild(btnRun);
     ctrl.appendChild(btns);
 
     root.appendChild(ctrl);
+
+    var stage = el('div', 'rl-stage');
+    var cv = el('canvas', 'rl-canvas');
+    stage.appendChild(cv);
+    root.appendChild(stage);
+
+    var legend = el('p', 'rl-hint');
+    legend.innerHTML =
+      '<span style="color:' + GOLD + '">━ 拿到钥匙的路线</span>　' +
+      '<span style="color:' + P.faint + '">┅ 没拿到钥匙时走的路</span>　' +
+      '<span style="color:' + WARN + '">✕ 过不去</span>';
+    root.appendChild(legend);
 
     var readout = el('p', 'rl-readout');
     root.appendChild(readout);
@@ -1632,7 +1688,7 @@
       label(ctx, 'K', CX(3) - lx0, CY(0) - ly0, GOLD, 12, 'center');
       label(ctx, 'G', CX(5) - lx0, CY(3) - ly0, GOLD, 12, 'center');
 
-      // 门格上的两种画法：一个状态，还是两个。训练后让位给箭头
+      // 门格上的两种画法：一个状态，还是两个
       if (S.naive) {
         ctx.save();
         ctx.strokeStyle = WARN;
@@ -1640,7 +1696,8 @@
         ctx.setLineDash([4, 3]);
         ctx.strokeRect(dx - cw / 2 + 1, dy - cw / 2 + 1, cw - 2, cw - 2);
         ctx.restore();
-        // 一个格子只能存一个值，这里画 1 表示「一种状态」
+        // 一个格子只能存一个值，这里画 1 表示「一种状态」；
+        // 门格上永远不会有箭头（它进不去），所以这个数字不会被箭头压住
         label(ctx, '1', dx, dy, WARN, 13, 'center');
       } else if (!model) {
         ctx.save();
@@ -1677,7 +1734,7 @@
       legend.innerHTML = M
         ? '<span style="color:' + GOLD + '">→ 学到的一步</span>　' +
           '<span style="color:' + WARN + '">✕ 停在这里</span>　' +
-          '<span style="color:' + P.faint + '">箭头从 S 出发，按学到的策略走 40 步</span>'
+          '<span style="color:' + P.faint + '">箭头从 S 出发，指向它学到的那一步</span>'
         : '<span style="color:' + GOLD + '">━ 拿到钥匙的路线</span>　' +
           '<span style="color:' + P.faint + '">┅ 没拿到钥匙时走的路</span>　' +
           '<span style="color:' + WARN + '">✕ 过不去</span>';
@@ -1686,12 +1743,19 @@
     function renderReadout() {
       if (!M) {
         readout.innerHTML = '还没训练。上面两个标签只改状态的写法，' +
-          '点右边的按钮才真的学一遍，结果会出现在按钮下面。';
+          '点按钮 = 两种写法各训 ' + G_BATCH + ' 次，看几次能走到终点。';
         return;
       }
       var m = S.naive ? M.naive : M.full;
-      readout.innerHTML = '地图上画的是 <b>' + (S.naive ? '只有坐标' : '坐标 + 钥匙') +
-        '</b> 学到的走法：共 ' + m.states + ' 个状态' +
+      var sp = m.reached ? null : stuckPair(m.trace);
+      var head = m.won === m.of
+        ? G_BATCH + ' 次全部走通'
+        : G_BATCH + ' 次里 <b>' + m.won + '</b> 次走通';
+      readout.innerHTML = head + '。地图上画的是' +
+        (m.reached ? '其中一次' : '第 ' + m.failSeed + ' 次（没走通）') +
+        '的走法' +
+        (sp ? '：在 (' + sp.a + ') 与 (' + sp.b + ') 之间来回' : '') +
+        '。共 ' + m.states + ' 个状态' +
         (m.clash
           ? '，其中 <b style="color:' + WARN + '">' + m.clash + ' 处</b>同一个状态对应两种结果'
           : '，没有一处歧义');
@@ -1702,10 +1766,11 @@
 
       // 先给结论，再给表格。表格是细节，读者不该被迫自己比对
       var vd = el('div', 'rl-verdict');
-      vd.appendChild(el('div', 'rl-verdict-hd', '这一轮的结果'));
+      vd.appendChild(el('div', 'rl-verdict-hd', '这一批的结果'));
 
       function addRow(d) {
-        var r = el('div', 'rl-verdict-row ' + (d.m.reached ? 'good' : 'bad'));
+        var all = d.m.won === d.m.of;
+        var r = el('div', 'rl-verdict-row ' + (all ? 'good' : 'bad'));
 
         var nm = el('div', 'v-name');
         nm.appendChild(el('b', null, d.name));
@@ -1713,17 +1778,21 @@
         r.appendChild(nm);
 
         var rt = el('div', 'v-rate');
-        rt.innerHTML = '<b>' + Math.round(d.m.rate * 100) + '</b>/100 局到终点';
+        rt.innerHTML = '<b>' + d.m.won + '</b>/' + d.m.of + ' 次走通';
         r.appendChild(rt);
 
         var why = el('div', 'v-why');
-        if (d.m.reached) {
-          why.textContent = '平均 ' + f2(d.m.len) + ' 步走完';
-        } else {
+        if (all) {
+          why.textContent = '每次都走通，平均 ' + f2(d.m.len) + ' 步';
+        } else if (d.m.won === 0) {
           var sp = stuckPair(d.m.trace);
           why.textContent = sp
-            ? '走 40 步，在 (' + sp.a + ') 与 (' + sp.b + ') 之间来回 ' + sp.n + ' 次'
-            : '走 40 步也没到终点';
+            ? '一次都没走通，全卡在 (' + sp.a + ') 与 (' + sp.b + ') 之间打转'
+            : G_ROLLOUT + ' 步也走不到终点';
+        } else {
+          var sp2 = stuckPair(d.m.trace);
+          why.textContent = '另外 ' + d.m.fails + ' 次没走通' +
+            (sp2 ? '，图上这一次卡在 (' + sp2.a + ') 与 (' + sp2.b + ') 之间' : '');
         }
         r.appendChild(why);
         return r;
@@ -1736,7 +1805,7 @@
       var tb = el('table', 'rl-compare-tb');
       var thead = el('thead');
       var trh = el('tr');
-      ['状态定义', '状态数', '歧义处', '成功率', '平均步数'].forEach(function (t) {
+      ['状态定义', '状态数', '歧义处', G_BATCH + ' 次走通', '走通时步数'].forEach(function (t) {
         trh.appendChild(el('th', null, t));
       });
       thead.appendChild(trh);
@@ -1755,7 +1824,7 @@
         tr.appendChild(td0);
         tr.appendChild(el('td', null, String(d.m.states)));
         tr.appendChild(el('td', null, String(d.m.clash)));
-        tr.appendChild(el('td', null, Math.round(d.m.rate * 100) + '%'));
+        tr.appendChild(el('td', null, d.m.won + '/' + d.m.of));
         tr.appendChild(el('td', null, d.m.len ? f2(d.m.len) : '—'));
         body.appendChild(tr);
       });
@@ -1763,9 +1832,10 @@
       resultBox.appendChild(tb);
 
       var note = el('p', 'rl-compare-note');
-      note.innerHTML = '两行的算法、奖励、回合数、随机种子完全相同，' +
-        '唯一的差别是第二行把钥匙写进了状态。' +
-        '<span class="d">成功率是训练结束后关掉探索、用学到的策略跑出来的。</span>';
+      note.innerHTML = '两行的算法、奖励、回合数、每轮的随机种子完全相同，' +
+        '唯一的差别是下面一行把钥匙写进了状态。' +
+        '<span class="d">「走通」= 训练结束后关掉探索，从起点按学到的策略走一局。' +
+        '一局只有一个结果，所以数的是「' + G_BATCH + ' 次里几次」，不是「一百局里几局」。</span>';
       resultBox.appendChild(note);
     }
 
@@ -1790,27 +1860,39 @@
     tabNaive.onclick = function () { S.naive = true; sync(); };
     tabFull.onclick = function () { S.naive = false; sync(); };
 
-    btnRun.onclick = function () {
-      // 第一次用文章里的种子，复现文章中的数字；之后每次换一个，
-      // 用来确认结论不是某一串随机数碰巧凑出来的
-      seedUsed = seedUsed ? (seedUsed * 7919) % 2147483647 : G_SEED;
-      M = { naive: gTrain(true, seedUsed), full: gTrain(false, seedUsed) };
-      btnRun.textContent = '换个种子再训一次';
+    // 文章里的数字来自第一批种子；之后每批接着往后走，用来验证结论不是碰巧
+    var nextSeed = G_SEED;
+    function nextSeeds() {
+      var out = [];
+      for (var i = 0; i < G_BATCH; i++) {
+        out.push(nextSeed);
+        nextSeed = (nextSeed * 7919) % 2147483647;
+      }
+      return out;
+    }
+
+    function runBatch() {
+      var seeds = nextSeeds();
+      M = { naive: gBatch(true, seeds), full: gBatch(false, seeds) };
+      btnRun.disabled = false;
+      btnRun.textContent = '换一批种子再训';
       resultBox.style.display = '';
       resultBox.classList.remove('rl-fresh');
       void resultBox.offsetWidth;          // 重启动画，第二次点也有淡入
       resultBox.classList.add('rl-fresh');
       sync();
+    }
 
-      // 结果在按钮下面，笔记本竖屏时常常正好在可视区外
-      if (resultBox.scrollIntoView) {
-        var rect = resultBox.getBoundingClientRect();
-        var vh = window.innerHeight || 800;
-        if (rect.bottom > vh - 24 || rect.top < 0) {
-          resultBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        }
-      }
+    btnRun.onclick = function () {
+      if (btnRun.disabled) return;
+      // 先让浏览器把「训练中」画出来再开算：这批要跑几百万步
+      btnRun.disabled = true;
+      btnRun.textContent = '训练中…';
+      setTimeout(runBatch, 30);
     };
+
+    // 测试和自动化脚本可以同步跑完，不必等那 30 毫秒
+    root._runBatch = runBatch;
 
     redraws.push(draw);
     sync();
