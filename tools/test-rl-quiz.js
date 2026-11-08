@@ -97,16 +97,35 @@ ok('rl2 每题 4 条说明', rl2E === 12, String(rl2E));
 ok('rl2 答案下标合法', rl2A.every(v => v >= 0 && v <= 3), rl2A.join(','));
 ok('rl2 答案分布均匀', [0, 1, 2, 3].every(i => rl2A.filter(v => v === i).length === 3), rl2A.join(','));
 
-// dsp8 的结构自检：8 题、每题 4 选项、每题 4 条逐项说明、答案下标合法
-const dsp8Src = (src.split(/\n\s+dsp8:\s*\{/)[1] || '').split(/\n\s+\}\s*\n\s*\};/)[0];
-const dsp8A = [...dsp8Src.matchAll(/\n\s+a: (\d),/g)].map(m => Number(m[1]));
-const dsp8Opts = (dsp8Src.match(/o: \[/g) || []).length;
-const dsp8E = (dsp8Src.match(/e: \[/g) || []).length;
-ok('dsp8 题数为 8', dsp8A.length === 8, String(dsp8A.length));
-ok('dsp8 每题 4 选项', dsp8Opts === 8, String(dsp8Opts));
-ok('dsp8 每题 4 条说明', dsp8E === 8, String(dsp8E));
-ok('dsp8 答案下标合法', dsp8A.every(v => v >= 0 && v <= 3), dsp8A.join(','));
-ok('dsp8 答案分布均匀', [0, 1, 2, 3].every(i => dsp8A.filter(v => v === i).length === 2), dsp8A.join(','));
+// dsp* 全量结构自检：按 key 切段，逐库检查题量、选项数、说明数、答案下标与分布。
+// 切段方式：先扫出所有 "key: { title:" 的位置，相邻两个位置之间即为一个题库。
+const bankStart = src.indexOf('var BANK = {');
+const bankEnd = src.indexOf('\n  };\n', bankStart);
+const bounds = [];
+const reKey = /\n\s+([a-zA-Z0-9]+):\s*\{\s*\n\s+title:/g;
+let mk;
+while ((mk = reKey.exec(src))) bounds.push({ key: mk[1], at: mk.index });
+
+const dspKeys = bounds.map(b => b.key).filter(k => /^dsp\d+$/.test(k));
+ok('dsp 题库数量 >= 15', dspKeys.length >= 15, dspKeys.join(','));
+
+for (let i = 0; i < bounds.length; i++) {
+  const key = bounds[i].key;
+  if (!/^dsp\d+$/.test(key)) continue;
+  const to = i + 1 < bounds.length ? bounds[i + 1].at : bankEnd;
+  const seg = src.slice(bounds[i].at, to);
+  const ans = [...seg.matchAll(/\n\s+a: (\d),/g)].map(m => Number(m[1]));
+  const opts = (seg.match(/o: \[/g) || []).length;
+  const expl = (seg.match(/e: \[/g) || []).length;
+  const want = Number((seg.match(/title: '本篇自测 · (\d+)/) || [])[1]);
+  ok(`${key} 题量符合标题（${want}）`, ans.length === want, String(ans.length));
+  ok(`${key} 每题 4 选项`, opts === ans.length, String(opts));
+  ok(`${key} 每题 4 条说明`, expl === ans.length, String(expl));
+  ok(`${key} 答案下标合法`, ans.every(v => v >= 0 && v <= 3), ans.join(','));
+  const dist = [0, 1, 2, 3].map(k => ans.filter(v => v === k).length);
+  ok(`${key} 答案分布均匀`, Math.max(...dist) - Math.min(...dist) <= 1, dist.join('/'));
+  ok(`${key} 题面无裸 $ 与 TeX`, !/\$|\\\\(frac|sum|int)/.test(seg));
+}
 
 qs.forEach((q, i) => {
   const bs = [...q.querySelectorAll('.qz-opt')];
