@@ -1898,9 +1898,175 @@
     sync();
   }
 
+  /* =======================================================================
+     实验三：折扣因子 —— 未来每一步的分还剩多少
+     -----------------------------------------------------------------------
+     这一段要讲的事只有一件：γ 决定你能看多远。
+     不用动画、不用按钮，就一个滑块：拖到 0.5 看柱子几步就塌光，
+     拖到 0.99 看二十步外还留着九成。结论是拖出来的，不是念出来的。
+     ======================================================================= */
+
+  var D_STEPS = 20;          // 柱子的根数：未来第 1 到第 20 步
+
+  function mountDiscount(root) {
+    var P = palette();
+    var g = 0.90;
+
+    root.innerHTML = '';
+
+    var hd = el('div', 'rl-head');
+    hd.appendChild(el('b', null, '交互实验 · 折扣因子'));
+    hd.appendChild(el('span', null, '拖一下滑块，看未来每一步的分被折成多少'));
+    hd.appendChild(el('span', 'rl-badge', 'RL LAB 03'));
+    root.appendChild(hd);
+
+    var stage = el('div', 'rl-stage');
+    var cv = el('canvas', 'rl-canvas');
+    stage.appendChild(cv);
+    root.appendChild(stage);
+
+    var ctrl = el('div', 'rl-controls');
+    var fld = el('div', 'rl-field wide');
+    var lab = el('label');
+    lab.appendChild(el('span', null, '折扣因子 γ'));
+    var gval = el('b', null, '0.90');
+    lab.appendChild(gval);
+    fld.appendChild(lab);
+
+    var range = el('input', 'rl-range');
+    range.type = 'range';
+    range.min = '0';
+    range.max = '99';
+    range.step = '1';
+    range.value = '90';
+    fld.appendChild(range);
+    ctrl.appendChild(fld);
+    root.appendChild(ctrl);
+
+    var stats = el('div', 'rl-stats');
+    var statDefs = [
+      { k: 'k10', label: '第 10 步还剩' },
+      { k: 'cut', label: '权重跌破 10%' },
+      { k: 'tot', label: '每步 1 分，无限走' }
+    ];
+    var statEls = {};
+    statDefs.forEach(function (d) {
+      var box = el('div', 'rl-stat');
+      box.appendChild(el('em', null, d.label));
+      var b = el('b', null, '—');
+      box.appendChild(b);
+      stats.appendChild(box);
+      statEls[d.k] = b;
+    });
+    root.appendChild(stats);
+
+    var hint = el('p', 'rl-hint');
+    root.appendChild(hint);
+
+    // 太小的权重不写 0.00：那会让人以为「完全没有」，
+    // 实际 γ=0.5 时第 10 步还剩 0.00098，是没了但不是零。
+    function fmtSmall(v) {
+      if (v <= 0) return '0';
+      return v < 0.01 ? '<0.01' : f2(v);
+    }
+
+    // 权重跌到 10% 需要几步：解 γ^k = 0.1
+    function cutStep() {
+      if (g <= 0) return 1;
+      return Math.ceil(Math.log(0.1) / Math.log(g));
+    }
+
+    function draw() {
+      var f = fit(cv, 220);
+      var ctx = f.ctx, w = f.w, h = f.h;
+      var padL = 36, padR = 12, padT = 22, padB = 28;
+      var iw = w - padL - padR, ih = h - padT - padB;
+
+      function yOf(v) { return padT + ih * (1 - v); }
+
+      // 0 / 0.5 / 1 三条参考线，读高度用
+      setFont(ctx, 10, false);
+      [0, 0.5, 1].forEach(function (v) {
+        var y = yOf(v);
+        ctx.beginPath();
+        ctx.strokeStyle = P.edge;
+        ctx.lineWidth = 1;
+        ctx.moveTo(padL, y);
+        ctx.lineTo(padL + iw, y);
+        ctx.stroke();
+        label(ctx, v.toFixed(1), padL - 8, y, P.faint, 10, 'right');
+      });
+
+      // 10% 那条虚线：低于它的步数基本可以当不存在
+      var y10 = yOf(0.1);
+      ctx.save();
+      ctx.strokeStyle = P.faint;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(padL, y10);
+      ctx.lineTo(padL + iw, y10);
+      ctx.stroke();
+      ctx.restore();
+      label(ctx, '10%', padL + iw - 2, y10 - 8, P.faint, 10, 'right');
+
+      // 柱子：第 k 步的 1 分，折成 γ^k
+      var bw = iw / D_STEPS;
+      for (var k = 1; k <= D_STEPS; k++) {
+        var v = Math.pow(g, k);
+        var x = padL + bw * (k - 1) + bw * 0.18;
+        var bwid = bw * 0.64;
+        var y = yOf(v);
+        ctx.fillStyle = v >= 0.1 ? P.accent : P.faint;
+        ctx.globalAlpha = v >= 0.1 ? 0.85 : 0.45;
+        ctx.fillRect(x, y, bwid, padT + ih - y);
+        ctx.globalAlpha = 1;
+      }
+
+      // 横轴：只标 1 / 5 / 10 / 15 / 20，免得挤成一团
+      [1, 5, 10, 15, 20].forEach(function (k) {
+        label(ctx, String(k), padL + bw * (k - 1) + bw / 2,
+          padT + ih + 12, P.faint, 10);
+      });
+      label(ctx, '从今天起第几步', padL + iw / 2, padT + ih + 26, P.faint, 10);
+
+      // 柱顶标出第 10 步那个数：正文会引用它
+      var v10 = Math.pow(g, 10);
+      label(ctx, fmtSmall(v10), padL + bw * 9 + bw / 2, yOf(v10) - 9,
+        v10 >= 0.1 ? P.accent : P.faint, 11, 'center', 'bottom');
+    }
+
+    function sync() {
+      gval.textContent = f2(g);
+      var v10 = Math.pow(g, 10);
+      var cut = cutStep();
+      var tot = g >= 1 ? '∞' : (1 / (1 - g));
+
+      statEls.k10.textContent = fmtSmall(v10);
+      statEls.cut.textContent = '第 ' + cut + ' 步';
+      statEls.tot.textContent = (typeof tot === 'number' ? tot.toFixed(2) : tot) + ' 分';
+
+      hint.innerHTML = g <= 0
+        ? 'γ = 0 只有今天：往后再多的分，乘上 0 都不算数。'
+        : '第 k 步的 1 分，只值 γ<sup>k</sup> 分。γ = ' + f2(g) +
+          ' 时，第 ' + cut + ' 步往后连一成都不到。';
+
+      draw();
+    }
+
+    range.oninput = function () {
+      g = (+range.value) / 100;
+      sync();
+    };
+
+    redraws.push(draw);
+    sync();
+  }
+
   window.LY_RL = { register: register, boot: boot };
   register('bandit', mountBandit);
   register('grid', mountGrid);
+  register('discount', mountDiscount);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);

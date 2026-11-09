@@ -26,11 +26,11 @@ comment: false
 <span>从一条判据出发，一层层搭到 MDP；最后一扇锁着的门验收</span>
 </a>
 
-<div class="rl-card soon">
+<a class="rl-card live" href="/2026/11/09/强化学习rl三回报与价值/">
 <em>03</em>
 <b>折扣因子</b>
-<span>拖 γ，看同一个策略的价值排序怎么变</span>
-</div>
+<span>拖 γ，看未来每一步的分被折成多少，一眼看出它能看到第几步</span>
+</a>
 
 <div class="rl-card soon">
 <em>04</em>
