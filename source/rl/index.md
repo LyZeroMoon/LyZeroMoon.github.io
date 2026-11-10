@@ -35,7 +35,7 @@ comment: false
 <a class="rl-card" href="/2026/11/11/强化学习rl四贝尔曼方程/">
 <em>04</em>
 <b>贝尔曼方程</b>
-<span>把式子代进去，价值一步步爬到真值</span>
+<span>当前价值 = 即时奖励 + 未来价值的折扣期望</span>
 </a>
 
 <div class="rl-card soon">
