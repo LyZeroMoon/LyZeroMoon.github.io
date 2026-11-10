@@ -32,11 +32,11 @@ comment: false
 <span>拖 γ，看未来每一步的分被折成多少，一眼看出它能看到第几步</span>
 </a>
 
-<div class="rl-card soon">
+<a class="rl-card" href="/2026/11/11/强化学习rl四贝尔曼方程/">
 <em>04</em>
-<b>价值迭代</b>
-<span>价值从终点一圈圈扩散到全图</span>
-</div>
+<b>贝尔曼方程</b>
+<span>把式子代进去，价值一步步爬到真值</span>
+</a>
 
 <div class="rl-card soon">
 <em>05</em>
