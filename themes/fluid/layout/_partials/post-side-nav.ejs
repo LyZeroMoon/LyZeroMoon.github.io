@@ -1,0 +1,29 @@
+<%
+  // 视口左右两侧的悬浮翻页箭头（只在文章页渲染，见 post.ejs）。
+  // 邻居由 scripts/post-side-nav.js 的 postSideNav 助手算 —— 同专栏内按标题序号，
+  // 不用 Hexo 的 page.prev/next（方向反、同日发布还会跳号）。
+  // 样式在 source/css/post-nav.css（custom_css 引入），配色全走主题变量。
+  const sideNav = postSideNav(page)
+%>
+<% if (theme.post.prev_next.enable && !page.hide && (sideNav.prev || sideNav.next)) { %>
+<nav class="psn" aria-label="文章翻页">
+  <% if (sideNav.prev) { %>
+  <a class="psn-item psn-prev" href="<%= url_for(sideNav.prev.path) %>"
+     title="上一篇：<%= sideNav.prev.title %>" aria-label="上一篇：<%= sideNav.prev.title %>">
+    <span class="psn-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+    </span>
+    <span class="psn-tip"><b>上一篇</b><em><%= sideNav.prev.title %></em></span>
+  </a>
+  <% } %>
+  <% if (sideNav.next) { %>
+  <a class="psn-item psn-next" href="<%= url_for(sideNav.next.path) %>"
+     title="下一篇：<%= sideNav.next.title %>" aria-label="下一篇：<%= sideNav.next.title %>">
+    <span class="psn-tip"><b>下一篇</b><em><%= sideNav.next.title %></em></span>
+    <span class="psn-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+    </span>
+  </a>
+  <% } %>
+</nav>
+<% } %>

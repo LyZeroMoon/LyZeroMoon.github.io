@@ -58,21 +58,21 @@ page.banner_mask_alpha = page.banner_mask_alpha || theme.post.banner_mask_alpha
 
               <% if (theme.post.prev_next.enable && !page.hide) { %>
                 <div class="post-prevnext my-3">
+                  <%# 邻居由 postSideNav 算（同专栏内按标题序号），与左右悬浮箭头同源 %>
+                  <% const sideNav = postSideNav(page) %>
                   <article class="post-prev col-6">
-                    <% const prev = prev_post(page) %>
-                    <% if (prev) { %>
-                      <a href="<%= url_for(prev.path) %>" title="<%= prev.title %>">
+                    <% if (sideNav.prev) { %>
+                      <a href="<%= url_for(sideNav.prev.path) %>" title="<%= sideNav.prev.title %>">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile"><%= prev.title %></span>
+                        <span class="hidden-mobile"><%= sideNav.prev.title %></span>
                         <span class="visible-mobile"><%- __('post.prev_post') %></span>
                       </a>
                     <% } %>
                   </article>
                   <article class="post-next col-6">
-                    <% const next = next_post(page) %>
-                    <% if (next) { %>
-                      <a href="<%= url_for(next.path) %>" title="<%= next.title %>">
-                        <span class="hidden-mobile"><%= next.title %></span>
+                    <% if (sideNav.next) { %>
+                      <a href="<%= url_for(sideNav.next.path) %>" title="<%= sideNav.next.title %>">
+                        <span class="hidden-mobile"><%= sideNav.next.title %></span>
                         <span class="visible-mobile"><%- __('post.next_post') %></span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
@@ -93,6 +93,8 @@ page.banner_mask_alpha = page.banner_mask_alpha || theme.post.banner_mask_alpha
     </div>
   </div>
 </div>
+
+<%- partial('_partials/post-side-nav') %>
 
 <%- partial('_partials/markdown-plugins') %>
 

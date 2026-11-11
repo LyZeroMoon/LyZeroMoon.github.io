@@ -253,6 +253,9 @@ custom_css:
   # 不会串到别的文章。曾经只在 source/rl/index.md 里用 <link> 引过，
   # 结果文章页一直没样式——别再删这一行。
   - /css/rl.css
+  # 文章页左右悬浮翻页箭头。DOM 由 themes/fluid/layout/_partials/post-side-nav.ejs
+  # 在文章页输出，选择器统一 .psn- 前缀。窄屏（<1200px）自动隐藏。
+  - /css/post-nav.css
 
 # 网页访问统计
 # Analysis of website visitors
