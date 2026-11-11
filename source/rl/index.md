@@ -38,11 +38,11 @@ comment: false
 <span>当前价值 = 即时奖励 + 未来价值的折扣期望</span>
 </a>
 
-<div class="rl-card soon">
+<a class="rl-card live" href="/2026/11/11/强化学习rl五策略评估与策略迭代/">
 <em>05</em>
 <b>策略迭代</b>
 <span>评估与改进交替，策略快照逐轮切换</span>
-</div>
+</a>
 
 <div class="rl-card soon">
 <em>06</em>
