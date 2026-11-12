@@ -1,0 +1,139 @@
+/* ============================================================
+   文章页左右悬浮翻页箭头
+   由 _config.fluid.yml 的 custom_css 引入（全站，但只在文章页有 DOM）
+
+   两条硬约束：
+   1. 配色一律用主题变量，写死颜色会在深色皮肤下变成白块；
+   2. 外层整屏透明层必须 pointer-events: none，否则正文点不到。
+   ============================================================ */
+
+.psn {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  pointer-events: none;   /* 只是画两个按钮，不接管整屏点击 */
+}
+
+.psn-item {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
+  text-decoration: none;
+  color: var(--sec-text-color);
+  transition: color .18s;
+}
+.psn-prev { left: 0; }
+.psn-next { right: 0; }
+
+/* ---------- 箭头按钮 ---------- */
+
+.psn-btn {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  background: var(--board-bg-color);
+  border: 1px solid var(--line-color);
+  opacity: .76;
+  transition: opacity .18s, transform .18s, box-shadow .18s, border-color .18s;
+}
+.psn-prev .psn-btn { border-left: 0; border-radius: 0 10px 10px 0; }
+.psn-next .psn-btn { border-right: 0; border-radius: 10px 0 0 10px; }
+
+.psn-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.psn-item:hover,
+.psn-item:focus-visible { color: var(--post-link-color); }
+
+.psn-item:hover .psn-btn,
+.psn-item:focus-visible .psn-btn {
+  opacity: 1;
+  border-color: var(--post-link-color);
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--text-color) 14%, transparent);
+}
+.psn-prev:hover .psn-btn { transform: translateX(3px); }
+.psn-next:hover .psn-btn { transform: translateX(-3px); }
+
+.psn-item:focus-visible { outline: none; }
+.psn-item:focus-visible .psn-btn {
+  outline: 2px solid var(--post-link-color);
+  outline-offset: 2px;
+}
+
+/* ---------- 悬停展开的标题条 ---------- */
+
+.psn-tip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+  max-width: 0;
+  padding: 0;
+  border: 0 solid var(--line-color);
+  border-radius: 8px;
+  background: var(--board-bg-color);
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  transition: max-width .26s cubic-bezier(.4, 0, .2, 1),
+              opacity .18s, padding .26s, border-width .18s;
+}
+.psn-prev .psn-tip { margin-left: 7px; }
+.psn-next .psn-tip { margin-right: 7px; align-items: flex-end; }
+
+.psn-tip b {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  color: var(--sec-text-color);
+}
+.psn-tip em {
+  display: block;
+  max-width: 208px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-style: normal;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-color);
+}
+
+.psn-item:hover .psn-tip,
+.psn-item:focus-visible .psn-tip {
+  max-width: 230px;
+  padding: 7px 11px;
+  border-width: 1px;
+  opacity: 1;
+}
+
+/* ---------- 响应式 ---------- */
+
+/* 中屏只留箭头：展开的标题条会压住目录侧栏 */
+@media (max-width: 1399.98px) {
+  .psn-item:hover .psn-tip,
+  .psn-item:focus-visible .psn-tip {
+    max-width: 0;
+    padding: 0;
+    border-width: 0;
+    opacity: 0;
+  }
+}
+
+/* 窄屏没有两侧留白，箭头会盖住正文，直接不显示 */
+@media (max-width: 1199.98px) {
+  .psn { display: none; }
+}
