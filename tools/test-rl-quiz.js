@@ -87,7 +87,9 @@ const bankA = [...rl1Src.matchAll(/\n\s+a: (\d),/g)].map(m => Number(m[1]));
 ok('题库答案与预期一致', JSON.stringify(bankA) === JSON.stringify(ANSWERS), bankA.join(','));
 
 // rl2 的结构自检：12 题、每题 4 选项、4 条逐项说明、答案下标合法且分布均匀
-const rl2Src = (src.split(/\n\s+rl2:\s*\{/)[1] || '').split(/\n\s+dsp8:\s*\{/)[0];
+// 终点必须指向「下一个 key」（rl3），不能指向远处的 dsp8 ——
+// rl3/rl4/rl5 上线后，用 dsp8 当边界会把这三个题库一起吞进来，题数凭空变成 48。
+const rl2Src = (src.split(/\n\s+rl2:\s*\{/)[1] || '').split(/\n\s+rl3:\s*\{/)[0];
 const rl2A = [...rl2Src.matchAll(/\n\s+a: (\d),/g)].map(m => Number(m[1]));
 const rl2Opts = (rl2Src.match(/o: \[/g) || []).length;
 const rl2E = (rl2Src.match(/e: \[/g) || []).length;
