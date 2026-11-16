@@ -16,7 +16,7 @@ function ok(n, c, e) {
 
 /* 一、源码层面：rl3 段里 q / o / w / e 都不能出现 $ 或反斜杠命令 */
 const a = src.indexOf('rl3: {');
-const b = src.indexOf('DSP（八）');   // 下一段注释的正文行，别把它的说明也算进来
+const b = src.indexOf('rl4: {');   // 下一段题库的起点，别把它的说明也算进来
 ok('找到 rl3 段', a > 0 && b > a, a + ' / ' + b);
 const seg = src.slice(a, b);
 const dollars = (seg.match(/\$/g) || []).length;

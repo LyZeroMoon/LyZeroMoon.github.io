@@ -2063,10 +2063,199 @@
     sync();
   }
 
+  /* =======================================================================
+     实验四：蒙特卡洛采样 —— 无偏，但一次采不准
+     -----------------------------------------------------------------------
+     这一段要讲的事只有一件：期望算不出来，样本平均算得出来，
+     但要多少条样本才敢下结论。
+     一个状态、两种结果（0 和 10 各一半），真值 5、单条标准差 5。
+     二十个点＝二十次独立实验各自的估值。拖 N 看它们收拢。
+     不用按钮、不用标签页：结论是拖出来的。
+     ======================================================================= */
+
+  var MC_ROWS = 20;          // 二十次独立实验
+  var MC_MAXN = 400;         // 最多采多少条轨迹
+  var MC_TV = 5;             // 真实价值 V(s) = 5
+  var MC_SD = 5;             // 单条回报的标准差
+
+  function mountMC(root) {
+    var P = palette();
+    var n = 25;
+
+    root.innerHTML = '';
+
+    var hd = el('div', 'rl-head');
+    hd.appendChild(el('b', null, '交互实验 · 蒙特卡洛采样'));
+    hd.appendChild(el('span', null, '拖 N，看二十次实验的估值怎么收拢'));
+    hd.appendChild(el('span', 'rl-badge', 'RL LAB 06'));
+    root.appendChild(hd);
+
+    var stage = el('div', 'rl-stage');
+    var cv = el('canvas', 'rl-canvas');
+    stage.appendChild(cv);
+    root.appendChild(stage);
+
+    var ctrl = el('div', 'rl-controls');
+    var fld = el('div', 'rl-field wide');
+    var lab = el('label');
+    lab.appendChild(el('span', null, '采样的轨迹条数 N'));
+    var nval = el('b', null, '25');
+    lab.appendChild(nval);
+    fld.appendChild(lab);
+
+    var range = el('input', 'rl-range');
+    range.type = 'range';
+    range.min = '1';
+    range.max = String(MC_MAXN);
+    range.step = '1';
+    range.value = String(n);
+    fld.appendChild(range);
+    ctrl.appendChild(fld);
+    root.appendChild(ctrl);
+
+    var stats = el('div', 'rl-stats');
+    var statDefs = [
+      { k: 'sd', label: '估值标准差 σ/√N' },
+      { k: 'far', label: '最远一次偏离' },
+      { k: 'hit', label: '落在 ±0.5 内' }
+    ];
+    var statEls = {};
+    statDefs.forEach(function (d) {
+      var box = el('div', 'rl-stat');
+      box.appendChild(el('em', null, d.label));
+      var b = el('b', null, '—');
+      box.appendChild(b);
+      stats.appendChild(box);
+      statEls[d.k] = b;
+    });
+    root.appendChild(stats);
+
+    var hint = el('p', 'rl-hint');
+    root.appendChild(hint);
+
+    /* 二十次实验 × 400 条样本，一次性生成后只取前缀平均。
+       这样拖动滑块时点是在「长大」而不是每次重掷——读者才看得出收拢。 */
+    var rand = rng(20261116 + Math.floor(Math.random() * 999));
+    var cum = [];              // cum[i][k] = 前 k 条样本之和
+    for (var i = 0; i < MC_ROWS; i++) {
+      var acc = 0, row = [0];
+      for (var k = 1; k <= MC_MAXN; k++) {
+        acc += rand() < 0.5 ? 0 : 10;
+        row.push(acc);
+      }
+      cum.push(row);
+    }
+
+    function mean(i, k) { return cum[i][k] / k; }
+
+    function draw() {
+      var f = fit(cv, 300);
+      var ctx = f.ctx, w = f.w, h = f.h;
+      var padL = 26, padR = 16, padT = 30, padB = 34;
+      var iw = w - padL - padR, ih = h - padT - padB;
+      var rowH = ih / MC_ROWS;
+
+      function xOf(v) { return padL + iw * (v / 10); }
+
+      // 估值范围 0..10 的刻度线
+      setFont(ctx, 10, false);
+      [0, 2, 4, 6, 8, 10].forEach(function (v) {
+        var x = xOf(v);
+        ctx.beginPath();
+        ctx.strokeStyle = P.edge;
+        ctx.lineWidth = 1;
+        ctx.moveTo(x, padT);
+        ctx.lineTo(x, padT + ih);
+        ctx.stroke();
+        label(ctx, String(v), x, padT + ih + 12, P.faint, 10);
+      });
+      label(ctx, '估出来的 V(s)', padL + iw / 2, padT + ih + 26, P.faint, 10);
+
+      // ±σ/√N 的带子：宽度就是「结论有多不可靠」
+      var sd = MC_SD / Math.sqrt(n);
+      var x1 = xOf(Math.max(0, MC_TV - sd));
+      var x2 = xOf(Math.min(10, MC_TV + sd));
+      ctx.fillStyle = P.accent;
+      ctx.globalAlpha = 0.10;
+      ctx.fillRect(x1, padT, Math.max(1.5, x2 - x1), ih);
+      ctx.globalAlpha = 1;
+
+      ctx.save();
+      ctx.strokeStyle = P.faint;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(x1, padT); ctx.lineTo(x1, padT + ih);
+      ctx.moveTo(x2, padT); ctx.lineTo(x2, padT + ih);
+      ctx.stroke();
+      ctx.restore();
+
+      // 真值线
+      var xt = xOf(MC_TV);
+      ctx.save();
+      ctx.strokeStyle = P.accent;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(xt, padT - 6);
+      ctx.lineTo(xt, padT + ih);
+      ctx.stroke();
+      ctx.restore();
+      label(ctx, '真值 5', xt, padT - 14, P.accent, 11);
+
+      // 二十个估值：一行一次实验
+      for (var i = 0; i < MC_ROWS; i++) {
+        var v = mean(i, n);
+        var y = padT + rowH * (i + 0.5);
+        var x = xOf(v);
+        ctx.beginPath();
+        ctx.fillStyle = P.accent;
+        ctx.globalAlpha = 0.72;
+        ctx.arc(x, y, Math.min(3.4, rowH * 0.30), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      // 左侧提示当前 N：读图时不用回头找滑块
+      label(ctx, 'N = ' + n, padL + 4, padT + 10, P.faint, 10, 'left');
+    }
+
+    function sync() {
+      nval.textContent = String(n);
+      var sd = MC_SD / Math.sqrt(n);
+      var far = 0, hit = 0;
+      for (var i = 0; i < MC_ROWS; i++) {
+        var d = Math.abs(mean(i, n) - MC_TV);
+        if (d > far) far = d;
+        if (d <= 0.5) hit++;
+      }
+
+      statEls.sd.textContent = sd < 0.01 ? '<0.01' : f2(sd);
+      statEls.far.textContent = f2(far);
+      statEls.hit.textContent = hit + ' / ' + MC_ROWS;
+
+      hint.innerHTML = n <= 2
+        ? '只采 ' + n + ' 条：估值非 0 即 10。无偏是「平均下来不歪」，' +
+          '不是「一条就靠近」。'
+        : '估值标准差是 ' + (sd < 0.01 ? '<0.01' : f2(sd)) +
+          '。想把误差减半，轨迹条数要乘四——这是 σ/√N 的代价，与算法好坏无关。';
+
+      draw();
+    }
+
+    range.oninput = function () {
+      n = +range.value;
+      sync();
+    };
+
+    redraws.push(draw);
+    sync();
+  }
+
   window.LY_RL = { register: register, boot: boot };
   register('bandit', mountBandit);
   register('grid', mountGrid);
   register('discount', mountDiscount);
+  register('mc', mountMC);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
