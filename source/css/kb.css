@@ -249,3 +249,18 @@ a.wikilink:hover {
   .ly-fold { background: transparent; }
   .ly-fold > :not(summary) { display: block; }
 }
+
+/* ---------- 宽表格：自己横向滚，不撑破正文 ----------
+   公式表里的 KaTeX 不可压缩，窄屏（手机）上表格会比正文栏宽，
+   结果是整页跟着横向滚动、右侧内容被裁掉。
+   改成 display:block + overflow-x:auto：滚动条落在表格内部。
+   width:100% 是必须的——block 化之后窄表格不会自动撑满栏宽，
+   不写这条，短表格会缩成内容那么宽，看着像没对齐。 */
+.markdown-body table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
