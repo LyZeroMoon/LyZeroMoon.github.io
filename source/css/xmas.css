@@ -130,7 +130,7 @@
 }
 
 /* ==========================================================================
-   三、首页头图：换成本地场景，文字挪到左下
+   三、首页头图：换成本地场景，标题居中
    banner 的 background 是 EJS 写死的内联样式，只能 !important 盖。
    ========================================================================== */
 
@@ -146,58 +146,80 @@
   }
 }
 
-/* 蒙版从「整块半透明黑」换成一束从左往下的暗角：
-   左半边压暗托住文字，右半边留出窗、桌椅和炉火的亮度 */
+/* 蒙版改成一束居中的暗角：文字站到正中央后，得先把树冠那片亮压下来，
+   否则白字会和彩球、串灯糊在一起；四周仍留出窗光与炉火。 */
 :root[data-ui="xmas"] #banner .mask {
-  background: linear-gradient(
-      97deg,
-      rgba(4, 8, 6, 0.94) 0%,
-      rgba(4, 8, 6, 0.86) 16%,
-      rgba(4, 8, 6, 0.56) 30%,
-      rgba(4, 8, 6, 0.2) 46%,
-      rgba(4, 8, 6, 0.03) 62%,
-      transparent 74%
-    ),
+  background:
+    radial-gradient(ellipse 56% 44% at 50% 50%,
+      rgba(4, 8, 6, 0.9) 0%,
+      rgba(4, 8, 6, 0.78) 34%,
+      rgba(4, 8, 6, 0.36) 64%,
+      transparent 100%),
     linear-gradient(
       180deg,
-      rgba(4, 8, 6, 0.7) 0%,
-      rgba(4, 8, 6, 0.14) 30%,
-      rgba(4, 8, 6, 0.03) 56%,
-      rgba(11, 17, 14, 0.86) 90%,
+      rgba(4, 8, 6, 0.78) 0%,
+      rgba(4, 8, 6, 0.2) 24%,
+      rgba(4, 8, 6, 0.05) 56%,
+      rgba(11, 17, 14, 0.84) 88%,
       #0b110e 100%
     ) !important;
-  align-items: flex-end;
-  justify-content: flex-start;
+  /* 主题内联的 background-color 会压在渐变下面再加一层暗，这里清掉，
+     暗度只由上面两层决定，调参才有意义 */
+  background-color: transparent !important;
+  align-items: center;
+  justify-content: center;
 }
 
 :root[data-ui="xmas"] #banner .banner-text {
   /* !important：.banner-text 自带 .text-center，主题那边不是从 main.css
      加载的，特异性算不准，这里直接盖掉 */
-  text-align: left !important;
+  text-align: center !important;
   width: auto;
-  max-width: min(620px, 76vw);
-  padding: 0 clamp(24px, 7vw, 110px) 13vh;
-  margin: 0;
+  max-width: min(820px, 90vw);
+  padding: 0 clamp(20px, 6vw, 72px);
+  /* 块整体上抬一点：几何正中会正好顶在树干最密的那一段上 */
+  margin-bottom: 6vh;
 }
 
 :root[data-ui="xmas"] #banner .banner-text .h2,
 :root[data-ui="xmas"] #banner #subtitle {
   font-family: "Songti SC", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
-  font-size: clamp(2rem, 4.8vw, 3.6rem);
-  line-height: 1.3;
-  letter-spacing: 0.04em;
+  /* 文章页标题也用这条，字号不能大 —— 居中之后一行排不下就会吊一个字到第二行 */
+  font-size: clamp(2rem, 4.6vw, 3.4rem);
+  line-height: 1.24;
+  letter-spacing: 0.06em;
   color: #fbf8f0;
-  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 2px 32px rgba(0, 0, 0, 0.72), 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+/* 副标题只留英文一句，正好可以排得夸张些：斜体衬线 + 紧凑字距，像印在贺卡上。
+   用 :has(.post-meta) 把文章页排除掉 —— 文章页没有 post-meta 才怪，
+   那边是标题 + 日期 + 字数，跟着放大就溢出了。 */
+:root[data-ui="xmas"] #banner .banner-text:not(:has(.post-meta)) #subtitle {
+  display: inline-block;
+  font-family: Georgia, "Times New Roman", "Songti SC", serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(2.3rem, 6vw, 4.4rem);
+  letter-spacing: 0.01em;
+  line-height: 1.18;
+  color: #fcf8ef;
 }
 
 /* 窄屏：头图比例更竖，把焦点往树和礼物那边挪，否则只剩一截天花板 */
 @media (max-width: 767px) {
   :root[data-ui="xmas"] #banner.banner {
-    background-position: 44% 50% !important;
+    background-position: 46% 52% !important;
   }
   :root[data-ui="xmas"] #banner .banner-text {
-    padding: 0 22px 11vh;
-    max-width: 88vw;
+    padding: 0 18px;
+    max-width: 92vw;
+    margin-bottom: 4vh;
+  }
+  /* 小屏把英文收一档，一行才排得下 */
+  :root[data-ui="xmas"] #banner .banner-text:not(:has(.post-meta)) #subtitle {
+    font-size: clamp(1.9rem, 8.4vw, 2.6rem);
+    letter-spacing: 0;
   }
 }
 

@@ -1,3 +1,16 @@
+<%
+  // 圣诞皮肤下副标题只要英文一句，所以这里不能再按 slogan.text 随机抽 ——
+  // 抽到「圣诞快乐」就成中文了。改成在清单里取第一条纯拉丁字符的文案。
+  var uiCfg = site.data.ui || {}
+  var uiXmas = uiCfg.force === true && uiCfg.default === 'xmas'
+  var uiSlogan = theme.index.slogan && theme.index.slogan.text
+  var uiXmasText = 'Merry Christmas'
+  if (Array.isArray(uiSlogan)) {
+    for (var iUi = 0; iUi < uiSlogan.length; iUi++) {
+      if (/^[\x00-\x7F]+$/.test(String(uiSlogan[iUi]))) { uiXmasText = String(uiSlogan[iUi]); break }
+    }
+  }
+%>
 <% if(theme.fun_features.typing.enable && in_scope(theme.fun_features.typing.scope) && page.subtitle !== false) { %>
   <%- js_ex(theme.static_prefix.typed, '/typed.min.js') %>
   <script>
@@ -40,6 +53,8 @@
             typing(text);
           }
         })
+      <% } else if (is_home() && uiXmas) { %>
+        typing(<%- JSON.stringify(uiXmasText) %>);
       <% } else if (is_home() && Array.isArray(theme.index.slogan.text) && theme.index.slogan.text.length > 0) { %>
         var texts = <%- JSON.stringify(theme.index.slogan.text) %>;
         var idx = Math.floor(Math.random() * texts.length);
