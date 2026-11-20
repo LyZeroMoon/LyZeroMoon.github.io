@@ -26,6 +26,11 @@
   var skins = (cfg.skins || []).filter(function (s) { return s && s.id; });
   if (!skins.length) return;
 
+  /* 节日皮肤是整站强制的（ui.json 里 force:true）：首屏已经定死了 data-ui，
+     本地记忆也不参与，这时候皮肤面板点开了也切不走，索性整个不启动 ——
+     按钮本身由 xmas.css 隐藏。回退时把 ui.json 的 force 去掉即可恢复。 */
+  if (cfg.force === true) return;
+
   var ids = skins.map(function (s) { return s.id; });
   var siteDefault = ids.indexOf(cfg.default) >= 0 ? cfg.default : ids[0];
   var allowSwitch = cfg.allowSwitch !== false;

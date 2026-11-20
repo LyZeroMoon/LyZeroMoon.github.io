@@ -242,6 +242,9 @@ custom_js:
   # 专栏（分类）页的「正序 / 倒序」切换。只改 DOM 顺序 + 记 localStorage，
   # 没有它页面照样按顺序显示（服务端已排好），只是不能翻转。
   - /js/column-order.js
+  # 圣诞季：飘雪层 + 鼠标雪尘（含 9% 六角晶体）。只在 data-ui="xmas" 时启动，
+  # 其它皮肤下这个文件一行都不执行。节日结束连同 css/xmas.css 一起删即可。
+  - /js/xmas.js
 
 # 指定自定义 .css 文件路径，用法和 custom_js 相同
 # The usage is the same as custom_js
@@ -256,6 +259,9 @@ custom_css:
   # 文章页左右悬浮翻页箭头。DOM 由 themes/fluid/layout/_partials/post-side-nav.ejs
   # 在文章页输出，选择器统一 .psn- 前缀。窄屏（<1200px）自动隐藏。
   - /css/post-nav.css
+  # 圣诞季。必须排在 skins.css 之后：它用同特异性的 :root[data-ui="xmas"]
+  # 覆盖同一批变量，靠的就是后加载。
+  - /css/xmas.css
 
 # 网页访问统计
 # Analysis of website visitors
@@ -548,9 +554,8 @@ index:
     # 为空则按 hexo config.subtitle 显示，支持列表格式来实现随机选择一行文字显示
     # If empty, text based on `subtitle` in hexo config, support list format to random selection of a row for display
     text:
-      - "写代码，也写思考"
-      - "记录踩过的坑与想通的事"
-      - "Keep coding, keep learning"
+      - "圣诞快乐"
+      - "Merry Christmas"
 
     # 通过 API 接口作为首页副标题的内容，必须返回的是 JSON 格式，如果请求失败则按 text 字段显示，该功能必须先开启 typing 打字机功能
     # Subtitle of the homepage through the API, must be returned a JSON. If the request fails, it will be displayed in `text` value. This feature must first enable the typing animation

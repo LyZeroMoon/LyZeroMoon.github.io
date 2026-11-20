@@ -1,6 +1,7 @@
 {
   "version": 1,
-  "default": "default",
+  "default": "xmas",
+  "force": true,
   "allowSwitch": true,
   "skins": [
     {
@@ -99,6 +100,16 @@
       "desc": "网格底纹、切角面板、霓虹辉光",
       "accent": "#05060a",
       "accent2": "#22d3ee",
+      "builtin": false,
+      "game": false,
+      "enabled": true
+    },
+    {
+      "id": "xmas",
+      "name": "圣诞",
+      "desc": "壁炉夜景、飘雪与雪尘拖尾，节日期间整站强制",
+      "accent": "#c1443c",
+      "accent2": "#2f5d43",
       "builtin": false,
       "game": false,
       "enabled": true

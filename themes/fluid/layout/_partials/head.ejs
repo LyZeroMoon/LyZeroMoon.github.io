@@ -24,12 +24,16 @@ if (!uiSkins.length) {
 }
 var uiIds = uiSkins.map(function (s) { return s.id })
 var uiDefault = uiIds.indexOf(uiData.default) >= 0 ? uiData.default : uiIds[0]
+// force:true = 节日期间整站强制这条皮肤（见 source/_data/ui.json）。
+// 只影响「站点默认 vs 访客本地记录」的优先级，皮肤本身的渲染逻辑不变。
+var uiForce = uiData.force === true
 // 「复古」皮肤要在窗口标题栏里显示站点名。CSS 的 content 取不到站点配置，
 // 所以把站点名做成一个自定义属性（JSON.stringify 顺带把引号转义掉，
 // 它输出的双引号字符串正好是合法的 CSS 字符串字面量）。
 var uiSiteTitle = String(theme.navbar.blog_title || config.title || '').trim()
 var uiConfig = {
   default: uiDefault,
+  force: uiForce,
   allowSwitch: uiData.allowSwitch !== false,
   // 小游戏入口只认「街机」这个 id：CSS 那边是 :root[data-ui="arcade"]，
   // JS 那边也是写死的。ui.json 里的 game 字段只用来给后台画个角标，
@@ -103,7 +107,8 @@ var gamesConfigJson = JSON.stringify(gamesConfig)
         var ids = cfg.skins.map(function (s) { return s.id; });
         var saved = null;
         try { saved = localStorage.getItem('ly_ui_skin'); } catch (e) {}
-        var pick = ids.indexOf(saved) >= 0 ? saved : cfg.default;
+        // force 时本地记录不算数：节日皮肤要对所有访客一致
+        var pick = (!cfg.force && ids.indexOf(saved) >= 0) ? saved : cfg.default;
         if (ids.indexOf(pick) < 0) pick = fallback;
         document.documentElement.setAttribute('data-ui', pick);
       } catch (e) {
