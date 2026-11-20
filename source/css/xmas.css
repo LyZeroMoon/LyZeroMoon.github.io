@@ -146,26 +146,29 @@
   }
 }
 
-/* 蒙版从「整块半透明黑」换成一束从左往下的暗角：
-   左半边压暗托住文字，右半边留出窗、桌椅和炉火的亮度 */
+/* 蒙版：左半边压暗托住文字，右半边留出窗、桌椅和炉火的亮度。
+   上一版整体偏暗，两处下手：① 去掉主题内联的 rgba(0,0,0,.3) 全屏底
+   ② 97deg 与 180deg 各档一起提亮，文字区仍有 0.8 的暗度，画面不再整体发灰。 */
 :root[data-ui="xmas"] #banner .mask {
   background: linear-gradient(
       97deg,
-      rgba(4, 8, 6, 0.94) 0%,
-      rgba(4, 8, 6, 0.86) 16%,
-      rgba(4, 8, 6, 0.56) 30%,
-      rgba(4, 8, 6, 0.2) 46%,
-      rgba(4, 8, 6, 0.03) 62%,
-      transparent 74%
+      rgba(4, 8, 6, 0.82) 0%,
+      rgba(4, 8, 6, 0.66) 18%,
+      rgba(4, 8, 6, 0.36) 34%,
+      rgba(4, 8, 6, 0.12) 50%,
+      rgba(4, 8, 6, 0.02) 64%,
+      transparent 76%
     ),
     linear-gradient(
       180deg,
-      rgba(4, 8, 6, 0.7) 0%,
-      rgba(4, 8, 6, 0.14) 30%,
-      rgba(4, 8, 6, 0.03) 56%,
-      rgba(11, 17, 14, 0.86) 90%,
+      rgba(4, 8, 6, 0.46) 0%,
+      rgba(4, 8, 6, 0.08) 30%,
+      rgba(4, 8, 6, 0.02) 56%,
+      rgba(11, 17, 14, 0.8) 90%,
       #0b110e 100%
     ) !important;
+  /* 主题内联的 background-color 会在渐变下面再多压一层，清掉才提得动亮度 */
+  background-color: transparent !important;
   align-items: flex-end;
   justify-content: flex-start;
 }
@@ -188,6 +191,17 @@
   letter-spacing: 0.04em;
   color: #fbf8f0;
   text-shadow: 0 2px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* 首页副标题是纯英文，字体栈里就不留中文字族了 —— 否则会落到宋体的拉丁字形上，
+   笔画带顿笔，不像贺卡。:not(:has(.post-meta)) 把文章页排除在外（那边是中文标题）。 */
+:root[data-ui="xmas"] #banner .banner-text:not(:has(.post-meta)) #subtitle {
+  font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(2.2rem, 5.2vw, 3.8rem);
+  letter-spacing: 0.015em;
+  line-height: 1.22;
 }
 
 /* 窄屏：头图比例更竖，把焦点往树和礼物那边挪，否则只剩一截天花板 */
