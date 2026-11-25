@@ -1,0 +1,89 @@
+/*!
+ * 网络协议安全专栏
+ * ---------------------------------------------------------------------------
+ * 目前只有一块：封装示意图（.nps-enc）。
+ * 配色一律走 Fluid 的 CSS 变量 + 半透明色，不写死深浅两套，
+ * 否则换皮肤（尤其圣诞季深绿底）时整块会变成白卡片。
+ * ---------------------------------------------------------------------------
+ */
+
+.nps-enc {
+  margin: 1.5rem 0;
+  padding: 0.9rem 1rem 0.75rem;
+  border: 1px solid var(--line-color, #e3e3e3);
+  border-radius: 10px;
+  background: var(--board-bg-color, #fff);
+  font-size: 0.84rem;
+  overflow-x: auto;
+}
+
+.nps-enc-cap {
+  margin-bottom: 0.65rem;
+  font-size: 0.76rem;
+  letter-spacing: 0.02em;
+  color: var(--sec-text-color, #999);
+}
+
+.nps-enc-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.26rem 0;
+  min-width: 500px;
+}
+
+.nps-enc-l {
+  flex: 0 0 3.4rem;
+  text-align: right;
+  font-size: 0.74rem;
+  color: var(--sec-text-color, #888);
+  white-space: nowrap;
+}
+
+.nps-enc-bar {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 2px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+/* 首部块：定宽（按真实比例画会细成一条线，这里只保证读得清） */
+.nps-enc-bar i {
+  font-style: normal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.55rem;
+  padding: 0 0.34rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  color: var(--text-color, #333);
+  border: 1px solid rgba(80, 120, 190, 0.45);
+  background: rgba(80, 120, 190, 0.13);
+}
+
+/* 载荷块：吃掉剩下的宽度 */
+.nps-enc-bar i.d {
+  flex: 1 1 auto;
+  justify-content: center;
+  border-style: dashed;
+  border-color: var(--line-color, #ddd);
+  background: rgba(128, 128, 128, 0.09);
+  color: var(--sec-text-color, #666);
+}
+
+.nps-enc-note {
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--line-color, #e3e3e3);
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--sec-text-color, #888);
+}
+
+@media (max-width: 575px) {
+  .nps-enc-row { min-width: 440px; }
+  .nps-enc-bar i { font-size: 0.66rem; padding: 0 0.24rem; }
+}

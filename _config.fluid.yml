@@ -256,6 +256,8 @@ custom_css:
   # 不会串到别的文章。曾经只在 source/rl/index.md 里用 <link> 引过，
   # 结果文章页一直没样式——别再删这一行。
   - /css/rl.css
+  # 网络协议安全专栏：目前只有封装示意图 .nps-enc，配色走主题变量。
+  - /css/nps.css
   # 文章页左右悬浮翻页箭头。DOM 由 themes/fluid/layout/_partials/post-side-nav.ejs
   # 在文章页输出，选择器统一 .psn- 前缀。窄屏（<1200px）自动隐藏。
   - /css/post-nav.css
