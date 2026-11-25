@@ -1,0 +1,1449 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <!-- 皮肤：越早越好，必须排在样式表之前。localStorage 里存着访客的选择，
+       没有记录（或记录已失效）就用站点默认值。 -->
+  <script>
+    window.LY_UI = {"default":"xmas","force":true,"allowSwitch":true,"game":true,"siteTitle":"\"零月小站\"","skins":[{"id":"default","name":"经典","desc":"Fluid 原味，干净克制","accent":"#2f4154","accent2":"#f6f8fa","game":false},{"id":"ink","name":"墨韵","desc":"暖纸底、衬线字、朱砂点缀","accent":"#2b2620","accent2":"#f3eee4","game":false},{"id":"midnight","name":"深海","desc":"深蓝夜色，为长时间阅读而调","accent":"#16324a","accent2":"#eef3f9","game":false},{"id":"glass","name":"玻璃","desc":"毛玻璃卡片 + 渐变背景","accent":"#5b7cfa","accent2":"#eef2ff","game":false},{"id":"sakura","name":"樱雾","desc":"粉紫柔和，轻盈通透","accent":"#7a4a63","accent2":"#fdf2f6","game":false},{"id":"terminal","name":"终端","desc":"等宽字体与磷光绿，极客风","accent":"#0f1a14","accent2":"#e8f5ec","game":false},{"id":"retro","name":"复古","desc":"Windows 95 视窗，青色桌面与立体边框","accent":"#008080","accent2":"#c0c0c0","game":false},{"id":"arcade","name":"街机","desc":"霓虹街机 + CRT 扫描线，附赠贪吃蛇","accent":"#0a0118","accent2":"#ffd60a","game":false},{"id":"magazine","name":"杂志","desc":"衬线大字、首字下沉、编辑式分栏","accent":"#8c1d18","accent2":"#fbf9f4","game":false},{"id":"cyber","name":"赛博","desc":"网格底纹、切角面板、霓虹辉光","accent":"#05060a","accent2":"#22d3ee","game":false},{"id":"xmas","name":"圣诞","desc":"壁炉夜景、飘雪与雪尘拖尾，节日期间整站强制","accent":"#c1443c","accent2":"#2f5d43","game":false}]};
+    (function () {
+      var cfg = window.LY_UI;
+      var fallback = (cfg.skins[0] && cfg.skins[0].id) || 'default';
+      try {
+        if (cfg.siteTitle) {
+          document.documentElement.style.setProperty('--ly-site-title', cfg.siteTitle);
+        }
+        var ids = cfg.skins.map(function (s) { return s.id; });
+        var saved = null;
+        try { saved = localStorage.getItem('ly_ui_skin'); } catch (e) {}
+        // force 时本地记录不算数：节日皮肤要对所有访客一致
+        var pick = (!cfg.force && ids.indexOf(saved) >= 0) ? saved : cfg.default;
+        if (ids.indexOf(pick) < 0) pick = fallback;
+        document.documentElement.setAttribute('data-ui', pick);
+      } catch (e) {
+        document.documentElement.setAttribute('data-ui', fallback);
+      }
+    })();
+  </script>
+
+  <!-- 小游戏清单：给 js/games-hub.js 用。放在这里（而不是页面里）是因为
+       街机皮肤的「直接开一局」入口在任何页面都可能被点到。 -->
+  <script>window.LY_GAMES = {"enabled":true,"featured":"snake","page":"/games/","dir":"/js/games/","css":"/css/games.css","games":[{"id":"snake","name":"贪吃蛇","bestMode":"high"},{"id":"g2048","name":"2048","bestMode":"high"},{"id":"tetris","name":"俄罗斯方块","bestMode":"high"},{"id":"breakout","name":"打砖块","bestMode":"high"},{"id":"minesweeper","name":"扫雷","bestMode":"low"}]};</script>
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="LyZeroMoon">
+  <meta name="keywords" content="编程, 技术博客, 架构, 踩坑, 笔记">
+  
+    <meta name="description" content="漏洞的四种分法与 Flag 误用 标签： #网络协议安全 #漏洞分类 #TCP标志位 #Flag误用 #威胁分类 对应第 1 章上册 P37–43。只列考点。    # 考点 考法     1 两种分法：按漏洞、按层次 填空   2 四类漏洞的名称与定义 名词解释、简答   3 四类漏洞各自的典型攻击 选择、简答   4 TCP 六个标志位的含义 填空   5 四组异常标志位及其崩溃原因 简答（必">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【网络协议安全】（三）漏洞的四种分法与 Flag 误用">
+<meta property="og:url" content="https://lyzeromoon.github.io/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E4%B8%89%E6%BC%8F%E6%B4%9E%E5%9B%9B%E7%A7%8D%E5%88%86%E6%B3%95%E4%B8%8EFlag%E8%AF%AF%E7%94%A8/index.html">
+<meta property="og:site_name" content="零月小站">
+<meta property="og:description" content="漏洞的四种分法与 Flag 误用 标签： #网络协议安全 #漏洞分类 #TCP标志位 #Flag误用 #威胁分类 对应第 1 章上册 P37–43。只列考点。    # 考点 考法     1 两种分法：按漏洞、按层次 填空   2 四类漏洞的名称与定义 名词解释、简答   3 四类漏洞各自的典型攻击 选择、简答   4 TCP 六个标志位的含义 填空   5 四组异常标志位及其崩溃原因 简答（必">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-25T14:55:00.000Z">
+<meta property="article:modified_time" content="2026-11-25T16:53:50.999Z">
+<meta property="article:author" content="LyZeroMoon">
+<meta property="article:tag" content="编程, 技术博客, 架构, 踩坑, 笔记">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>【网络协议安全】（三）漏洞的四种分法与 Flag 误用 - 零月小站</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/kb.css">
+<link rel="stylesheet" href="/css/skins.css">
+<link rel="stylesheet" href="/css/rl.css">
+<link rel="stylesheet" href="/css/nps.css">
+<link rel="stylesheet" href="/css/post-nav.css">
+<link rel="stylesheet" href="/css/xmas.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"lyzeromoon.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"><link rel="alternate" href="/atom.xml" title="零月小站" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  
+<nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>零月小站</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/columns/" target="_self">
+                <i class="iconfont icon-books"></i>
+                <span>专栏</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/notes/" target="_self">
+                <i class="iconfont icon-note"></i>
+                <span>常用公式</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/resources/" target="_self">
+                <i class="iconfont icon-briefcase"></i>
+                <span>资源</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/admin/" target="_self">
+                <i class="iconfont icon-pencil"></i>
+                <span>写作后台</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="nav-games-btn">
+            <a class="nav-link" href="/games/" target="_self"
+               aria-label="小游戏" title="小游戏">
+              <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg><span>小游戏</span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="ui-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" role="button"
+               aria-label="界面风格" title="界面风格">
+              <i class="iconfont icon-brush"></i>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item nav-game-only" id="arcade-game-btn">
+            <a class="nav-link" target="_self" href="javascript:;" role="button"
+               aria-label="直接开一局" title="直接开一局：贪吃蛇">
+              <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/columns/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-books"></i>
+                  <span>专栏</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/notes/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-note"></i>
+                  <span>常用公式</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/resources/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-briefcase"></i>
+                  <span>资源</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/admin/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-pencil"></i>
+                  <span>写作后台</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-games-btn">
+            <a href="/games/" aria-label="小游戏">
+              <div class="mobile-grid-item">
+                <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+                <span>小游戏</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-ui-toggle-btn">
+            <a href="javascript:;" aria-label="界面风格">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-brush"></i>
+                <span>界面风格</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell nav-game-only" id="mobile-arcade-game-btn">
+            <a href="javascript:;" aria-label="直接开一局">
+              <div class="mobile-grid-item">
+                <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+                <span>开一局</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="【网络协议安全】（三）漏洞的四种分法与 Flag 误用"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-25 22:55" pubdate>
+          2026年11月25日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          34 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">【网络协议安全】（三）漏洞的四种分法与 Flag 误用</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="漏洞的四种分法与-Flag-误用"><a class="headerlink" href="#漏洞的四种分法与-Flag-误用"></a>漏洞的四种分法与 Flag 误用</h1>
+<p><strong>标签：</strong> #网络协议安全 #漏洞分类 #TCP标志位 #Flag误用 #威胁分类</p>
+<p>对应第 1 章上册 P37–43。只列考点。</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>考点</th>
+<th>考法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>两种分法：按漏洞、按层次</td>
+<td>填空</td>
+</tr>
+<tr>
+<td>2</td>
+<td>四类漏洞的名称与定义</td>
+<td>名词解释、简答</td>
+</tr>
+<tr>
+<td>3</td>
+<td>四类漏洞各自的典型攻击</td>
+<td>选择、简答</td>
+</tr>
+<tr>
+<td>4</td>
+<td>TCP 六个标志位的含义</td>
+<td>填空</td>
+</tr>
+<tr>
+<td>5</td>
+<td>四组异常标志位及其崩溃原因</td>
+<td>简答（必考）</td>
+</tr>
+<tr>
+<td>6</td>
+<td>基于协议的三种执行方式</td>
+<td>填空</td>
+</tr>
+<tr>
+<td>7</td>
+<td>五层各自的典型威胁</td>
+<td>选择</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="一、两种分法"><a class="headerlink" href="#一、两种分法"></a>一、两种分法</h2>
+<p>同一个攻击可以从两个角度看，考试会分别问：</p>
+<ul>
+<li><strong>按漏洞成因</strong>：基于头部、基于协议、基于验证、基于流量。回答“这个攻击利用的是什么”。</li>
+<li><strong>按网络层次</strong>：物理、链路、网络、传输、应用。回答“这个攻击发生在哪一层”。</li>
+</ul>
+<p>前一问考定义，后一问考归类。</p>
+<h2 id="二、四类漏洞"><a class="headerlink" href="#二、四类漏洞"></a>二、四类漏洞</h2>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>定义</th>
+<th>本质</th>
+<th>典型攻击</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>基于头部</td>
+<td>协议头部与标准发生冲突，如在头部某个域使用无效值</td>
+<td>字段值本身非法</td>
+<td>TCP Flag 误用</td>
+</tr>
+<tr>
+<td>基于协议</td>
+<td>所有数据包都<strong>有效</strong>，但与协议的<strong>执行过程</strong>冲突</td>
+<td>包合法，序列非法</td>
+<td>乱序、过快/过慢（DoS）、不发（SYN 雪崩）</td>
+</tr>
+<tr>
+<td>基于验证</td>
+<td>验证是一方对另一方的识别，以执行其功能；识别被绕过</td>
+<td>认错了人</td>
+<td>非法接入点、IPv4 地址欺骗、DNS 欺骗</td>
+</tr>
+<tr>
+<td>基于流量</td>
+<td>大量数据被送到某个层或多个层，层来不及处理流入的数据，引起丢包或根本不处理</td>
+<td>量与处理能力不匹配</td>
+<td>雪崩流量、数据包嗅探</td>
+</tr>
+</tbody>
+</table>
+<p>四类的关系可以这样记：<strong>头部看字段对不对，协议看顺序对不对，验证看身份对不对，流量看数量扛不扛得住</strong>。</p>
+<h2 id="三、基于头部：TCP-Flag-误用"><a class="headerlink" href="#三、基于头部：TCP-Flag-误用"></a>三、基于头部：TCP Flag 误用</h2>
+<p><strong>六个标志位（必背）</strong></p>
+<table>
+<thead>
+<tr>
+<th>标志</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ACK</td>
+<td>确认报文已收到</td>
+</tr>
+<tr>
+<td>SYN</td>
+<td>发起连接</td>
+</tr>
+<tr>
+<td>FIN</td>
+<td>释放连接</td>
+</tr>
+<tr>
+<td>PSH</td>
+<td>将报文不经缓存直接送达应用程序</td>
+</tr>
+<tr>
+<td>RST</td>
+<td>发生错误，重建连接</td>
+</tr>
+<tr>
+<td>URG</td>
+<td>紧急指针，需要马上处理紧急指针域指向的数据</td>
+</tr>
+</tbody>
+</table>
+<p><strong>四组异常组合（必考简答）</strong></p>
+<table>
+<thead>
+<tr>
+<th>异常组合</th>
+<th>异常原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SYN &amp; FIN</td>
+<td>SYN 要创建 TCB 并放入半连接队列，FIN 要从全连接队列中释放相应的 TCB；而全连接队列中找不到对应的 TCB，所以会出错</td>
+</tr>
+<tr>
+<td>SYN &amp; URG</td>
+<td>SYN 报文不能携带数据，接收端却会去取 URG 紧急指针指向的数据段，而数据段并不存在，因此发生段错误</td>
+</tr>
+<tr>
+<td>FIN &amp; RST</td>
+<td>收到 FIN 会创建定时器等资源，收到 RST 会删除所有资源，由此引发协议栈错乱</td>
+</tr>
+<tr>
+<td>SYN &amp; RST</td>
+<td>SYN 要创建 TCB，RST 要删除所有资源，由此引发协议栈错乱</td>
+</tr>
+</tbody>
+</table>
+<p>四条原因可以归成两句话：<strong>同一件事被要求“建”和“删”两次 → 队列/资源对不上</strong>；<strong>要求取用不存在的东西 → 越界或段错误</strong>。</p>
+<h2 id="四、基于协议与基于验证"><a class="headerlink" href="#四、基于协议与基于验证"></a>四、基于协议与基于验证</h2>
+<p><strong>基于协议</strong>：所有包都合法，问题出在时序。三种执行方式：</p>
+<ul>
+<li><strong>不按顺序</strong>发送数据包；</li>
+<li>发送太快或太慢（DoS 攻击）；</li>
+<li><strong>没有发送</strong>数据包（SYN 雪崩式攻击）。</li>
+</ul>
+<p>注意“没有发送”也算一种——攻击的要害不在包的内容，而在<strong>该来的没来</strong>。</p>
+<p><strong>基于验证</strong>：验证被绕过，即“认错了人”。三种情况：</p>
+<ul>
+<li>非法访问接入点（无线）；</li>
+<li>IPv4 地址欺骗；</li>
+<li>DNS 欺骗。</li>
+</ul>
+<p><strong>验证 ≠ 加密</strong>。验证回答“你是谁”，加密回答“别人看不懂”；绕过验证不需要破解密码。</p>
+<h2 id="五、基于流量与按层次"><a class="headerlink" href="#五、基于流量与按层次"></a>五、基于流量与按层次</h2>
+<p><strong>基于流量</strong>：数据量大到某一层处理不过来。两种情况：</p>
+<ul>
+<li><strong>雪崩流量</strong>：例，攻击者发送一个定向广播包到远程网络，并要求有回应——一份请求换回整网回应。</li>
+<li><strong>数据包嗅探</strong>：收集而非压垮，属于流量被非授权读取。</li>
+</ul>
+<p><strong>按层次分类（选择题高频）</strong></p>
+<table>
+<thead>
+<tr>
+<th>层次</th>
+<th>典型威胁</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>物理层</td>
+<td>设备破坏、线路侦听</td>
+</tr>
+<tr>
+<td>链路层</td>
+<td>MAC 欺骗、MAC 泛洪、ARP 欺骗</td>
+</tr>
+<tr>
+<td>网络层</td>
+<td>IP 欺骗、Smurf 攻击、ICMP 攻击、路由欺骗</td>
+</tr>
+<tr>
+<td>传输层</td>
+<td>TCP 欺骗、TCP/UDP DoS 攻击、端口扫描</td>
+</tr>
+<tr>
+<td>应用层</td>
+<td>DNS 污染、HTTPS、漏洞、Web 攻击、病毒木马</td>
+</tr>
+</tbody>
+</table>
+<h2 id="六、易错辨析"><a class="headerlink" href="#六、易错辨析"></a>六、易错辨析</h2>
+<table>
+<thead>
+<tr>
+<th>错误说法</th>
+<th>判据</th>
+<th>反例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>“SYN &amp; FIN 是无效包，会被直接丢弃”</td>
+<td>判据在协议栈状态机，不在校验和</td>
+<td>两个标志都是合法值，包能通过校验，处理时才出错</td>
+</tr>
+<tr>
+<td>“基于协议的漏洞里数据包是畸形的”</td>
+<td>定义明确“所有数据包都是有效的”</td>
+<td>乱序发送的包每个都合标准，错的是顺序</td>
+</tr>
+<tr>
+<td>“基于验证的漏洞要靠破解密码”</td>
+<td>验证看识别，不看保密</td>
+<td>DNS 欺骗一个伪造应答即可，无需任何密钥</td>
+</tr>
+<tr>
+<td>“Flag 误用属于基于协议的漏洞”</td>
+<td>看错在字段还是时序</td>
+<td>Flag 是首部字段用了冲突值 → 基于头部</td>
+</tr>
+<tr>
+<td>“端口扫描属于应用层威胁”</td>
+<td>端口是传输层概念</td>
+<td>传输层：TCP 欺骗、TCP/UDP DoS、端口扫描</td>
+</tr>
+<tr>
+<td>“数据包嗅探属于基于头部”</td>
+<td>嗅探不改字段，靠流量被读取</td>
+<td>基于流量</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="七、自测（50-题）"><a class="headerlink" href="#七、自测（50-题）"></a>七、自测（50 题）</h2>
+<p><strong>15 道选择题</strong>、<strong>10 道判断题</strong>、<strong>16 道填空题</strong>、<strong>9 道简答题</strong>。</p>
+<h3 id="选择题"><a class="headerlink" href="#选择题"></a>选择题</h3>
+<div class="rl-quiz" data-quiz="nps3"></div>
+<h3 id="判断题"><a class="headerlink" href="#判断题"></a>判断题</h3>
+<details class="ly-fold">
+<summary>10 道判断题</summary>
+<p><strong>1.</strong> 基于头部的漏洞，本质是协议头部与标准发生了冲突。</p>
+<p><strong>2.</strong> 基于协议的漏洞，其数据包本身都是有效的。</p>
+<p><strong>3.</strong> SYN 和 FIN 同时置位，属于基于协议的漏洞。</p>
+<p><strong>4.</strong> SYN 报文可以携带数据，因此 SYN &amp; URG 不会出错。</p>
+<p><strong>5.</strong> 收到 FIN 会创建定时器等资源，收到 RST 会删除所有资源。</p>
+<p><strong>6.</strong> “没有发送数据包”也是一种基于协议的攻击执行方式。</p>
+<p><strong>7.</strong> 验证就是加密，绕过验证必须破解密钥。</p>
+<p><strong>8.</strong> 非法访问接入点属于基于验证的漏洞。</p>
+<p><strong>9.</strong> 定向广播包要求回应，可造成雪崩流量。</p>
+<p><strong>10.</strong> ARP 欺骗属于链路层威胁。</p>
+<hr>
+<p><strong>答案</strong></p>
+<ol>
+<li>对。定义就是头部字段与标准冲突，如使用无效值。</li>
+<li>对。定义强调“所有数据包都是有效的”，冲突在于执行过程。</li>
+<li>错。SYN、FIN 都是首部字段值，组合冲突 → 基于头部。</li>
+<li>错。SYN 报文不能携带数据，接收端却去取 URG 指向的数据段，发生段错误。</li>
+<li>对。这正是 FIN &amp; RST 引发协议栈错乱的原因。</li>
+<li>对。SYN 雪崩就是“该发的没发”，靠半开连接耗尽资源。</li>
+<li>错。验证回答“你是谁”，加密回答“别人看不懂”，绕过验证不需要密钥。</li>
+<li>对。三者之一：非法接入点、IPv4 地址欺骗、DNS 欺骗。</li>
+<li>对。一份请求换回整网回应，是雪崩流量的典型例子。</li>
+<li>对。链路层：MAC 欺骗、MAC 泛洪、ARP 欺骗。</li>
+</ol>
+</details>
+<h3 id="填空题"><a class="headerlink" href="#填空题"></a>填空题</h3>
+<details class="ly-fold">
+<summary>16 道填空题</summary>
+<p><strong>1.</strong> 按漏洞成因，网络攻击分为基于 ______、基于 ______、基于 ______、基于 ______ 四类。</p>
+<p><strong>2.</strong> 基于头部的漏洞，定义是协议头部与 ______ 发生冲突。</p>
+<p><strong>3.</strong> 基于协议的漏洞，三种执行方式是：<strong><strong><strong>、</strong></strong></strong>、______。</p>
+<p><strong>4.</strong> 基于验证的漏洞，三种情况是：<strong><strong><strong>、</strong></strong></strong>、______。</p>
+<p><strong>5.</strong> 基于流量的漏洞，两种情况是：<strong><strong><strong>、</strong></strong></strong>。</p>
+<p><strong>6.</strong> SYN 标志表示 ______，FIN 表示 ______，RST 表示 ______。</p>
+<p><strong>7.</strong> PSH 表示将报文 ______ 送达应用程序。</p>
+<p><strong>8.</strong> URG 表示 ______，需要马上处理其指向的数据。</p>
+<p><strong>9.</strong> ACK 表示 ______。</p>
+<p><strong>10.</strong> SYN &amp; FIN 出错，是因为全连接队列中找不到对应的 ______。</p>
+<p><strong>11.</strong> SYN &amp; URG 出错，是因为 SYN 报文不能 ______。</p>
+<p><strong>12.</strong> SYN 要创建 ______，RST 要 ______，由此引发协议栈错乱。</p>
+<p><strong>13.</strong> 按层次分类，IP 欺骗、Smurf、ICMP 攻击属于 ______ 层。</p>
+<p><strong>14.</strong> 端口扫描、TCP 欺骗属于 ______ 层。</p>
+<p><strong>15.</strong> DNS 污染、Web 攻击、病毒木马属于 ______ 层。</p>
+<p><strong>16.</strong> 物理层的典型威胁是 ______ 与 ______。</p>
+<hr>
+<p><strong>答案</strong></p>
+<ol>
+<li>头部；协议；验证；流量。</li>
+<li>标准。</li>
+<li>不按顺序发送；发送太快或太慢；没有发送（SYN 雪崩）。</li>
+<li>非法访问接入点；IPv4 地址欺骗；DNS 欺骗。</li>
+<li>雪崩流量；数据包嗅探。</li>
+<li>发起连接；释放连接；发生错误、重建连接。</li>
+<li>不经缓存直接。</li>
+<li>紧急指针。</li>
+<li>确认报文已收到。</li>
+<li>TCB。</li>
+<li>携带数据。</li>
+<li>TCB；删除所有资源。</li>
+<li>网络。</li>
+<li>传输。</li>
+<li>应用。</li>
+<li>设备破坏；线路侦听。</li>
+</ol>
+</details>
+<h3 id="简答题"><a class="headerlink" href="#简答题"></a>简答题</h3>
+<details class="ly-fold">
+<summary>9 道简答题</summary>
+<p><strong>1.</strong> 网络漏洞按成因分哪四类？各给一句定义。</p>
+<p><strong>2.</strong> 写出 TCP 六个标志位的含义。</p>
+<p><strong>3.</strong> 说明 SYN &amp; FIN 为什么会让协议栈出错。</p>
+<p><strong>4.</strong> 说明 SYN &amp; URG 为什么会导致段错误。</p>
+<p><strong>5.</strong> 为什么 FIN &amp; RST、SYN &amp; RST 都会引起协议栈错乱？</p>
+<p><strong>6.</strong> 基于协议的漏洞有哪三种执行方式？各举一例。</p>
+<p><strong>7.</strong> 基于验证的漏洞有哪三种情况？为什么说不等于破解密码？</p>
+<p><strong>8.</strong> 基于流量的漏洞定义是什么？举两种情形。</p>
+<p><strong>9.</strong> 按网络层次列出各层两种典型威胁。</p>
+<hr>
+<p><strong>答案要点</strong></p>
+<p><strong>1.</strong> 基于头部：协议头部与标准冲突，如某域使用无效值。基于协议：包都有效，但与协议执行过程冲突。基于验证：一方对另一方的识别被绕过。基于流量：大量数据送到某层，该层来不及处理而丢包或不处理。</p>
+<p><strong>2.</strong> ACK 确认报文已收到；SYN 发起连接；FIN 释放连接；PSH 将报文不经缓存直接送达应用程序；RST 发生错误、重建连接；URG 紧急指针，需马上处理其指向的数据。</p>
+<p><strong>3.</strong> SYN 表示要创建一个 TCB 并放入半连接队列，FIN 表示要从全连接队列中释放相应的 TCB；此时全连接队列中根本找不到对应的 TCB，释放动作落空而出错。</p>
+<p><strong>4.</strong> SYN 报文不能携带数据，但接收端看到 URG 就会去取紧急指针指向的数据段，而该数据段并不存在，于是发生段错误。</p>
+<p><strong>5.</strong> FIN 会创建定时器等资源，RST 会删除所有资源；一个要求建、一个要求删，两套动作同时作用在同一个连接上，协议栈状态机进入不一致状态，即协议栈错乱。</p>
+<p><strong>6.</strong> ① 不按顺序发送数据包——先发后一片、再发前一片，重组逻辑出错；② 发送太快或太慢——泛洪造成 DoS、极慢速耗尽连接；③ 没有发送数据包——只发 SYN 不完成握手，即 SYN 雪崩。</p>
+<p><strong>7.</strong> ① 非法访问接入点；② IPv4 地址欺骗；③ DNS 欺骗。验证回答“你是谁”，加密回答“内容别人看不懂”；欺骗只需让对端相信一个假身份或假应答，不需要破解任何密钥。</p>
+<p><strong>8.</strong> 大量数据被送到某个层或多个层，层不能及时处理流入的数据，引起丢包或根本不处理。情形：雪崩流量（定向广播包要求回应，一份请求换整网回应）、数据包嗅探（流量被非授权读取）。</p>
+<p><strong>9.</strong> 物理层：设备破坏、线路侦听。链路层：MAC 欺骗、MAC 泛洪、ARP 欺骗。网络层：IP 欺骗、Smurf、ICMP 攻击、路由欺骗。传输层：TCP 欺骗、TCP/UDP DoS、端口扫描。应用层：DNS 污染、HTTPS、漏洞、Web 攻击、病毒木马。</p>
+</details>
+<script src="/js/rl/quiz.js" defer></script>
+<hr>
+<blockquote>
+<p><strong>一句话总结</strong>：四类漏洞看四个“对不对”——字段、顺序、身份、数量；Flag 误用的四组组合，答案都在“TCB 建了又删”和“取了不存在的数据”这两句话里。</p>
+</blockquote>
+
+                
+              </div>
+            
+
+            
+
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8/" class="category-chain-item">网络协议安全</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>【网络协议安全】（三）漏洞的四种分法与 Flag 误用</div>
+      <div>https://lyzeromoon.github.io/2026/11/25/网络协议安全三漏洞四种分法与Flag误用/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>LyZeroMoon</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年11月25日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  
+                  
+                  <article class="post-prev col-6">
+                    
+                      <a href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E4%BA%8CTCPIP%E7%9A%84%E4%BA%94%E4%B8%AA%E5%85%88%E5%A4%A9%E7%BC%BA%E9%99%B7/" title="【网络协议安全】（二）TCP/IP 的五个先天缺陷">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">【网络协议安全】（二）TCP/IP 的五个先天缺陷</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                      <a href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%9B%9B%E4%B8%BB%E6%9C%BA%E6%89%AB%E6%8F%8F/" title="【网络协议安全】（四）主机扫描">
+                        <span class="hidden-mobile">【网络协议安全】（四）主机扫描</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+    <div id="giscus" class="giscus"></div>
+    <script type="text/javascript">
+      Fluid.utils.loadComments('#giscus', function() {
+        var options = {"repo":"LyZeroMoon/LyZeroMoon.github.io","repo-id":"R_kgDOVHG-_g","category":"General","category-id":"DIC_kwDOVHG-_s4DIUgl","theme-light":"light","theme-dark":"dark","mapping":"pathname","reactions-enabled":1,"emit-metadata":0,"input-position":"top","lang":"zh-CN"};
+        var attributes = {};
+        for (let option in options) {
+          if (!option.startsWith('theme-')) {
+            var key = option.startsWith('data-') ? option : 'data-' + option;
+            attributes[key] = options[option];
+          }
+        }
+        var light = 'light';
+        var dark = 'dark';
+        window.GiscusThemeLight = light;
+        window.GiscusThemeDark = dark;
+        attributes['data-theme'] = document.documentElement.getAttribute('data-user-color-scheme') === 'dark' ? dark : light;
+        for (let attribute in attributes) {
+          var value = attributes[attribute];
+          if (value === undefined || value === null || value === '') {
+            delete attributes[attribute];
+          }
+        }
+        var s = document.createElement('script');
+        s.setAttribute('src', 'https://giscus.app/client.js');
+        s.setAttribute('crossorigin', 'anonymous');
+        for (let attribute in attributes) {
+          s.setAttribute(attribute, attributes[attribute]);
+        }
+        var ss = document.getElementsByTagName('script');
+        var e = ss.length > 0 ? ss[ss.length - 1] : document.head || document.documentElement;
+        e.parentNode.insertBefore(s, e.nextSibling);
+      });
+    </script>
+    <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="psn" aria-label="文章翻页">
+  
+  <a class="psn-item psn-prev" href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E4%BA%8CTCPIP%E7%9A%84%E4%BA%94%E4%B8%AA%E5%85%88%E5%A4%A9%E7%BC%BA%E9%99%B7/"
+     title="上一篇：【网络协议安全】（二）TCP/IP 的五个先天缺陷" aria-label="上一篇：【网络协议安全】（二）TCP/IP 的五个先天缺陷">
+    <span class="psn-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+    </span>
+    <span class="psn-tip"><b>上一篇</b><em>【网络协议安全】（二）TCP/IP 的五个先天缺陷</em></span>
+  </a>
+  
+  
+  <a class="psn-item psn-next" href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%9B%9B%E4%B8%BB%E6%9C%BA%E6%89%AB%E6%8F%8F/"
+     title="下一篇：【网络协议安全】（四）主机扫描" aria-label="下一篇：【网络协议安全】（四）主机扫描">
+    <span class="psn-tip"><b>下一篇</b><em>【网络协议安全】（四）主机扫描</em></span>
+    <span class="psn-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+    </span>
+  </a>
+  
+</nav>
+
+
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="/atom.xml" target="_blank" rel="noopener" title="订阅本站更新"><i class="iconfont icon-rss"></i> RSS 订阅</a> &nbsp;·&nbsp; <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/skins.js"></script>
+<script src="/js/games-hub.js"></script>
+<script src="/js/column-order.js"></script>
+<script src="/js/xmas.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

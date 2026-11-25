@@ -1,0 +1,1442 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <!-- 皮肤：越早越好，必须排在样式表之前。localStorage 里存着访客的选择，
+       没有记录（或记录已失效）就用站点默认值。 -->
+  <script>
+    window.LY_UI = {"default":"xmas","force":true,"allowSwitch":true,"game":true,"siteTitle":"\"零月小站\"","skins":[{"id":"default","name":"经典","desc":"Fluid 原味，干净克制","accent":"#2f4154","accent2":"#f6f8fa","game":false},{"id":"ink","name":"墨韵","desc":"暖纸底、衬线字、朱砂点缀","accent":"#2b2620","accent2":"#f3eee4","game":false},{"id":"midnight","name":"深海","desc":"深蓝夜色，为长时间阅读而调","accent":"#16324a","accent2":"#eef3f9","game":false},{"id":"glass","name":"玻璃","desc":"毛玻璃卡片 + 渐变背景","accent":"#5b7cfa","accent2":"#eef2ff","game":false},{"id":"sakura","name":"樱雾","desc":"粉紫柔和，轻盈通透","accent":"#7a4a63","accent2":"#fdf2f6","game":false},{"id":"terminal","name":"终端","desc":"等宽字体与磷光绿，极客风","accent":"#0f1a14","accent2":"#e8f5ec","game":false},{"id":"retro","name":"复古","desc":"Windows 95 视窗，青色桌面与立体边框","accent":"#008080","accent2":"#c0c0c0","game":false},{"id":"arcade","name":"街机","desc":"霓虹街机 + CRT 扫描线，附赠贪吃蛇","accent":"#0a0118","accent2":"#ffd60a","game":false},{"id":"magazine","name":"杂志","desc":"衬线大字、首字下沉、编辑式分栏","accent":"#8c1d18","accent2":"#fbf9f4","game":false},{"id":"cyber","name":"赛博","desc":"网格底纹、切角面板、霓虹辉光","accent":"#05060a","accent2":"#22d3ee","game":false},{"id":"xmas","name":"圣诞","desc":"壁炉夜景、飘雪与雪尘拖尾，节日期间整站强制","accent":"#c1443c","accent2":"#2f5d43","game":false}]};
+    (function () {
+      var cfg = window.LY_UI;
+      var fallback = (cfg.skins[0] && cfg.skins[0].id) || 'default';
+      try {
+        if (cfg.siteTitle) {
+          document.documentElement.style.setProperty('--ly-site-title', cfg.siteTitle);
+        }
+        var ids = cfg.skins.map(function (s) { return s.id; });
+        var saved = null;
+        try { saved = localStorage.getItem('ly_ui_skin'); } catch (e) {}
+        // force 时本地记录不算数：节日皮肤要对所有访客一致
+        var pick = (!cfg.force && ids.indexOf(saved) >= 0) ? saved : cfg.default;
+        if (ids.indexOf(pick) < 0) pick = fallback;
+        document.documentElement.setAttribute('data-ui', pick);
+      } catch (e) {
+        document.documentElement.setAttribute('data-ui', fallback);
+      }
+    })();
+  </script>
+
+  <!-- 小游戏清单：给 js/games-hub.js 用。放在这里（而不是页面里）是因为
+       街机皮肤的「直接开一局」入口在任何页面都可能被点到。 -->
+  <script>window.LY_GAMES = {"enabled":true,"featured":"snake","page":"/games/","dir":"/js/games/","css":"/css/games.css","games":[{"id":"snake","name":"贪吃蛇","bestMode":"high"},{"id":"g2048","name":"2048","bestMode":"high"},{"id":"tetris","name":"俄罗斯方块","bestMode":"high"},{"id":"breakout","name":"打砖块","bestMode":"high"},{"id":"minesweeper","name":"扫雷","bestMode":"low"}]};</script>
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="LyZeroMoon">
+  <meta name="keywords" content="编程, 技术博客, 架构, 踩坑, 笔记">
+  
+    <meta name="description" content="VLAN 攻击 标签： #网络协议安全 #VLAN跳跃 #双标签 #DTP #VTP #NativeVLAN 对应第 2 章下册 P58–64。只列考点。    # 考点 考法     1 双标签跳跃的原理 简答（必考）   2 双标签跳跃的三条局限 简答   3 双标签跳跃的防范 填空   4 DTP 跳跃的原理与特点 简答   5 DTP 与双标签的区别（单向 &#x2F; 双向） 选择、辨析   6">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【网络协议安全】（十三）VLAN 攻击">
+<meta property="og:url" content="https://lyzeromoon.github.io/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%8D%81%E4%B8%89VLAN%E6%94%BB%E5%87%BB/index.html">
+<meta property="og:site_name" content="零月小站">
+<meta property="og:description" content="VLAN 攻击 标签： #网络协议安全 #VLAN跳跃 #双标签 #DTP #VTP #NativeVLAN 对应第 2 章下册 P58–64。只列考点。    # 考点 考法     1 双标签跳跃的原理 简答（必考）   2 双标签跳跃的三条局限 简答   3 双标签跳跃的防范 填空   4 DTP 跳跃的原理与特点 简答   5 DTP 与双标签的区别（单向 &#x2F; 双向） 选择、辨析   6">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-25T15:56:00.000Z">
+<meta property="article:modified_time" content="2026-11-25T16:53:51.000Z">
+<meta property="article:author" content="LyZeroMoon">
+<meta property="article:tag" content="编程, 技术博客, 架构, 踩坑, 笔记">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>【网络协议安全】（十三）VLAN 攻击 - 零月小站</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/kb.css">
+<link rel="stylesheet" href="/css/skins.css">
+<link rel="stylesheet" href="/css/rl.css">
+<link rel="stylesheet" href="/css/nps.css">
+<link rel="stylesheet" href="/css/post-nav.css">
+<link rel="stylesheet" href="/css/xmas.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"lyzeromoon.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"><link rel="alternate" href="/atom.xml" title="零月小站" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  
+<nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>零月小站</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/columns/" target="_self">
+                <i class="iconfont icon-books"></i>
+                <span>专栏</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/notes/" target="_self">
+                <i class="iconfont icon-note"></i>
+                <span>常用公式</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/resources/" target="_self">
+                <i class="iconfont icon-briefcase"></i>
+                <span>资源</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/admin/" target="_self">
+                <i class="iconfont icon-pencil"></i>
+                <span>写作后台</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="nav-games-btn">
+            <a class="nav-link" href="/games/" target="_self"
+               aria-label="小游戏" title="小游戏">
+              <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg><span>小游戏</span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="ui-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" role="button"
+               aria-label="界面风格" title="界面风格">
+              <i class="iconfont icon-brush"></i>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item nav-game-only" id="arcade-game-btn">
+            <a class="nav-link" target="_self" href="javascript:;" role="button"
+               aria-label="直接开一局" title="直接开一局：贪吃蛇">
+              <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/columns/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-books"></i>
+                  <span>专栏</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/notes/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-note"></i>
+                  <span>常用公式</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/resources/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-briefcase"></i>
+                  <span>资源</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/admin/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-pencil"></i>
+                  <span>写作后台</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-games-btn">
+            <a href="/games/" aria-label="小游戏">
+              <div class="mobile-grid-item">
+                <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+                <span>小游戏</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-ui-toggle-btn">
+            <a href="javascript:;" aria-label="界面风格">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-brush"></i>
+                <span>界面风格</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell nav-game-only" id="mobile-arcade-game-btn">
+            <a href="javascript:;" aria-label="直接开一局">
+              <div class="mobile-grid-item">
+                <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+                <span>开一局</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="【网络协议安全】（十三）VLAN 攻击"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-25 23:56" pubdate>
+          2026年11月25日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          39 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">【网络协议安全】（十三）VLAN 攻击</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="VLAN-攻击"><a class="headerlink" href="#VLAN-攻击"></a>VLAN 攻击</h1>
+<p><strong>标签：</strong> #网络协议安全 #VLAN跳跃 #双标签 #DTP #VTP #NativeVLAN</p>
+<p>对应第 2 章下册 P58–64。只列考点。</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>考点</th>
+<th>考法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>双标签跳跃的原理</td>
+<td>简答（必考）</td>
+</tr>
+<tr>
+<td>2</td>
+<td>双标签跳跃的三条局限</td>
+<td>简答</td>
+</tr>
+<tr>
+<td>3</td>
+<td>双标签跳跃的防范</td>
+<td>填空</td>
+</tr>
+<tr>
+<td>4</td>
+<td>DTP 跳跃的原理与特点</td>
+<td>简答</td>
+</tr>
+<tr>
+<td>5</td>
+<td>DTP 与双标签的区别（单向 / 双向）</td>
+<td>选择、辨析</td>
+</tr>
+<tr>
+<td>6</td>
+<td>VTP 的工作机制与 Revision 规则</td>
+<td>简答（必考）</td>
+</tr>
+<tr>
+<td>7</td>
+<td>VTP 攻击的思路与三条防范</td>
+<td>简答</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="一、双标签跳跃"><a class="headerlink" href="#一、双标签跳跃"></a>一、双标签跳跃</h2>
+<p><strong>利用的前提</strong>：交换机对 <strong>Native VLAN 的帧不加标签</strong>（出厂默认 Native VLAN 就是 VLAN 1，而接入口默认也在 VLAN 1）。</p>
+<p><strong>攻击原理</strong>（两步）：</p>
+<ol>
+<li>攻击者构造<strong>含双层 802.1Q 标签</strong>的帧，<strong>外层标签填 Trunk 链路的 Native VLAN 号</strong>（默认 VLAN 1），内层标签填目标 VLAN 号；</li>
+<li>帧进入交换机后，按外层标签被划分到 VLAN 1 转发；到 Trunk 端口发送时，因为 VLAN 号等于 Native VLAN，<strong>交换机剥掉外层标签</strong>——但内层标签仍在；</li>
+<li>报文以&quot;不带外层标签&quot;的形式上了 Trunk 链路，对端交换机把它当普通帧接收，再按<strong>内层标签</strong>转发到目标 VLAN。</li>
+</ol>
+<p>一句话：<strong>交换机只剥一层，攻击者就套两层</strong>。剥掉的是攻击者想让它剥的那一层。</p>
+<p><strong>三条局限</strong>（PPT 明确列出，常考）：</p>
+<table>
+<thead>
+<tr>
+<th>局限</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>部分交换机丢弃带标签的接入口帧</td>
+<td>有的交换机从 Access 接口收到带标签的帧就认为是非法帧，直接丢弃，攻击无法发出</td>
+</tr>
+<tr>
+<td><strong>只能单向</strong></td>
+<td>攻击者能把包送进 VLAN 2，但<strong>回包无法回来</strong></td>
+</tr>
+<tr>
+<td>只能发广播/组播</td>
+<td>因为是单向，攻击者拿不到被攻击者的 MAC，只能构造<strong>二层广播或组播</strong>帧</td>
+</tr>
+</tbody>
+</table>
+<p><strong>防范</strong>：把交换机之间 Trunk 链路的 <strong>native VLAN 设置为一个不存在的 VLAN</strong>。这样所有帧都必须重新封装、都带标签，攻击者构造的双标签就没有&quot;免标签&quot;通道可用。</p>
+<hr>
+<h2 id="二、DTP-跳跃"><a class="headerlink" href="#二、DTP-跳跃"></a>二、DTP 跳跃</h2>
+<p><strong>DTP = Dynamic Trunk Protocol，动态干道协议</strong>。管理员可以手工指定链路是否为 Trunk，也可以让交换机<strong>自动协商</strong>，同时还能协商 Trunk 的封装类型。</p>
+<p><strong>漏洞来源</strong>：厂家为了方便用户，<strong>默认把接口设为主动或被动协商模式</strong>——这意味着<strong>只要有设备主动向接口发起协商，接口就会形成 Trunk</strong>。</p>
+<p><strong>攻击步骤</strong>：</p>
+<ol>
+<li>攻击者向交换机接口主动发送 <strong>DTP 协商包</strong>；</li>
+<li>攻击者与交换机之间的链路被协商成 <strong>Trunk 链路</strong>；</li>
+<li>这条链路可<strong>双向传输任何 VLAN</strong> 的数据；</li>
+<li>攻击者收发带任意 VLAN 标签的数据，<strong>实现对任意 VLAN 的访问</strong>。</li>
+</ol>
+<p><strong>特点</strong>（与双标签正好互补）：</p>
+<ul>
+<li><strong>能实现攻击者与被攻击者之间的双向访问</strong>；</li>
+<li>因此可以<strong>绕过防火墙直接访问目标主机</strong>。</li>
+</ul>
+<p><strong>防范两条</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>措施</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>关闭不需要开启的交换机接口</td>
+<td>攻击者根本接不进来</td>
+</tr>
+<tr>
+<td>关闭 DTP</td>
+<td>接口不再协商 Trunk，攻击者拿不到干道</td>
+</tr>
+</tbody>
+</table>
+<p><strong>与双标签的对比</strong>（必考辨析）：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>双标签跳跃</th>
+<th>DTP 跳跃</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>利用的东西</td>
+<td>Native VLAN <strong>不剥内层标签</strong></td>
+<td>Trunk 端口<strong>自动协商</strong></td>
+</tr>
+<tr>
+<td>方向</td>
+<td><strong>单向</strong></td>
+<td><strong>双向</strong></td>
+</tr>
+<tr>
+<td>能发什么</td>
+<td>只能广播/组播</td>
+<td>任意单播</td>
+</tr>
+<tr>
+<td>前提</td>
+<td>知道 Native VLAN 号</td>
+<td>端口开着 DTP</td>
+</tr>
+<tr>
+<td>防范</td>
+<td>native VLAN 设为不存在的 VLAN</td>
+<td>关闭 DTP、关闭闲置端口</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="三、VTP-攻击"><a class="headerlink" href="#三、VTP-攻击"></a>三、VTP 攻击</h2>
+<p><strong>VTP = VLAN Trunk Protocol，思科私有协议</strong>，作用是减少繁重的配置工作：管理员在网络中设一个或多个 <strong>VTP Server</strong>，在 Server 上创建、删除、修改 VLAN，VTP 会把这些变化<strong>通告</strong>给其它交换机，实现管理自动化。</p>
+<p><strong>三个机制要点</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>要点</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>传输载体</td>
+<td>通告<strong>只能在 Trunk 链路上传输</strong>（所以交换机之间的 Trunk 必须先配好）</td>
+</tr>
+<tr>
+<td>通告形式</td>
+<td>以<strong>组播帧</strong>发送</td>
+</tr>
+<tr>
+<td>冲突裁决</td>
+<td>通告里有 <strong>Revision（修订号）</strong> 字段，每次增删改递增；<strong>收到更高的 Revision 就更新自己；收到更低的，用自己的信息反向覆盖对方</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>攻击思路</strong>（一句话）：<strong>发送一个 Revision 极高的 VTP 通告，就能覆盖全网 VLAN 信息</strong>。如果把网络里全部 VLAN 都删掉，整个网络的通信随即中断——这是一种<strong>破坏型</strong>攻击，不是窃听型。</p>
+<p>Revision 规则是它的软肋：<strong>只比大小，不比新旧，也不认证来源</strong>。</p>
+<p><strong>三条防范</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>措施</th>
+<th>原理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>关闭不需要开启的交换机接口</td>
+<td>攻击者交换机无法接入</td>
+</tr>
+<tr>
+<td>与用户计算机连接的接口明确配置为 <strong>Access</strong></td>
+<td>只要 Trunk 协商不成功，VTP 就无法工作</td>
+</tr>
+<tr>
+<td><strong>配置 VTP 密码</strong></td>
+<td>攻击者的 VTP 消息被拒绝接收，这是<strong>防止攻击的根本措施</strong></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="四、易错辨析"><a class="headerlink" href="#四、易错辨析"></a>四、易错辨析</h2>
+<table>
+<thead>
+<tr>
+<th>错误说法</th>
+<th>判据</th>
+<th>反例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&quot;双标签攻击能双向通信&quot;</td>
+<td>只能单向</td>
+<td>回包没有外层标签通道，回不到攻击者</td>
+</tr>
+<tr>
+<td>&quot;双标签能直接连到目标主机 TCP 端口&quot;</td>
+<td>拿不到目标 MAC</td>
+<td>只能发广播/组播，通常是泛洪或欺骗</td>
+</tr>
+<tr>
+<td>&quot;把 Native VLAN 改成 VLAN 2 就安全了&quot;</td>
+<td>换成哪个都存在通道</td>
+<td>要设成<strong>不存在的 VLAN</strong>，强制所有帧带标签</td>
+</tr>
+<tr>
+<td>&quot;关闭 Trunk 就能防 DTP&quot;</td>
+<td>DTP 是协商过程</td>
+<td>端口开着主动/被动模式，攻击者一发协商就成 Trunk，要<strong>关 DTP</strong></td>
+</tr>
+<tr>
+<td>&quot;VTP 是通用标准&quot;</td>
+<td>思科私有</td>
+<td>非思科设备不支持</td>
+</tr>
+<tr>
+<td>&quot;VTP 收到更低的 Revision 会忽略&quot;</td>
+<td>会反向覆盖</td>
+<td>用自己更高的信息覆盖对方</td>
+</tr>
+<tr>
+<td>&quot;VTP 攻击是窃听&quot;</td>
+<td>是破坏</td>
+<td>删光 VLAN 让全网断通</td>
+</tr>
+<tr>
+<td>&quot;VTP 密码只是提醒作用&quot;</td>
+<td>是认证</td>
+<td>密码不匹配的 VTP 消息被拒收</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="五、自测（50-题）"><a class="headerlink" href="#五、自测（50-题）"></a>五、自测（50 题）</h2>
+<p><strong>15 道选择题</strong>（点选项立刻判对错，四个选项各有说明）、<strong>10 道判断题</strong>、<strong>16 道填空题</strong>、<strong>9 道简答题</strong>。</p>
+<h3 id="选择题"><a class="headerlink" href="#选择题"></a>选择题</h3>
+<div class="rl-quiz" data-quiz="nps13"></div>
+<h3 id="判断题"><a class="headerlink" href="#判断题"></a>判断题</h3>
+<p>对错先在纸上写，再展开对答案。</p>
+<details class="ly-fold">
+<summary>10 道判断题</summary>
+<p><strong>1.</strong> 双标签跳跃利用的是 Native VLAN 不打标签的特性。</p>
+<p><strong>2.</strong> 双标签跳跃可以实现双向通信。</p>
+<p><strong>3.</strong> 双标签攻击可以发送单播帧到目标主机。</p>
+<p><strong>4.</strong> 把 Trunk 的 native VLAN 设为不存在的 VLAN 可以防范双标签攻击。</p>
+<p><strong>5.</strong> DTP 是动态干道协议。</p>
+<p><strong>6.</strong> 交换机默认接口一律不参与 DTP 协商。</p>
+<p><strong>7.</strong> DTP 跳跃可以实现双向访问，绕过防火墙。</p>
+<p><strong>8.</strong> VTP 是思科私有协议。</p>
+<p><strong>9.</strong> VTP 通告中的 Revision 越大表示信息越旧。</p>
+<p><strong>10.</strong> 配置 VTP 密码是防范 VTP 攻击的根本措施。</p>
+<hr>
+<p><strong>答案</strong></p>
+<ol>
+<li>对。</li>
+<li>错。只能单向，回包回不来。</li>
+<li>错。只能广播或组播。</li>
+<li>对。</li>
+<li>对。</li>
+<li>错。默认常处于主动或被动协商模式。</li>
+<li>对。</li>
+<li>对。</li>
+<li>错。越大表示越新，设备只比大小。</li>
+<li>对。</li>
+</ol>
+</details>
+<h3 id="填空题"><a class="headerlink" href="#填空题"></a>填空题</h3>
+<details class="ly-fold">
+<summary>16 道填空题</summary>
+<p><strong>1.</strong> 双标签跳跃的帧含有 ______ 层 VLAN 标签。</p>
+<p><strong>2.</strong> 双标签跳跃中外层标签填 ______ 号。</p>
+<p><strong>3.</strong> 交换机在 Trunk 端口发送时剥掉的是 ______ 标签。</p>
+<p><strong>4.</strong> 双标签攻击只能实现 ______ 向攻击。</p>
+<p><strong>5.</strong> 因为是单向攻击，攻击包只能是二层的 ______ 或 ______ 帧。</p>
+<p><strong>6.</strong> 双标签跳跃的防范是把 Trunk 的 native VLAN 设为 ______。</p>
+<p><strong>7.</strong> DTP 的英文全称是 ______。</p>
+<p><strong>8.</strong> DTP 除了协商是否成 Trunk，还能协商 Trunk 的 ______。</p>
+<p><strong>9.</strong> DTP 跳跃的防范是关闭不需要的接口和关闭 ______。</p>
+<p><strong>10.</strong> VTP 的英文全称是 ______，是 ______ 公司的私有协议。</p>
+<p><strong>11.</strong> VTP 通告只能在 ______ 链路上传输。</p>
+<p><strong>12.</strong> VTP 通告以 ______ 帧的方式发送。</p>
+<p><strong>13.</strong> VTP 通告中用于比较新旧的字段是 ______。</p>
+<p><strong>14.</strong> 收到 Revision 更 ______ 的通告时，交换机会更新自身信息。</p>
+<p><strong>15.</strong> VTP 攻击的后果可以是删除全部 VLAN，使整个网络 ______。</p>
+<p><strong>16.</strong> 防范 VTP 攻击的三条措施是关闭闲置接口、用户接口配置为 ______、配置 ______。</p>
+<hr>
+<p><strong>答案</strong></p>
+<ol>
+<li>两（双）。</li>
+<li>Native VLAN（默认 VLAN 1）。</li>
+<li>外层。</li>
+<li>单。</li>
+<li>广播；组播。</li>
+<li>一个不存在的 VLAN。</li>
+<li>Dynamic Trunk Protocol。</li>
+<li>封装类型。</li>
+<li>DTP。</li>
+<li>VLAN Trunk Protocol；思科。</li>
+<li>Trunk（干道）。</li>
+<li>组播。</li>
+<li>Revision（修订号）。</li>
+<li>高。</li>
+<li>通信中断。</li>
+<li>Access；VTP 密码。</li>
+</ol>
+</details>
+<h3 id="简答题"><a class="headerlink" href="#简答题"></a>简答题</h3>
+<details class="ly-fold">
+<summary>9 道简答题</summary>
+<p><strong>1.</strong> 叙述双标签跳跃的完整原理。</p>
+<p><strong>2.</strong> 双标签跳跃有哪三条局限？</p>
+<p><strong>3.</strong> 如何防范双标签跳跃？为什么设成&quot;不存在的 VLAN&quot;才有效？</p>
+<p><strong>4.</strong> DTP 跳跃为什么能成功？</p>
+<p><strong>5.</strong> DTP 跳跃有什么特点？如何防范？</p>
+<p><strong>6.</strong> 比较双标签跳跃与 DTP 跳跃。</p>
+<p><strong>7.</strong> VTP 的作用与工作机制是什么？</p>
+<p><strong>8.</strong> VTP 攻击的思路是什么？会造成什么后果？</p>
+<p><strong>9.</strong> 如何防范 VTP 攻击？哪一条是根本措施？</p>
+</div>
+<p><strong>答案要点</strong></p>
+<p><strong>1.</strong> 攻击者构造带双层 802.1Q 标签的帧，外层填 Trunk 的 Native VLAN 号、内层填目标 VLAN 号，从接入口送入。交换机按外层标签把它划入 VLAN 1 转发，到 Trunk 端口发送时因等于 Native VLAN 而剥掉外层标签；内层标签保留，帧以无标签形式上干道，对端交换机接收后按内层标签把它转发到目标 VLAN。本质是交换机只剥一层，攻击者套两层。</p>
+<p><strong>2.</strong> ① 有的交换机对接入口收到的带标签帧直接判为非法并丢弃，攻击无法发出；② 只能单向，攻击者能把包送进目标 VLAN，回包回不来；③ 因为单向、拿不到被攻击者 MAC，攻击包只能是二层广播或组播帧。</p>
+<p><strong>3.</strong> 把交换机之间 Trunk 链路的 native VLAN 设置成一个不存在的 VLAN。原因是：双标签依赖&quot;Native VLAN 帧不打标签&quot;这条通道，只要 native VLAN 与实际 VLAN 都不存在，任何帧经过 Trunk 都必须打标签并被重新封装，攻击者的外层标签就不再享有免标签待遇，内层标签也无法存活。</p>
+<p><strong>4.</strong> 因为 DTP 默认开启且接口常处于主动或被动协商模式。厂家为了方便，只要有设备主动发起协商，接口就会形成 Trunk。攻击者正是冒充&quot;另一台交换机&quot;发 DTP 协商包，把接入口变成干道，从而获得收发任意 VLAN 标签帧的能力。</p>
+<p><strong>5.</strong> 特点：攻击者与被攻击者之间可双向访问，能绕过防火墙直接访问目标主机。防范：关闭不需要开启的交换机接口，让攻击者无法接入；关闭 DTP，使接口不再协商 Trunk。</p>
+<p><strong>6.</strong> 双标签利用 Native VLAN 不剥离内层标签的特性，只能单向、只能发广播或组播，防范靠把 native VLAN 设为不存在的 VLAN；DTP 利用 Trunk 自动协商，能双向、能发任意单播，防范靠关闭 DTP 与闲置端口。前者是&quot;标签技巧&quot;，后者是&quot;协议协商被骗&quot;。</p>
+<p><strong>7.</strong> VTP 是思科私有的 VLAN 管理协议，用于减少配置工作。管理员设置 VTP Server，在 Server 上增删改 VLAN，VTP 把这些变化以组播通告的形式沿 Trunk 链路传播到其它交换机，其它交换机据此同步 VLAN 数据库。通告带 Revision 修订号，每次修改递增；收到更高 Revision 就更新，收到更低则用自身信息反向覆盖。</p>
+<p><strong>8.</strong> 攻击者向网络注入一个 Revision 极高的 VTP 通告，因为交换机只比较 Revision 大小、不校验来源，全网都会接受并覆盖自己的 VLAN 信息。如果通告中删除了全部 VLAN，各交换机上的 VLAN 配置被清空，端口所属 VLAN 不存在，整个网络通信中断。</p>
+<p><strong>9.</strong> 三条：关闭不需要开启的交换机接口；把与用户计算机连接的接口明确配置为 Access 模式，使 Trunk 无法协商成功、VTP 无从工作；配置 VTP 密码，使攻击者发来的 VTP 消息被拒绝接收。其中配置 VTP 密码是根本措施，因为它直接解决了&quot;只比 Revision、不认证来源&quot;这个软肋。</p>
+</details>
+<script src="/js/rl/quiz.js" defer></script>
+<hr>
+<blockquote>
+<p><strong>一句话总结</strong>：三种 VLAN 攻击各打一个点——双标签打 Native VLAN 不打标签（单向、只能广播）、DTP 打自动协商（双向、可绕防火墙）、VTP 打 Revision 只比大小（破坏型、删光 VLAN 断网）；防范分别对应&quot;设不存在的 native VLAN&quot;、&quot;关 DTP 关闲置口&quot;、&quot;配 VTP 密码&quot;。</p>
+</blockquote>
+
+                
+              </div>
+            
+
+            
+
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8/" class="category-chain-item">网络协议安全</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>【网络协议安全】（十三）VLAN 攻击</div>
+      <div>https://lyzeromoon.github.io/2026/11/25/网络协议安全十三VLAN攻击/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>LyZeroMoon</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年11月25日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  
+                  
+                  <article class="post-prev col-6">
+                    
+                      <a href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%8D%81%E4%BA%8CVLAN%E4%B8%8E8021Q/" title="【网络协议安全】（十二）VLAN 与 802.1Q">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">【网络协议安全】（十二）VLAN 与 802.1Q</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+    <div id="giscus" class="giscus"></div>
+    <script type="text/javascript">
+      Fluid.utils.loadComments('#giscus', function() {
+        var options = {"repo":"LyZeroMoon/LyZeroMoon.github.io","repo-id":"R_kgDOVHG-_g","category":"General","category-id":"DIC_kwDOVHG-_s4DIUgl","theme-light":"light","theme-dark":"dark","mapping":"pathname","reactions-enabled":1,"emit-metadata":0,"input-position":"top","lang":"zh-CN"};
+        var attributes = {};
+        for (let option in options) {
+          if (!option.startsWith('theme-')) {
+            var key = option.startsWith('data-') ? option : 'data-' + option;
+            attributes[key] = options[option];
+          }
+        }
+        var light = 'light';
+        var dark = 'dark';
+        window.GiscusThemeLight = light;
+        window.GiscusThemeDark = dark;
+        attributes['data-theme'] = document.documentElement.getAttribute('data-user-color-scheme') === 'dark' ? dark : light;
+        for (let attribute in attributes) {
+          var value = attributes[attribute];
+          if (value === undefined || value === null || value === '') {
+            delete attributes[attribute];
+          }
+        }
+        var s = document.createElement('script');
+        s.setAttribute('src', 'https://giscus.app/client.js');
+        s.setAttribute('crossorigin', 'anonymous');
+        for (let attribute in attributes) {
+          s.setAttribute(attribute, attributes[attribute]);
+        }
+        var ss = document.getElementsByTagName('script');
+        var e = ss.length > 0 ? ss[ss.length - 1] : document.head || document.documentElement;
+        e.parentNode.insertBefore(s, e.nextSibling);
+      });
+    </script>
+    <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="psn" aria-label="文章翻页">
+  
+  <a class="psn-item psn-prev" href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%8D%81%E4%BA%8CVLAN%E4%B8%8E8021Q/"
+     title="上一篇：【网络协议安全】（十二）VLAN 与 802.1Q" aria-label="上一篇：【网络协议安全】（十二）VLAN 与 802.1Q">
+    <span class="psn-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+    </span>
+    <span class="psn-tip"><b>上一篇</b><em>【网络协议安全】（十二）VLAN 与 802.1Q</em></span>
+  </a>
+  
+  
+</nav>
+
+
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="/atom.xml" target="_blank" rel="noopener" title="订阅本站更新"><i class="iconfont icon-rss"></i> RSS 订阅</a> &nbsp;·&nbsp; <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/skins.js"></script>
+<script src="/js/games-hub.js"></script>
+<script src="/js/column-order.js"></script>
+<script src="/js/xmas.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

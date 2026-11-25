@@ -1,0 +1,1545 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <!-- 皮肤：越早越好，必须排在样式表之前。localStorage 里存着访客的选择，
+       没有记录（或记录已失效）就用站点默认值。 -->
+  <script>
+    window.LY_UI = {"default":"xmas","force":true,"allowSwitch":true,"game":true,"siteTitle":"\"零月小站\"","skins":[{"id":"default","name":"经典","desc":"Fluid 原味，干净克制","accent":"#2f4154","accent2":"#f6f8fa","game":false},{"id":"ink","name":"墨韵","desc":"暖纸底、衬线字、朱砂点缀","accent":"#2b2620","accent2":"#f3eee4","game":false},{"id":"midnight","name":"深海","desc":"深蓝夜色，为长时间阅读而调","accent":"#16324a","accent2":"#eef3f9","game":false},{"id":"glass","name":"玻璃","desc":"毛玻璃卡片 + 渐变背景","accent":"#5b7cfa","accent2":"#eef2ff","game":false},{"id":"sakura","name":"樱雾","desc":"粉紫柔和，轻盈通透","accent":"#7a4a63","accent2":"#fdf2f6","game":false},{"id":"terminal","name":"终端","desc":"等宽字体与磷光绿，极客风","accent":"#0f1a14","accent2":"#e8f5ec","game":false},{"id":"retro","name":"复古","desc":"Windows 95 视窗，青色桌面与立体边框","accent":"#008080","accent2":"#c0c0c0","game":false},{"id":"arcade","name":"街机","desc":"霓虹街机 + CRT 扫描线，附赠贪吃蛇","accent":"#0a0118","accent2":"#ffd60a","game":false},{"id":"magazine","name":"杂志","desc":"衬线大字、首字下沉、编辑式分栏","accent":"#8c1d18","accent2":"#fbf9f4","game":false},{"id":"cyber","name":"赛博","desc":"网格底纹、切角面板、霓虹辉光","accent":"#05060a","accent2":"#22d3ee","game":false},{"id":"xmas","name":"圣诞","desc":"壁炉夜景、飘雪与雪尘拖尾，节日期间整站强制","accent":"#c1443c","accent2":"#2f5d43","game":false}]};
+    (function () {
+      var cfg = window.LY_UI;
+      var fallback = (cfg.skins[0] && cfg.skins[0].id) || 'default';
+      try {
+        if (cfg.siteTitle) {
+          document.documentElement.style.setProperty('--ly-site-title', cfg.siteTitle);
+        }
+        var ids = cfg.skins.map(function (s) { return s.id; });
+        var saved = null;
+        try { saved = localStorage.getItem('ly_ui_skin'); } catch (e) {}
+        // force 时本地记录不算数：节日皮肤要对所有访客一致
+        var pick = (!cfg.force && ids.indexOf(saved) >= 0) ? saved : cfg.default;
+        if (ids.indexOf(pick) < 0) pick = fallback;
+        document.documentElement.setAttribute('data-ui', pick);
+      } catch (e) {
+        document.documentElement.setAttribute('data-ui', fallback);
+      }
+    })();
+  </script>
+
+  <!-- 小游戏清单：给 js/games-hub.js 用。放在这里（而不是页面里）是因为
+       街机皮肤的「直接开一局」入口在任何页面都可能被点到。 -->
+  <script>window.LY_GAMES = {"enabled":true,"featured":"snake","page":"/games/","dir":"/js/games/","css":"/css/games.css","games":[{"id":"snake","name":"贪吃蛇","bestMode":"high"},{"id":"g2048","name":"2048","bestMode":"high"},{"id":"tetris","name":"俄罗斯方块","bestMode":"high"},{"id":"breakout","name":"打砖块","bestMode":"high"},{"id":"minesweeper","name":"扫雷","bestMode":"low"}]};</script>
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="LyZeroMoon">
+  <meta name="keywords" content="编程, 技术博客, 架构, 踩坑, 笔记">
+  
+    <meta name="description" content="以太网 802.3 与交换机转发 标签： #网络协议安全 #以太网 #CSMA&#x2F;CD #交换机 #冲突域 #广播域 对应第 2 章上册 P5–40。只列考点。    # 考点 考法     1 局域网的特点与三条优点 简答   2 五种拓扑 &#x2F; LLC 与 MAC 子层分工 填空   3 CSMA&#x2F;CD 四句话与完整工作流程 简答（必考）   4 冲突与退避算法 名词解释   5 MAC 帧各字段">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【网络协议安全】（七）以太网 802.3 与交换机转发">
+<meta property="og:url" content="https://lyzeromoon.github.io/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E4%B8%83%E4%BB%A5%E5%A4%AA%E7%BD%91%E4%B8%8E%E4%BA%A4%E6%8D%A2%E6%9C%BA/index.html">
+<meta property="og:site_name" content="零月小站">
+<meta property="og:description" content="以太网 802.3 与交换机转发 标签： #网络协议安全 #以太网 #CSMA&#x2F;CD #交换机 #冲突域 #广播域 对应第 2 章上册 P5–40。只列考点。    # 考点 考法     1 局域网的特点与三条优点 简答   2 五种拓扑 &#x2F; LLC 与 MAC 子层分工 填空   3 CSMA&#x2F;CD 四句话与完整工作流程 简答（必考）   4 冲突与退避算法 名词解释   5 MAC 帧各字段">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-25T15:50:00.000Z">
+<meta property="article:modified_time" content="2026-11-25T16:53:50.999Z">
+<meta property="article:author" content="LyZeroMoon">
+<meta property="article:tag" content="编程, 技术博客, 架构, 踩坑, 笔记">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>【网络协议安全】（七）以太网 802.3 与交换机转发 - 零月小站</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/kb.css">
+<link rel="stylesheet" href="/css/skins.css">
+<link rel="stylesheet" href="/css/rl.css">
+<link rel="stylesheet" href="/css/nps.css">
+<link rel="stylesheet" href="/css/post-nav.css">
+<link rel="stylesheet" href="/css/xmas.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"lyzeromoon.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"><link rel="alternate" href="/atom.xml" title="零月小站" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  
+<nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>零月小站</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/columns/" target="_self">
+                <i class="iconfont icon-books"></i>
+                <span>专栏</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/notes/" target="_self">
+                <i class="iconfont icon-note"></i>
+                <span>常用公式</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/resources/" target="_self">
+                <i class="iconfont icon-briefcase"></i>
+                <span>资源</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/admin/" target="_self">
+                <i class="iconfont icon-pencil"></i>
+                <span>写作后台</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="nav-games-btn">
+            <a class="nav-link" href="/games/" target="_self"
+               aria-label="小游戏" title="小游戏">
+              <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg><span>小游戏</span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="ui-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" role="button"
+               aria-label="界面风格" title="界面风格">
+              <i class="iconfont icon-brush"></i>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item nav-game-only" id="arcade-game-btn">
+            <a class="nav-link" target="_self" href="javascript:;" role="button"
+               aria-label="直接开一局" title="直接开一局：贪吃蛇">
+              <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/columns/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-books"></i>
+                  <span>专栏</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/notes/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-note"></i>
+                  <span>常用公式</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/resources/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-briefcase"></i>
+                  <span>资源</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/admin/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-pencil"></i>
+                  <span>写作后台</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-games-btn">
+            <a href="/games/" aria-label="小游戏">
+              <div class="mobile-grid-item">
+                <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+                <span>小游戏</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-ui-toggle-btn">
+            <a href="javascript:;" aria-label="界面风格">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-brush"></i>
+                <span>界面风格</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell nav-game-only" id="mobile-arcade-game-btn">
+            <a href="javascript:;" aria-label="直接开一局">
+              <div class="mobile-grid-item">
+                <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+                <span>开一局</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="【网络协议安全】（七）以太网 802.3 与交换机转发"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-25 23:50" pubdate>
+          2026年11月25日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          43 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">【网络协议安全】（七）以太网 802.3 与交换机转发</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="以太网-802-3-与交换机转发"><a class="headerlink" href="#以太网-802-3-与交换机转发"></a>以太网 802.3 与交换机转发</h1>
+<p><strong>标签：</strong> #网络协议安全 #以太网 #CSMA/CD #交换机 #冲突域 #广播域</p>
+<p>对应第 2 章上册 P5–40。只列考点。</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>考点</th>
+<th>考法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>局域网的特点与三条优点</td>
+<td>简答</td>
+</tr>
+<tr>
+<td>2</td>
+<td>五种拓扑 / LLC 与 MAC 子层分工</td>
+<td>填空</td>
+</tr>
+<tr>
+<td>3</td>
+<td>CSMA/CD 四句话与完整工作流程</td>
+<td>简答（必考）</td>
+</tr>
+<tr>
+<td>4</td>
+<td>冲突与退避算法</td>
+<td>名词解释</td>
+</tr>
+<tr>
+<td>5</td>
+<td>MAC 帧各字段长度、帧长范围、前导码</td>
+<td>填空、计算</td>
+</tr>
+<tr>
+<td>6</td>
+<td>三种&quot;发往本站的帧&quot;</td>
+<td>选择</td>
+</tr>
+<tr>
+<td>7</td>
+<td>冲突域与广播域的定义、划分层次</td>
+<td>简答（必考）</td>
+</tr>
+<tr>
+<td>8</td>
+<td>集线器与交换机对两个域的不同影响</td>
+<td>选择、简答</td>
+</tr>
+<tr>
+<td>9</td>
+<td>交换机四个动作、MAC 表老化时间</td>
+<td>简答（必考）</td>
+</tr>
+<tr>
+<td>10</td>
+<td>单工 / 半双工 / 全双工</td>
+<td>填空</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="一、局域网与两个子层"><a class="headerlink" href="#一、局域网与两个子层"></a>一、局域网与两个子层</h2>
+<p><strong>局域网特点</strong>：网络为一个单位所拥有；地理位置和站点数目有限。</p>
+<p><strong>局域网三条优点</strong>：具有<strong>广播功能</strong>；利于扩展，设备位置可灵活调整；提高系统的<strong>可靠性和可用性</strong>。</p>
+<p><strong>五种拓扑</strong>：星形（集线器在中心）、总线（两端有匹配电阻）、环形、树形（干线耦合器）、网状。</p>
+<p><strong>局域网只有两个传输特点</strong>：用<strong>带地址的帧</strong>传送数据；<strong>不存在中间路由</strong>。正因为没有路由，数据链路层必须拆成两个子层。</p>
+<table>
+<thead>
+<tr>
+<th>子层</th>
+<th>全称</th>
+<th>职责</th>
+<th>与介质的关系</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LLC</td>
+<td>逻辑链路控制层</td>
+<td>与上层交接，屏蔽下层差异</td>
+<td><strong>无关</strong>，与介质、访问方法无关</td>
+</tr>
+<tr>
+<td>MAC</td>
+<td>介质访问控制</td>
+<td>组帧、寻址、争用介质</td>
+<td><strong>密切相关</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>为什么要分两层</strong>：各种 MAC 与 LLC 的界面保持一致，换介质只换 MAC 子层，上层不用改。</p>
+<p><strong>MAC 服务规范</strong>：介质访问控制是指把传输介质带宽<strong>有效地分配给网上各站点用户</strong>的方法。</p>
+<p><strong>载波监听的前提</strong>：局域网的介质是<strong>共享</strong>的；广域网是专用的（通常点对点），不存在介质冲突问题——这是以太网必须有争用机制、广域网不需要的根本原因。</p>
+<p><strong>常用的三种通信方式</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>信道数</th>
+<th>方向</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单工</td>
+<td>1</td>
+<td>只能单向</td>
+<td>寻呼机</td>
+</tr>
+<tr>
+<td>半双工</td>
+<td>1</td>
+<td>同一时刻只能单向</td>
+<td>对讲机</td>
+</tr>
+<tr>
+<td>全双工</td>
+<td>2</td>
+<td>同时双向</td>
+<td>电话</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="二、CSMA-CD-与冲突"><a class="headerlink" href="#二、CSMA-CD-与冲突"></a>二、CSMA/CD 与冲突</h2>
+<p><strong>一句话</strong>：先听后发，边发边听，冲突停发，随机延迟后重发。</p>
+<p><strong>四步流程</strong>（按 PPT 口径逐条）：</p>
+<ol>
+<li>如果介质<strong>空闲</strong>则传输；</li>
+<li>如果介质<strong>忙</strong>，继续监听，直到介质空闲马上传输；</li>
+<li>如果在传输期间<strong>检测到冲突</strong>，发送一简短 <strong>JAM 信号</strong>；</li>
+<li>发出 JAM 后，等待一<strong>随机时间</strong>，从头开始。</li>
+</ol>
+<p><strong>为什么必须&quot;边发边听&quot;</strong>：发送前听到空闲只说明&quot;刚才&quot;没人发。两个站可能同时判定空闲、同时开头发送，冲突只能在<strong>发送过程中</strong>发现。</p>
+<p><strong>为什么要发 JAM 信号</strong>：冲突产生的信号很弱，JAM 是一段加强的干扰信号，保证<strong>所有站</strong>都能可靠地检测到冲突，一起停下来。</p>
+<p><strong>退避算法要解决的问题</strong>：某站发送时，另外两站都在等；总线一空闲两站同时发 → 再碰撞 → 停止 → 重发，可能<strong>一直发不成功</strong>。所以要按随机时间错开重试，而不是&quot;一空闲就发&quot;。</p>
+<p><strong>冲突域</strong>：连接在同一导线上的所有工作站的集合，即同一物理网段上所有节点的集合，或以太网上<strong>竞争同一带宽</strong>的节点集合。<strong>基于第一层（物理层）</strong>，由 hub 组织，<strong>一个 hub 就是一个冲突域</strong>。冲突过多则传输效率降低，所以要提高效率就要<strong>分割冲突域</strong>。</p>
+<p><strong>广播域</strong>：接收同样广播消息的节点的集合。<strong>基于第二层（数据链路层）</strong>。交换机<strong>所有端口默认在同一个广播域内</strong>，而<strong>每一个端口就是一个冲突域</strong>。通常一个局域网就是一个广播域（用路由器连接的除外）。</p>
+<hr>
+<h2 id="三、MAC-帧格式"><a class="headerlink" href="#三、MAC-帧格式"></a>三、MAC 帧格式</h2>
+<p>以太网 V2 帧（最常用的 MAC 帧）：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>前同步码</th>
+<th>帧开始定界符</th>
+<th>目的地址</th>
+<th>源地址</th>
+<th>类型</th>
+<th>数据</th>
+<th>FCS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>长度（字节）</td>
+<td>7</td>
+<td>1</td>
+<td>6</td>
+<td>6</td>
+<td>2</td>
+<td>46 ~ 1500</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>前 8 字节（7 + 1）是<strong>前导码</strong>，用于收发同步，<strong>不计入帧长</strong>。前同步码是 56 位 1010…，定界符末两位为 11。</li>
+<li><strong>类型</strong>字段标识上层协议（如 IPv4 为 0x0800）。</li>
+<li><strong>数据</strong>最少 46、最多 1500 字节。不足 46 要<strong>填充</strong>到 46，否则接收端无法区分是&quot;短帧&quot;还是&quot;冲突碎片&quot;。</li>
+<li><strong>FCS</strong> 是 4 字节 CRC 校验，只检错、不纠错，错了直接丢，由上层超时重传。</li>
+<li><strong>帧长范围 64 ~ 1518 字节</strong>（不含前导码）。低于 64 的帧称为<strong>残帧</strong>，一般由冲突造成。</li>
+</ul>
+<p><strong>适配器收帧</strong>：网卡从网络上每收到一个帧，先用硬件检查 MAC 地址，是发往本站的收下处理，否则丢弃。<strong>&quot;发往本站的帧&quot;包含三种</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>含义</th>
+<th>目的 MAC 特征</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单播 unicast</td>
+<td>一对一</td>
+<td>等于本机 MAC</td>
+</tr>
+<tr>
+<td>广播 broadcast</td>
+<td>一对全体</td>
+<td>全 F（FF:FF:FF:FF:FF:FF）</td>
+</tr>
+<tr>
+<td>多播 multicast</td>
+<td>一对多</td>
+<td>第一字节最低位为 1</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="四、集线器与交换机"><a class="headerlink" href="#四、集线器与交换机"></a>四、集线器与交换机</h2>
+<p><strong>扩展局域网的两个目的</strong>：增加主机个数；增大作用范围。<strong>两种设备</strong>：集线器（Hub）与交换机。</p>
+<p><strong>用集线器扩展</strong>：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>优点</td>
+<td>使不同冲突域的主机能跨冲突域通信；扩大地理覆盖范围</td>
+</tr>
+<tr>
+<td>缺点</td>
+<td><strong>冲突域增大，但总吞吐量并未提高</strong>；不同冲突域数据率不同时<strong>不能</strong>用集线器互连</td>
+</tr>
+</tbody>
+</table>
+<p>集线器工作在物理层，收到的比特<strong>向所有端口转发</strong>，多台主机共享同一带宽。</p>
+<p><strong>以太网交换机</strong>：1990 年问世的交换式集线器（switching hub），也称二层交换机。它根据帧中的<strong>目标 MAC 地址</strong>智能转发，工作在数据链路层。</p>
+<p><strong>三条特点</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>特点</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>隔离冲突域</td>
+<td>共享式以太网靠 CSMA/CD 争用；交换机每个端口是一个独立冲突域</td>
+</tr>
+<tr>
+<td>增加总容量</td>
+<td>每个端口有专用容量，总容量随端口数增加；共享式是所有设备分一份</td>
+</tr>
+<tr>
+<td>数据率灵活</td>
+<td>各端口可用不同速率；共享式要求所有设备同一速率</td>
+</tr>
+</tbody>
+</table>
+<p><strong>背板交换矩阵</strong>：交换机用专用交换结构芯片，每个端口访问另一个端口都有<strong>专有线路</strong>，不会产生冲突，所以速率高。</p>
+<hr>
+<h2 id="五、交换机转发原理"><a class="headerlink" href="#五、交换机转发原理"></a>五、交换机转发原理</h2>
+<p>四个动作是本章最常考的一段：</p>
+<table>
+<thead>
+<tr>
+<th>动作</th>
+<th>触发条件</th>
+<th>具体行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>学习</strong></td>
+<td>收到任何帧</td>
+<td>把帧的<strong>源 MAC</strong> 与<strong>入端口</strong>写入 MAC 地址表</td>
+</tr>
+<tr>
+<td><strong>转发</strong></td>
+<td>表中<strong>有</strong>目的 MAC</td>
+<td>按表项<strong>单播</strong>从该端口发出</td>
+</tr>
+<tr>
+<td><strong>广播（泛洪）</strong></td>
+<td>表中<strong>无</strong>目的 MAC</td>
+<td>向<strong>除入端口外</strong>的所有端口泛洪</td>
+</tr>
+<tr>
+<td><strong>更新</strong></td>
+<td>老化 / 端口变化</td>
+<td>老化时间 <strong>300 秒</strong>；入端口与表中源 MAC 所在端口不同则<strong>重新学习到新端口</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>要点三条</strong>：</p>
+<ol>
+<li>表是<strong>学源不学目的</strong>——只记&quot;谁从哪个口进来&quot;，不记&quot;谁要发给谁&quot;。</li>
+<li>泛洪是<strong>排除入端口</strong>的，否则帧会在入口处回环。</li>
+<li>老化是为了适应主机移动：MAC 表有容量上限，不清就装不下新条目。</li>
+</ol>
+<p><strong>交换机怎么一步步把表学满</strong>：主机 11 发给主机 33，交换机查表无 33 → 泛洪；同时学到 11 在端口 1。主机 44 发给主机 11，此时表里已有 11 → 直接单播到端口 1；同时学到 44 在端口 2。表就是这样在通信过程中自动建起来的，<strong>不需要任何配置</strong>。</p>
+<hr>
+<h2 id="六、易错辨析"><a class="headerlink" href="#六、易错辨析"></a>六、易错辨析</h2>
+<table>
+<thead>
+<tr>
+<th>错误说法</th>
+<th>判据</th>
+<th>反例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&quot;CSMA/CD 是先听后发就够了&quot;</td>
+<td>还要边发边听</td>
+<td>同时判空闲会同时发送，冲突只能在发送中发现</td>
+</tr>
+<tr>
+<td>&quot;冲突后立即重发&quot;</td>
+<td>要退避随机时间</td>
+<td>不退避的话两站会一直同步碰撞</td>
+</tr>
+<tr>
+<td>&quot;冲突域越大越好，接入主机多&quot;</td>
+<td>冲突越多效率越低</td>
+<td>集线器级联只扩大冲突域，总吞吐不变</td>
+</tr>
+<tr>
+<td>&quot;交换机分割广播域&quot;</td>
+<td>交换机只分割冲突域</td>
+<td>默认所有端口同一广播域，要分割得用 VLAN 或路由器</td>
+</tr>
+<tr>
+<td>&quot;MAC 帧长 1518，加前导码 1526&quot;</td>
+<td>前导码不计入帧长</td>
+<td>帧长指从目的 MAC 到 FCS</td>
+</tr>
+<tr>
+<td>&quot;数据字段可以任意短&quot;</td>
+<td>最少 46 字节</td>
+<td>不足要填充，否则与冲突残帧无法区分</td>
+</tr>
+<tr>
+<td>&quot;交换机按目的 MAC 学习&quot;</td>
+<td>学习用的是源 MAC</td>
+<td>表项内容是&quot;源 MAC—入端口&quot;</td>
+</tr>
+<tr>
+<td>&quot;MAC 表永不过期&quot;</td>
+<td>老化 300 秒</td>
+<td>主机换端口后靠老化 + 重学习纠正</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="七、自测（50-题）"><a class="headerlink" href="#七、自测（50-题）"></a>七、自测（50 题）</h2>
+<p><strong>15 道选择题</strong>（点选项立刻判对错，四个选项各有说明）、<strong>10 道判断题</strong>、<strong>16 道填空题</strong>、<strong>9 道简答题</strong>。</p>
+<h3 id="选择题"><a class="headerlink" href="#选择题"></a>选择题</h3>
+<div class="rl-quiz" data-quiz="nps7"></div>
+<h3 id="判断题"><a class="headerlink" href="#判断题"></a>判断题</h3>
+<p>对错先在纸上写，再展开对答案。</p>
+<details class="ly-fold">
+<summary>10 道判断题</summary>
+<p><strong>1.</strong> 广域网也需要 CSMA/CD 来解决介质争用。</p>
+<p><strong>2.</strong> LLC 子层与所用传输介质无关。</p>
+<p><strong>3.</strong> CSMA/CD 中检测到冲突后，立即从头重发。</p>
+<p><strong>4.</strong> 一个集线器就是一个冲突域。</p>
+<p><strong>5.</strong> 交换机所有端口默认属于同一个广播域。</p>
+<p><strong>6.</strong> MAC 帧的数据字段可以是 20 字节。</p>
+<p><strong>7.</strong> 前导码 8 字节包含在以太网帧长 1518 之内。</p>
+<p><strong>8.</strong> 交换机是根据帧的目的 MAC 地址来学习表项的。</p>
+<p><strong>9.</strong> 广播帧的接收者包括本网段内所有主机。</p>
+<p><strong>10.</strong> MAC 地址表的老化时间是 300 秒。</p>
+<hr>
+<p><strong>答案</strong></p>
+<ol>
+<li>错。广域网通常点对点、介质专用，不存在争用。</li>
+<li>对。这是分层的意义：换介质只换 MAC，LLC 不动。</li>
+<li>错。要先发 JAM 信号，再等随机时间。</li>
+<li>对。冲突域基于物理层，由 hub 组织。</li>
+<li>对。要隔离必须靠 VLAN 或路由器。</li>
+<li>错。最少 46，不足要填充。</li>
+<li>错。前导码不计入帧长，帧长从目的 MAC 算起。</li>
+<li>错。学习用源 MAC，转发才看目的 MAC。</li>
+<li>对。广播就是一对全体。</li>
+<li>对。</li>
+</ol>
+</details>
+<h3 id="填空题"><a class="headerlink" href="#填空题"></a>填空题</h3>
+<details class="ly-fold">
+<summary>16 道填空题</summary>
+<p><strong>1.</strong> CSMA/CD 的四句话是：先听后发、<strong><strong><strong>、冲突停发、</strong></strong></strong>。</p>
+<p><strong>2.</strong> 检测到冲突后，站点发送一简短 ______ 信号。</p>
+<p><strong>3.</strong> 数据链路层分为 ______ 与 ______ 两个子层。</p>
+<p><strong>4.</strong> MAC 帧目的地址 ______ 字节，源地址 ______ 字节，类型 ______ 字节。</p>
+<p><strong>5.</strong> MAC 帧数据字段长度 ______ 到 ______ 字节，FCS ______ 字节。</p>
+<p><strong>6.</strong> 以太网帧长范围是 ______ 到 ______ 字节。</p>
+<p><strong>7.</strong> 前导码共 ______ 字节，其中前同步码 ______ 字节、帧开始定界符 ______ 字节。</p>
+<p><strong>8.</strong> 广播帧的目的 MAC 地址为 ______。</p>
+<p><strong>9.</strong> 冲突域基于第 ______ 层，广播域基于第 ______ 层。</p>
+<p><strong>10.</strong> 交换机每个端口是一个 ______ 域，所有端口同属一个 ______ 域。</p>
+<p><strong>11.</strong> 交换机 MAC 地址表老化时间为 ______ 秒。</p>
+<p><strong>12.</strong> 交换机四个动作是学习、<strong><strong><strong>、</strong></strong></strong>、更新。</p>
+<p><strong>13.</strong> 表中没有目的 MAC 时，交换机向 ______ 的所有端口泛洪。</p>
+<p><strong>14.</strong> 单工只有 ______ 个信道，全双工有 ______ 个信道。</p>
+<p><strong>15.</strong> 集线器工作在 ______ 层，交换机工作在 ______ 层。</p>
+<p><strong>16.</strong> 局域网的两种传输特点是用带地址的帧传送数据、______。</p>
+<hr>
+<p><strong>答案</strong></p>
+<ol>
+<li>边发边听；随机延迟后重发。</li>
+<li>JAM。</li>
+<li>LLC（逻辑链路控制）；MAC（介质访问控制）。</li>
+<li>6；6；2。</li>
+<li>46；1500；4。</li>
+<li>64；1518。</li>
+<li>8；7；1。</li>
+<li>全 F（FF:FF:FF:FF:FF:FF）。</li>
+<li>一（物理层）；二（数据链路层）。</li>
+<li>冲突；广播。</li>
+<li>300。</li>
+<li>转发；广播。</li>
+<li>除入端口外。</li>
+<li>1；2。</li>
+<li>物理；数据链路。</li>
+<li>不存在中间路由。</li>
+</ol>
+</details>
+<h3 id="简答题"><a class="headerlink" href="#简答题"></a>简答题</h3>
+<details class="ly-fold">
+<summary>9 道简答题</summary>
+<p><strong>1.</strong> 局域网为什么必须把数据链路层拆成 LLC 与 MAC 两个子层？</p>
+<p><strong>2.</strong> 完整叙述 CSMA/CD 的工作流程。</p>
+<p><strong>3.</strong> 说明 JAM 信号的作用。</p>
+<p><strong>4.</strong> 什么是退避算法？为什么必须要它？</p>
+<p><strong>5.</strong> 写出以太网 V2 帧的字段与长度，并指出帧长的上下限。</p>
+<p><strong>6.</strong> 区分冲突域与广播域，并说明集线器和交换机各如何影响它们。</p>
+<p><strong>7.</strong> 交换机有哪四个动作？各在什么条件下触发？</p>
+<p><strong>8.</strong> 交换机与集线器相比有哪些优势？</p>
+<p><strong>9.</strong> 为什么 MAC 帧数据字段不得少于 46 字节？</p>
+<hr>
+<p><strong>答案要点</strong></p>
+<p><strong>1.</strong> 局域网没有中间路由，链路层既要与上层交接又要直接面对共享介质。LLC 负责与网络层交接、屏蔽不同介质的差异；MAC 负责组帧、寻址和介质访问。两层界面统一，换介质只换 MAC，上层代码不动。</p>
+<p><strong>2.</strong> ① 监听介质，空闲则发送；② 忙则持续监听，一空闲马上发送；③ 发送期间边发边听，检测到冲突就发 JAM 信号；④ 等待一个随机时间后从头开始。</p>
+<p><strong>3.</strong> 冲突产生的信号幅度小、持续时间短，远端站点可能检测不到。JAM 是一段加强的干扰信号，保证全网上所有参与争用的站点都能可靠地判定冲突并同时停止发送。</p>
+<p><strong>4.</strong> 冲突后不按固定时间重试，而是从退避窗口里随机取一个时间等待，窗口随重试次数增大。没有它，两站会&quot;同时空闲、同时发送、同时冲突&quot;，可能永远发不出去。</p>
+<p><strong>5.</strong> 目的 MAC 6 + 源 MAC 6 + 类型 2 + 数据 46~1500 + FCS 4。下限 64 字节（6+6+2+46+4），上限 1518 字节（6+6+2+1500+4）。前导码 8 字节不计入。</p>
+<p><strong>6.</strong> 冲突域是竞争同一带宽的节点集合，基于物理层，一个 hub 一个冲突域；广播域是接收同一广播的节点集合，基于数据链路层，交换机所有端口默认同属一个广播域。集线器把多个冲突域<strong>合并</strong>成一个更大的冲突域；交换机把冲突域<strong>分裂</strong>成每端口一个，但<strong>不分割</strong>广播域。</p>
+<p><strong>7.</strong> 学习：收到帧时记下源 MAC 与入端口；转发：表中存在目的 MAC 时按表项单播；广播（泛洪）：表中不存在目的 MAC 时向除入端口外的所有端口发出；更新：老化时间 300 秒，或同一源 MAC 从不同端口进来时重新学习到新端口。</p>
+<p><strong>8.</strong> 隔离冲突域，消除争用；增加总容量，每端口独立带宽，总容量随端口数增长；数据率灵活，各端口可跑不同速率。集线器则相反：冲突域变大、吞吐不变、所有端口必须同一速率。</p>
+<p><strong>9.</strong> 帧太短会被接收端误判为冲突碎片。以太网规定最小帧长 64 字节，减去 6+6+2+4 共 18 字节的固定字段，载荷最少 46 字节；不足时由发送方填充到 46。</p>
+</details>
+<script src="/js/rl/quiz.js" defer></script>
+<hr>
+<blockquote>
+<p><strong>一句话总结</strong>：以太网靠四句话争用介质，靠 46~1500 与 64~1518 定帧长；集线器合并冲突域、交换机分裂冲突域但不碰广播域；交换机四个动作是学习源、转发目的、无表泛洪、超时老化。</p>
+</blockquote>
+
+                
+              </div>
+            
+
+            
+
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8/" class="category-chain-item">网络协议安全</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>【网络协议安全】（七）以太网 802.3 与交换机转发</div>
+      <div>https://lyzeromoon.github.io/2026/11/25/网络协议安全七以太网与交换机/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>LyZeroMoon</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年11月25日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  
+                  
+                  <article class="post-prev col-6">
+                    
+                      <a href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%85%ADDoS%E4%B8%8EDDoS/" title="【网络协议安全】（六）DoS 与 DDoS">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">【网络协议安全】（六）DoS 与 DDoS</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                      <a href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%85%ABMAC%E6%B3%9B%E6%B4%AA%E4%B8%8E%E6%AC%BA%E9%AA%97/" title="【网络协议安全】（八）MAC 泛洪与 MAC 欺骗">
+                        <span class="hidden-mobile">【网络协议安全】（八）MAC 泛洪与 MAC 欺骗</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+    <div id="giscus" class="giscus"></div>
+    <script type="text/javascript">
+      Fluid.utils.loadComments('#giscus', function() {
+        var options = {"repo":"LyZeroMoon/LyZeroMoon.github.io","repo-id":"R_kgDOVHG-_g","category":"General","category-id":"DIC_kwDOVHG-_s4DIUgl","theme-light":"light","theme-dark":"dark","mapping":"pathname","reactions-enabled":1,"emit-metadata":0,"input-position":"top","lang":"zh-CN"};
+        var attributes = {};
+        for (let option in options) {
+          if (!option.startsWith('theme-')) {
+            var key = option.startsWith('data-') ? option : 'data-' + option;
+            attributes[key] = options[option];
+          }
+        }
+        var light = 'light';
+        var dark = 'dark';
+        window.GiscusThemeLight = light;
+        window.GiscusThemeDark = dark;
+        attributes['data-theme'] = document.documentElement.getAttribute('data-user-color-scheme') === 'dark' ? dark : light;
+        for (let attribute in attributes) {
+          var value = attributes[attribute];
+          if (value === undefined || value === null || value === '') {
+            delete attributes[attribute];
+          }
+        }
+        var s = document.createElement('script');
+        s.setAttribute('src', 'https://giscus.app/client.js');
+        s.setAttribute('crossorigin', 'anonymous');
+        for (let attribute in attributes) {
+          s.setAttribute(attribute, attributes[attribute]);
+        }
+        var ss = document.getElementsByTagName('script');
+        var e = ss.length > 0 ? ss[ss.length - 1] : document.head || document.documentElement;
+        e.parentNode.insertBefore(s, e.nextSibling);
+      });
+    </script>
+    <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="psn" aria-label="文章翻页">
+  
+  <a class="psn-item psn-prev" href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%85%ADDoS%E4%B8%8EDDoS/"
+     title="上一篇：【网络协议安全】（六）DoS 与 DDoS" aria-label="上一篇：【网络协议安全】（六）DoS 与 DDoS">
+    <span class="psn-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+    </span>
+    <span class="psn-tip"><b>上一篇</b><em>【网络协议安全】（六）DoS 与 DDoS</em></span>
+  </a>
+  
+  
+  <a class="psn-item psn-next" href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%85%ABMAC%E6%B3%9B%E6%B4%AA%E4%B8%8E%E6%AC%BA%E9%AA%97/"
+     title="下一篇：【网络协议安全】（八）MAC 泛洪与 MAC 欺骗" aria-label="下一篇：【网络协议安全】（八）MAC 泛洪与 MAC 欺骗">
+    <span class="psn-tip"><b>下一篇</b><em>【网络协议安全】（八）MAC 泛洪与 MAC 欺骗</em></span>
+    <span class="psn-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+    </span>
+  </a>
+  
+</nav>
+
+
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="/atom.xml" target="_blank" rel="noopener" title="订阅本站更新"><i class="iconfont icon-rss"></i> RSS 订阅</a> &nbsp;·&nbsp; <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/skins.js"></script>
+<script src="/js/games-hub.js"></script>
+<script src="/js/column-order.js"></script>
+<script src="/js/xmas.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

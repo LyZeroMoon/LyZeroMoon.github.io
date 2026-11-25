@@ -1,0 +1,332 @@
+/*!
+ * 圣诞皮肤（xmas）
+ * ---------------------------------------------------------------------------
+ * 这条皮肤跟其它皮肤不一样：它不是给访客挑的，是节日期间整站强制的。
+ * 由三处配合生效 ——
+ *   source/_data/ui.json   的 default:"xmas" + force:true（强制，忽略本地记录）
+ *   themes/.../head.ejs    首屏写入 data-ui="xmas"
+ *   _config.fluid.yml      custom_css / custom_js 加载本文件与 js/xmas.js
+ *
+ * 回退：把 ui.json 的 default 改回 "default"、去掉 force（或直接删掉 xmas 那条），
+ * 再删掉本页末尾的「圣诞季专用」整段即可。图片在 source/img/xmas/，可保留。
+ *
+ * 配色只在「红 / 绿 / 白 + 一点金」里取，深绿做底是因为首页那张场景图本身是
+ * 暗调的壁炉夜景：换浅色底，头图和页面之间会裂成两块。
+ * ---------------------------------------------------------------------------
+ */
+
+/* ==========================================================================
+   一、配色变量
+   明色 / 自动暗色 / 手动暗色三处写同一套 —— 这条皮肤本身是暗底，
+   访客把主题切到「浅色」也不该把它变白，否则头图压不住。
+   ========================================================================== */
+
+:root[data-ui="xmas"] {
+  --body-bg-color: #0b110e;
+  --board-bg-color: #121b16;
+  --text-color: #e7e3d7;
+  --sec-text-color: #909a90;
+  --post-text-color: #dcd8cc;
+  --post-heading-color: #f7f3e7;
+  --post-link-color: #e2685b;
+  --link-hover-color: #f2806f;
+  --link-hover-bg-color: #1d2822;
+  --line-color: #232f28;
+  --navbar-bg-color: #0a100d;
+  --navbar-text-color: #ece8dc;
+  --subtitle-color: #f5f1e4;
+  --scrollbar-color: #33403a;
+  --scrollbar-hover-color: #4b5b52;
+  --button-bg-color: transparent;
+  --button-hover-bg-color: #1e2a23;
+  --highlight-bg-color: #0f1713;
+  --inlinecode-bg-color: rgba(226, 104, 91, 0.12);
+  --fold-title-color: #e7e3d7;
+  --fold-border-color: #232f28;
+
+  /* 这条皮肤自己的色板，别处引用就取这几个 */
+  --xmas-red: #c1443c;
+  --xmas-red-soft: #e2685b;
+  --xmas-green: #2f5d43;
+  --xmas-gold: #d4af62;
+}
+
+:root[data-ui="xmas"]:not([data-user-color-scheme]) {
+  --body-bg-color: #0b110e;
+  --board-bg-color: #121b16;
+  --text-color: #e7e3d7;
+  --sec-text-color: #909a90;
+  --post-text-color: #dcd8cc;
+  --post-heading-color: #f7f3e7;
+  --post-link-color: #e2685b;
+  --link-hover-color: #f2806f;
+  --link-hover-bg-color: #1d2822;
+  --line-color: #232f28;
+  --navbar-bg-color: #0a100d;
+  --navbar-text-color: #ece8dc;
+  --subtitle-color: #f5f1e4;
+  --scrollbar-color: #33403a;
+  --scrollbar-hover-color: #4b5b52;
+  --button-bg-color: transparent;
+  --button-hover-bg-color: #1e2a23;
+  --highlight-bg-color: #0f1713;
+  --inlinecode-bg-color: rgba(226, 104, 91, 0.12);
+  --fold-title-color: #e7e3d7;
+  --fold-border-color: #232f28;
+}
+
+@media not print {
+  :root[data-ui="xmas"][data-user-color-scheme="dark"] {
+    --body-bg-color: #0b110e;
+    --board-bg-color: #121b16;
+    --text-color: #e7e3d7;
+    --sec-text-color: #909a90;
+    --post-text-color: #dcd8cc;
+    --post-heading-color: #f7f3e7;
+    --post-link-color: #e2685b;
+    --link-hover-color: #f2806f;
+    --link-hover-bg-color: #1d2822;
+    --line-color: #232f28;
+    --navbar-bg-color: #0a100d;
+    --navbar-text-color: #ece8dc;
+    --subtitle-color: #f5f1e4;
+    --scrollbar-color: #33403a;
+    --scrollbar-hover-color: #4b5b52;
+    --button-bg-color: transparent;
+    --button-hover-bg-color: #1e2a23;
+    --highlight-bg-color: #0f1713;
+    --inlinecode-bg-color: rgba(226, 104, 91, 0.12);
+    --fold-title-color: #e7e3d7;
+    --fold-border-color: #232f28;
+  }
+}
+
+/* ==========================================================================
+   二、导航：底边一道红绿金细线
+   ========================================================================== */
+
+:root[data-ui="xmas"] .navbar {
+  border-bottom: 1px solid rgba(212, 175, 98, 0.18);
+  box-shadow: 0 1px 0 rgba(193, 68, 60, 0.06),
+              0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-ui="xmas"] .navbar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(193, 68, 60, 0.55) 18%,
+    rgba(212, 175, 98, 0.7) 42%,
+    rgba(47, 93, 67, 0.55) 66%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   三、首页头图：换成本地场景，文字挪到左下
+   banner 的 background 是 EJS 写死的内联样式，只能 !important 盖。
+   ========================================================================== */
+
+:root[data-ui="xmas"] #banner.banner {
+  background-image: url("/img/xmas/scene-1200.jpg") !important;
+  background-position: 50% 42% !important;
+  background-size: cover !important;
+}
+
+@media (min-width: 1440px) {
+  :root[data-ui="xmas"] #banner.banner {
+    background-image: url("/img/xmas/scene.jpg") !important;
+  }
+}
+
+/* 蒙版：只压「文字脚下那一小块」，不再整条左侧压暗。
+   原来那条 97deg 的斜向渐变覆盖了整个左半边，壁炉（横向 0–28%、纵向 45–85%）
+   正好整块泡在 0.66–0.82 的暗里，火焰和柴堆全糊掉。
+   改成定位在左下角的椭圆暗角：文字仍站在 0.7 以上的暗处，壁炉在椭圆外基本不受影响。
+   文字可读性另一半交给 setTextShadow 那几层黑晕。 */
+:root[data-ui="xmas"] #banner .mask {
+  background: radial-gradient(
+      ellipse 52% 34% at 18% 88%,
+      rgba(4, 8, 6, 0.86) 0%,
+      rgba(4, 8, 6, 0.74) 38%,
+      rgba(4, 8, 6, 0.42) 68%,
+      rgba(4, 8, 6, 0.12) 88%,
+      transparent 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(4, 8, 6, 0.3) 0%,
+      rgba(4, 8, 6, 0.08) 24%,
+      rgba(4, 8, 6, 0.02) 50%,
+      rgba(11, 17, 14, 0.5) 84%,
+      rgba(11, 17, 14, 0.86) 94%,
+      #0b110e 100%
+    ) !important;
+  /* 主题内联的 background-color 会在渐变下面再多压一层，清掉才提得动亮度 */
+  background-color: transparent !important;
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
+:root[data-ui="xmas"] #banner .banner-text {
+  /* !important：.banner-text 自带 .text-center，主题那边不是从 main.css
+     加载的，特异性算不准，这里直接盖掉 */
+  text-align: left !important;
+  width: auto;
+  max-width: min(620px, 76vw);
+  padding: 0 clamp(24px, 7vw, 110px) 13vh;
+  margin: 0;
+}
+
+:root[data-ui="xmas"] #banner .banner-text .h2,
+:root[data-ui="xmas"] #banner #subtitle {
+  font-family: "Songti SC", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
+  font-size: clamp(2rem, 4.8vw, 3.6rem);
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  color: #fbf8f0;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* 首页副标题是纯英文，字体栈里就不留中文字族了 —— 否则会落到宋体的拉丁字形上，
+   笔画带顿笔，不像贺卡。:not(:has(.post-meta)) 把文章页排除在外（那边是中文标题）。 */
+:root[data-ui="xmas"] #banner .banner-text:not(:has(.post-meta)) #subtitle {
+  font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(2.2rem, 5.2vw, 3.8rem);
+  letter-spacing: 0.015em;
+  line-height: 1.22;
+}
+
+/* 窄屏：头图比例更竖，把焦点往树和礼物那边挪，否则只剩一截天花板 */
+@media (max-width: 767px) {
+  :root[data-ui="xmas"] #banner.banner {
+    background-position: 44% 50% !important;
+  }
+  :root[data-ui="xmas"] #banner .banner-text {
+    padding: 0 22px 11vh;
+    max-width: 88vw;
+  }
+}
+
+/* 头图下沿的滚动提示改成暖金 */
+:root[data-ui="xmas"] .scroll-down-bar i {
+  color: var(--xmas-gold);
+}
+
+/* 节日文案不要打字机光标：「Merry Christmas」后面挂一个 _ 像没写完。
+   只在圣诞皮肤下藏，其它皮肤的打字机效果照旧。 */
+:root[data-ui="xmas"] .typed-cursor {
+  display: none !important;
+}
+
+/* ==========================================================================
+   四、正文区的一点圣诞气
+   克制：只动标题前的短杠和引用块边线，不给每张卡片加彩带。
+   ========================================================================== */
+
+:root[data-ui="xmas"] .markdown-body h2::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 0.86em;
+  margin-right: 0.5em;
+  vertical-align: -0.04em;
+  border-radius: 1px;
+  background: linear-gradient(
+    180deg,
+    var(--xmas-red) 0%,
+    var(--xmas-red) 50%,
+    var(--xmas-green) 50%,
+    var(--xmas-green) 100%
+  );
+}
+
+:root[data-ui="xmas"] .markdown-body blockquote {
+  border-left: 3px solid var(--xmas-red);
+  background: rgba(193, 68, 60, 0.06);
+}
+
+:root[data-ui="xmas"] ::selection {
+  background: rgba(193, 68, 60, 0.28);
+  color: #fdf8ec;
+}
+
+/* ==========================================================================
+   五、节日期间强制生效：藏掉右上角的换肤按钮
+   （data-ui 由 head.ejs 定死，按钮点开了也切不走，不如不显示）
+   ========================================================================== */
+
+:root[data-ui="xmas"] #ui-toggle-btn {
+  display: none !important;
+}
+
+/* ==========================================================================
+   六、飘雪层与鼠标雪尘
+   元素由 js/xmas.js 注入；这里只管定位。JS 在 prefers-reduced-motion 下
+   根本不创建这两个元素，所以不需要再写一份媒体查询兜底。
+   ========================================================================== */
+
+.ly-snow {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ly-snow i {
+  position: absolute;
+  top: -32px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0;
+  animation-name: ly-snow-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* 六角晶体：外层 i 负责下落，内层 b 负责自转 */
+.ly-snow i.flake {
+  border-radius: 0;
+  background: none;
+}
+
+.ly-snow i.flake b {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  animation-name: ly-snow-spin;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  filter: drop-shadow(0 0 4px rgba(226, 240, 255, 0.55));
+}
+
+@keyframes ly-snow-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ly-snow-fall {
+  0%   { transform: translate3d(0, -12px, 0); opacity: 0; }
+  8%   { opacity: var(--o, 0.7); }
+  92%  { opacity: var(--o, 0.7); }
+  100% { transform: translate3d(var(--dx, 0), 104vh, 0); opacity: 0; }
+}
+
+.ly-snowdust {
+  position: fixed;
+  inset: 0;
+  z-index: 899;
+  pointer-events: none;
+}

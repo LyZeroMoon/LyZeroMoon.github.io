@@ -1,0 +1,537 @@
+/* ============================================================
+   资源库：文件管理器式浏览页
+   只由 themes/fluid/layout/resources.ejs 引入（页面级注入，不进全站）
+
+   配色一律走 Fluid 的 CSS 变量（--board-bg-color / --line-color /
+   --post-link-color …），需要「比底色深一点」的地方用 color-mix 现算。
+   这样明暗模式和界面皮肤都是自动跟随的，不用再各写一套。
+
+   历史包袱：这里原来有 55 条 [data-color-scheme="dark"] 规则，
+   但主题注入的属性叫 data-user-color-scheme —— 那批规则从来没生效过，
+   所以资源页在暗色下其实一直是亮色硬编码。改成变量后一并解决了。
+   ============================================================ */
+
+:root {
+  /* 在底色上叠一点点文字色 = 微妙的层次，明暗两态都成立 */
+  --res-tint: color-mix(in srgb, var(--text-color) 5%, var(--board-bg-color));
+  --res-tint-2: color-mix(in srgb, var(--text-color) 9%, var(--board-bg-color));
+  /* 主色的淡版本，用于选中态、悬停态 */
+  --res-accent-soft: color-mix(in srgb, var(--post-link-color) 13%, transparent);
+  --res-accent-line: color-mix(in srgb, var(--post-link-color) 42%, transparent);
+}
+
+.res-app {
+  border: 1px solid var(--line-color);
+  border-radius: 14px;
+  background: var(--board-bg-color);
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(16, 32, 56, .04), 0 8px 26px -18px rgba(16, 32, 56, .18);
+}
+
+/* ---------- 顶栏：面包屑 + 工具 ---------- */
+
+.res-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--res-tint);
+  border-bottom: 1px solid var(--line-color);
+}
+
+.res-crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1px;
+  min-width: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.res-crumbs .sep {
+  color: var(--sec-text-color);
+  padding: 0 3px;
+  user-select: none;
+}
+.res-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 220px;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sec-text-color);
+  font-size: 13.5px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background .14s, color .14s;
+}
+.res-crumb:hover {
+  background: var(--res-accent-soft);
+  color: var(--post-link-color);
+}
+.res-crumb.now {
+  color: var(--text-color);
+  font-weight: 600;
+  cursor: default;
+}
+.res-crumb.now:hover {
+  background: transparent;
+  color: var(--text-color);
+}
+.res-crumb svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+  opacity: .75;
+}
+
+.res-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.res-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--line-color);
+  border-radius: 9px;
+  background: var(--board-bg-color);
+  transition: border-color .15s, box-shadow .15s;
+}
+.res-search:focus-within {
+  border-color: var(--res-accent-line);
+  box-shadow: 0 0 0 3px var(--res-accent-soft);
+}
+.res-search svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  color: var(--sec-text-color);
+}
+.res-search input {
+  width: 130px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-color);
+}
+.res-search input::placeholder { color: var(--sec-text-color); opacity: .8; }
+
+.res-sort {
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--line-color);
+  border-radius: 9px;
+  background: var(--board-bg-color);
+  color: var(--sec-text-color);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.res-view {
+  display: flex;
+  padding: 2px;
+  border: 1px solid var(--line-color);
+  border-radius: 9px;
+  background: var(--board-bg-color);
+}
+.res-view button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--sec-text-color);
+  cursor: pointer;
+  transition: background .14s, color .14s;
+}
+.res-view button svg { width: 14px; height: 14px; }
+.res-view button:hover { color: var(--text-color); }
+.res-view button.on {
+  background: var(--res-accent-soft);
+  color: var(--post-link-color);
+}
+
+/* ---------- 当前文件夹说明条 ---------- */
+
+.res-note {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 11px 16px;
+  background: var(--res-tint);
+  border-bottom: 1px solid var(--line-color);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--sec-text-color);
+}
+.res-note .t {
+  font-weight: 600;
+  color: var(--text-color);
+}
+.res-note .sp { margin-left: auto; color: var(--sec-text-color); }
+
+/* ---------- 主体 ---------- */
+
+.res-body {
+  padding: 14px 16px 20px;
+  min-height: 160px;
+}
+
+.res-sec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  color: var(--sec-text-color);
+}
+.res-sec .n {
+  font-weight: 400;
+  letter-spacing: 0;
+  opacity: .7;
+}
+.res-sec + .res-sec,
+.res-grid + .res-sec,
+.res-list + .res-sec { margin-top: 22px; }
+
+.res-loading {
+  margin: 0;
+  padding: 40px 10px;
+  text-align: center;
+  color: var(--sec-text-color);
+  font-size: 13.5px;
+}
+
+/* ---------- 网格视图 ---------- */
+
+.res-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+  gap: 10px;
+}
+
+.res-card {
+  position: relative;
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--line-color);
+  border-radius: 12px;
+  background: var(--board-bg-color);
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .16s, box-shadow .16s, transform .16s, background .16s;
+}
+.res-card:hover { text-decoration: none; color: inherit; }
+.res-card:hover {
+  border-color: var(--res-accent-line);
+  background: var(--res-tint);
+  box-shadow: 0 4px 14px rgba(31, 68, 122, .07);
+  transform: translateY(-1px);
+}
+.res-card:focus-visible {
+  outline: 2px solid var(--post-link-color);
+  outline-offset: 2px;
+}
+
+/* 左侧图标块：文件夹 / 文件各一套配色 */
+.res-ico {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 10px;
+  background: var(--res-tint-2);
+  color: var(--sec-text-color);
+}
+.res-ico svg { width: 21px; height: 21px; }
+.res-ico.folder {
+  background: var(--res-accent-soft);
+  color: var(--post-link-color);
+}
+.res-ico .ext {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+
+/* 按格式上色，让人扫一眼就知道是什么书。
+   color-mix 的写法让同一个色号在明色下是「浅底深字」、暗色下自动变成
+   「深底亮字」，不用再维护两套。 */
+.res-ico[data-fmt="PDF"] {
+  background: color-mix(in srgb, #c0392b 13%, var(--board-bg-color));
+  color: color-mix(in srgb, #c0392b 70%, var(--text-color));
+}
+.res-ico[data-fmt="EPUB"] {
+  background: color-mix(in srgb, #1a7f4b 13%, var(--board-bg-color));
+  color: color-mix(in srgb, #1a7f4b 70%, var(--text-color));
+}
+.res-ico[data-fmt="MOBI"],
+.res-ico[data-fmt="AZW3"],
+.res-ico[data-fmt="AZW"] {
+  background: color-mix(in srgb, #a9720f 14%, var(--board-bg-color));
+  color: color-mix(in srgb, #a9720f 70%, var(--text-color));
+}
+.res-ico[data-fmt="DJVU"],
+.res-ico[data-fmt="EPUB+"] {
+  background: color-mix(in srgb, #4b5cc4 13%, var(--board-bg-color));
+  color: color-mix(in srgb, #4b5cc4 70%, var(--text-color));
+}
+.res-ico[data-fmt="ZIP"],
+.res-ico[data-fmt="RAR"],
+.res-ico[data-fmt="7Z"] {
+  background: color-mix(in srgb, #7c5cd6 13%, var(--board-bg-color));
+  color: color-mix(in srgb, #7c5cd6 70%, var(--text-color));
+}
+.res-ico[data-fmt="TXT"],
+.res-ico[data-fmt="MD"] {
+  background: color-mix(in srgb, #0e8a9e 13%, var(--board-bg-color));
+  color: color-mix(in srgb, #0e8a9e 70%, var(--text-color));
+}
+
+.res-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.res-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.res-card:hover .res-name { color: var(--post-link-color); }
+
+.res-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--sec-text-color);
+  line-height: 1.6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.res-desc {
+  display: -webkit-box;
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--sec-text-color);
+  opacity: .9;
+  line-height: 1.6;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 卡片右上角的角标：站内文件 / 外链 */
+.res-flag {
+  position: absolute;
+  top: 11px;
+  right: 12px;
+  font-size: 10.5px;
+  line-height: 1.6;
+  padding: 1px 7px;
+  border-radius: 20px;
+  background: var(--res-tint-2);
+  color: var(--sec-text-color);
+}
+.res-flag.ext {
+  background: color-mix(in srgb, #a9720f 15%, var(--board-bg-color));
+  color: color-mix(in srgb, #a9720f 72%, var(--text-color));
+}
+
+/* ---------- 列表视图 ---------- */
+
+.res-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.res-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--line-color);
+  background: var(--board-bg-color);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .14s;
+}
+.res-row:last-child { border-bottom: 0; }
+.res-row:hover { background: var(--res-tint); }
+.res-row .res-ico {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 8px;
+}
+.res-row .res-ico svg { width: 16px; height: 16px; }
+.res-row .res-ico .ext { font-size: 9px; }
+.res-row .col-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-color);
+  text-decoration: none;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.res-row .col-name:hover { text-decoration: none; }
+.res-row:hover .col-name { color: var(--post-link-color); }
+.res-row .col-by {
+  flex: 0 0 130px;
+  font-size: 12.5px;
+  color: var(--sec-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.res-row .col-tag {
+  flex: 0 0 74px;
+  font-size: 11.5px;
+  color: var(--sec-text-color);
+  opacity: .85;
+}
+.res-row .col-size {
+  flex: 0 0 74px;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--sec-text-color);
+  font-variant-numeric: tabular-nums;
+}
+.res-row .col-date {
+  flex: 0 0 88px;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--sec-text-color);
+  opacity: .85;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 行内操作按钮：默认藏起来，鼠标经过才出现，保持列表干净 */
+.res-row .col-act {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+  opacity: 0;
+  transition: opacity .14s;
+}
+.res-row:hover .col-act,
+.res-row:focus-within .col-act { opacity: 1; }
+.res-act {
+  padding: 3px 9px;
+  border: 1px solid var(--line-color);
+  border-radius: 7px;
+  background: var(--board-bg-color);
+  color: var(--sec-text-color);
+  font-size: 11.5px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .14s, color .14s, background .14s;
+}
+.res-act:hover {
+  border-color: var(--res-accent-line);
+  color: var(--post-link-color);
+  background: var(--res-tint);
+}
+
+/* ---------- 空态 ---------- */
+
+.res-empty {
+  padding: 54px 22px;
+  text-align: center;
+  color: var(--sec-text-color);
+  font-size: 13.5px;
+  line-height: 2;
+}
+.res-empty .big {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 6px;
+}
+.res-empty code {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--inlinecode-bg-color, var(--res-tint-2));
+  color: var(--text-color);
+  font-size: 12.5px;
+}
+.res-empty a { color: var(--post-link-color); text-decoration: none; }
+.res-empty a:hover { text-decoration: underline; }
+
+/* 搜索结果里标出来源位置 */
+.res-where {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 7px;
+  padding: 1px 7px;
+  border-radius: 20px;
+  background: var(--res-tint-2);
+  color: var(--sec-text-color);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+/* ---------- 窄屏 ---------- */
+
+@media (max-width: 767.98px) {
+  .res-bar { padding: 9px 10px; gap: 8px; }
+  .res-crumbs { order: 1; width: 100%; }
+  .res-tools { order: 2; width: 100%; margin-left: 0; }
+  .res-search { flex: 1; }
+  .res-search input { width: 100%; }
+  .res-body { padding: 12px 12px 18px; }
+  .res-grid { grid-template-columns: 1fr; }
+  .res-row .col-by,
+  .res-row .col-tag { display: none; }
+  .res-row .col-act { opacity: 1; }
+}

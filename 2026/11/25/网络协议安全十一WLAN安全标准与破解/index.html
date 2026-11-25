@@ -1,0 +1,1475 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <!-- 皮肤：越早越好，必须排在样式表之前。localStorage 里存着访客的选择，
+       没有记录（或记录已失效）就用站点默认值。 -->
+  <script>
+    window.LY_UI = {"default":"xmas","force":true,"allowSwitch":true,"game":true,"siteTitle":"\"零月小站\"","skins":[{"id":"default","name":"经典","desc":"Fluid 原味，干净克制","accent":"#2f4154","accent2":"#f6f8fa","game":false},{"id":"ink","name":"墨韵","desc":"暖纸底、衬线字、朱砂点缀","accent":"#2b2620","accent2":"#f3eee4","game":false},{"id":"midnight","name":"深海","desc":"深蓝夜色，为长时间阅读而调","accent":"#16324a","accent2":"#eef3f9","game":false},{"id":"glass","name":"玻璃","desc":"毛玻璃卡片 + 渐变背景","accent":"#5b7cfa","accent2":"#eef2ff","game":false},{"id":"sakura","name":"樱雾","desc":"粉紫柔和，轻盈通透","accent":"#7a4a63","accent2":"#fdf2f6","game":false},{"id":"terminal","name":"终端","desc":"等宽字体与磷光绿，极客风","accent":"#0f1a14","accent2":"#e8f5ec","game":false},{"id":"retro","name":"复古","desc":"Windows 95 视窗，青色桌面与立体边框","accent":"#008080","accent2":"#c0c0c0","game":false},{"id":"arcade","name":"街机","desc":"霓虹街机 + CRT 扫描线，附赠贪吃蛇","accent":"#0a0118","accent2":"#ffd60a","game":false},{"id":"magazine","name":"杂志","desc":"衬线大字、首字下沉、编辑式分栏","accent":"#8c1d18","accent2":"#fbf9f4","game":false},{"id":"cyber","name":"赛博","desc":"网格底纹、切角面板、霓虹辉光","accent":"#05060a","accent2":"#22d3ee","game":false},{"id":"xmas","name":"圣诞","desc":"壁炉夜景、飘雪与雪尘拖尾，节日期间整站强制","accent":"#c1443c","accent2":"#2f5d43","game":false}]};
+    (function () {
+      var cfg = window.LY_UI;
+      var fallback = (cfg.skins[0] && cfg.skins[0].id) || 'default';
+      try {
+        if (cfg.siteTitle) {
+          document.documentElement.style.setProperty('--ly-site-title', cfg.siteTitle);
+        }
+        var ids = cfg.skins.map(function (s) { return s.id; });
+        var saved = null;
+        try { saved = localStorage.getItem('ly_ui_skin'); } catch (e) {}
+        // force 时本地记录不算数：节日皮肤要对所有访客一致
+        var pick = (!cfg.force && ids.indexOf(saved) >= 0) ? saved : cfg.default;
+        if (ids.indexOf(pick) < 0) pick = fallback;
+        document.documentElement.setAttribute('data-ui', pick);
+      } catch (e) {
+        document.documentElement.setAttribute('data-ui', fallback);
+      }
+    })();
+  </script>
+
+  <!-- 小游戏清单：给 js/games-hub.js 用。放在这里（而不是页面里）是因为
+       街机皮肤的「直接开一局」入口在任何页面都可能被点到。 -->
+  <script>window.LY_GAMES = {"enabled":true,"featured":"snake","page":"/games/","dir":"/js/games/","css":"/css/games.css","games":[{"id":"snake","name":"贪吃蛇","bestMode":"high"},{"id":"g2048","name":"2048","bestMode":"high"},{"id":"tetris","name":"俄罗斯方块","bestMode":"high"},{"id":"breakout","name":"打砖块","bestMode":"high"},{"id":"minesweeper","name":"扫雷","bestMode":"low"}]};</script>
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="LyZeroMoon">
+  <meta name="keywords" content="编程, 技术博客, 架构, 踩坑, 笔记">
+  
+    <meta name="description" content="WLAN 安全标准与密码破解 标签： #网络协议安全 #WEP #WPA #WPA2 #TKIP #CCMP 对应第 2 章下册 P23–26。只列考点。    # 考点 考法     1 WEP &#x2F; WPA &#x2F; WPA2 支持的认证与加密 填空、选择（必考）   2 WEP 的两种密钥长度与密钥性质 填空   3 WEP 的三个安全缺陷 简答（必考）   4 WEP 的两个解决方向 填空   5">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【网络协议安全】（十一）WLAN 安全标准与密码破解">
+<meta property="og:url" content="https://lyzeromoon.github.io/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%8D%81%E4%B8%80WLAN%E5%AE%89%E5%85%A8%E6%A0%87%E5%87%86%E4%B8%8E%E7%A0%B4%E8%A7%A3/index.html">
+<meta property="og:site_name" content="零月小站">
+<meta property="og:description" content="WLAN 安全标准与密码破解 标签： #网络协议安全 #WEP #WPA #WPA2 #TKIP #CCMP 对应第 2 章下册 P23–26。只列考点。    # 考点 考法     1 WEP &#x2F; WPA &#x2F; WPA2 支持的认证与加密 填空、选择（必考）   2 WEP 的两种密钥长度与密钥性质 填空   3 WEP 的三个安全缺陷 简答（必考）   4 WEP 的两个解决方向 填空   5">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-25T15:54:00.000Z">
+<meta property="article:modified_time" content="2026-11-25T16:53:51.000Z">
+<meta property="article:author" content="LyZeroMoon">
+<meta property="article:tag" content="编程, 技术博客, 架构, 踩坑, 笔记">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>【网络协议安全】（十一）WLAN 安全标准与密码破解 - 零月小站</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/kb.css">
+<link rel="stylesheet" href="/css/skins.css">
+<link rel="stylesheet" href="/css/rl.css">
+<link rel="stylesheet" href="/css/nps.css">
+<link rel="stylesheet" href="/css/post-nav.css">
+<link rel="stylesheet" href="/css/xmas.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"lyzeromoon.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"><link rel="alternate" href="/atom.xml" title="零月小站" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  
+<nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>零月小站</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/columns/" target="_self">
+                <i class="iconfont icon-books"></i>
+                <span>专栏</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/notes/" target="_self">
+                <i class="iconfont icon-note"></i>
+                <span>常用公式</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/resources/" target="_self">
+                <i class="iconfont icon-briefcase"></i>
+                <span>资源</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/admin/" target="_self">
+                <i class="iconfont icon-pencil"></i>
+                <span>写作后台</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="nav-games-btn">
+            <a class="nav-link" href="/games/" target="_self"
+               aria-label="小游戏" title="小游戏">
+              <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg><span>小游戏</span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="ui-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" role="button"
+               aria-label="界面风格" title="界面风格">
+              <i class="iconfont icon-brush"></i>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item nav-game-only" id="arcade-game-btn">
+            <a class="nav-link" target="_self" href="javascript:;" role="button"
+               aria-label="直接开一局" title="直接开一局：贪吃蛇">
+              <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/columns/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-books"></i>
+                  <span>专栏</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/notes/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-note"></i>
+                  <span>常用公式</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/resources/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-briefcase"></i>
+                  <span>资源</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/admin/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-pencil"></i>
+                  <span>写作后台</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-games-btn">
+            <a href="/games/" aria-label="小游戏">
+              <div class="mobile-grid-item">
+                <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+                <span>小游戏</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-ui-toggle-btn">
+            <a href="javascript:;" aria-label="界面风格">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-brush"></i>
+                <span>界面风格</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell nav-game-only" id="mobile-arcade-game-btn">
+            <a href="javascript:;" aria-label="直接开一局">
+              <div class="mobile-grid-item">
+                <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+                <span>开一局</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="【网络协议安全】（十一）WLAN 安全标准与密码破解"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-25 23:54" pubdate>
+          2026年11月25日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          35 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">【网络协议安全】（十一）WLAN 安全标准与密码破解</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="WLAN-安全标准与密码破解"><a class="headerlink" href="#WLAN-安全标准与密码破解"></a>WLAN 安全标准与密码破解</h1>
+<p><strong>标签：</strong> #网络协议安全 #WEP #WPA #WPA2 #TKIP #CCMP</p>
+<p>对应第 2 章下册 P23–26。只列考点。</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>考点</th>
+<th>考法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>WEP / WPA / WPA2 支持的认证与加密</td>
+<td>填空、选择（必考）</td>
+</tr>
+<tr>
+<td>2</td>
+<td>WEP 的两种密钥长度与密钥性质</td>
+<td>填空</td>
+</tr>
+<tr>
+<td>3</td>
+<td>WEP 的三个安全缺陷</td>
+<td>简答（必考）</td>
+</tr>
+<tr>
+<td>4</td>
+<td>WEP 的两个解决方向</td>
+<td>填空</td>
+</tr>
+<tr>
+<td>5</td>
+<td>WPA/WPA2 的三点改进</td>
+<td>简答（必考）</td>
+</tr>
+<tr>
+<td>6</td>
+<td>TKIP 与 CCMP 的算法核心</td>
+<td>选择</td>
+</tr>
+<tr>
+<td>7</td>
+<td>PSK 与 802.1x 的区别</td>
+<td>简答</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="一、三个安全标准"><a class="headerlink" href="#一、三个安全标准"></a>一、三个安全标准</h2>
+<table>
+<thead>
+<tr>
+<th>标准</th>
+<th>支持的认证</th>
+<th>支持的加密</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>WEP</strong>（传统标准）</td>
+<td>只有 <strong>WEP 认证</strong></td>
+<td>只有 <strong>WEP</strong></td>
+<td>只支持 WEP 方式的认证和加密</td>
+</tr>
+<tr>
+<td><strong>WPA</strong></td>
+<td><strong>PSK</strong> 和 <strong>802.1x</strong></td>
+<td>只有 <strong>TKIP</strong></td>
+<td>认证升级了，加密还只有一种</td>
+</tr>
+<tr>
+<td><strong>WPA2</strong></td>
+<td><strong>PSK</strong> 和 <strong>802.1x</strong></td>
+<td><strong>CCMP（AES）</strong> 和 <strong>TKIP</strong></td>
+<td>认证与加密都完整</td>
+</tr>
+</tbody>
+</table>
+<p>记忆口诀：<strong>认证看&quot;两种&quot;，加密看&quot;几种&quot;</strong>。WPA 与 WPA2 认证能力相同，差别只在加密多了一种 CCMP。</p>
+<hr>
+<h2 id="二、WEP"><a class="headerlink" href="#二、WEP"></a>二、WEP</h2>
+<p><strong>WEP = Wired Equivalent Privacy，有线对等私有协议</strong>。名字的意思是&quot;让无线达到有线一样的私密性&quot;，实际上没做到。</p>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>密钥类型</td>
+<td><strong>静态共享密钥</strong></td>
+</tr>
+<tr>
+<td>密钥长度</td>
+<td><strong>40 bit</strong> 或 <strong>104 bit</strong>（加上 24 bit IV 后对应 64 bit / 128 bit）</td>
+</tr>
+<tr>
+<td>密钥来源</td>
+<td>就是我们自己设置的那个密码</td>
+</tr>
+<tr>
+<td>加密算法</td>
+<td><strong>RC4</strong></td>
+</tr>
+<tr>
+<td>密钥分配</td>
+<td>所有用户共用同一个 WEP 密钥</td>
+</tr>
+</tbody>
+</table>
+<p><strong>WEP 的三个安全缺陷</strong>（必背）：</p>
+<table>
+<thead>
+<tr>
+<th>缺陷</th>
+<th>后果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>用<strong>静态</strong>共享密钥，不同用户共用一个</td>
+<td>一旦密钥丢失，<strong>整个网络都很危险</strong></td>
+</tr>
+<tr>
+<td><strong>IV 向量太短</strong></td>
+<td>大量监听用户数据报文后，WEP 加密很容易被破解</td>
+</tr>
+<tr>
+<td><strong>RC4 加密算法过于简单</strong></td>
+<td>算法本身就能被统计分析攻破</td>
+</tr>
+</tbody>
+</table>
+<p><strong>为什么会&quot;监听越多越容易破&quot;</strong>：WEP 每帧用 IV 拼接密钥生成密钥流，IV 只有 24 位，空间只有 1600 万，流量大时 IV 必然重复；两条密文用同一密钥流异或就能消掉明文，得到密钥流片段，样本越多越容易反推 RC4 密钥。</p>
+<p><strong>两个解决办法</strong>（PPT 原文口径，也是 WPA 的设计方向）：</p>
+<ol>
+<li>增加一种<strong>密钥管理机制</strong>；</li>
+<li>采用<strong>更强壮的加密算法</strong>。</li>
+</ol>
+<hr>
+<h2 id="三、WPA-WPA2"><a class="headerlink" href="#三、WPA-WPA2"></a>三、WPA / WPA2</h2>
+<p><strong>WPA = Wi-Fi Protected Access，无线保护接入</strong>。相对 WEP 的三点改进：</p>
+<h3 id="1-增强了-STA-与-AP-的认证机制"><a class="headerlink" href="#1-增强了-STA-与-AP-的认证机制"></a>1. 增强了 STA 与 AP 的认证机制</h3>
+<table>
+<thead>
+<tr>
+<th>版本</th>
+<th>认证方式</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>WPA 企业级</strong></td>
+<td>支持 <strong>802.1x</strong>（配合 RADIUS 服务器）</td>
+<td>企业，每人一套账号</td>
+</tr>
+<tr>
+<td><strong>WPA 个人级（WPA-PSK）</strong></td>
+<td>支持 <strong>Pre-shared key</strong>，预共享密钥</td>
+<td>家庭、小网络</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-增加了-Key-的生成、管理及传递机制"><a class="headerlink" href="#2-增加了-Key-的生成、管理及传递机制"></a>2. 增加了 Key 的生成、管理及传递机制</h3>
+<ul>
+<li><strong>每用户使用独立的 Key</strong>（解决&quot;共用一个密钥，丢一个全网失守&quot;）；</li>
+<li>通过安全的方式传递数据加密密钥——<strong>密钥协商</strong>。</li>
+</ul>
+<h3 id="3-增加了两类对称加密算法"><a class="headerlink" href="#3-增加了两类对称加密算法"></a>3. 增加了两类对称加密算法</h3>
+<table>
+<thead>
+<tr>
+<th>算法</th>
+<th>全称</th>
+<th>算法核心</th>
+<th>强度</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>TKIP</strong></td>
+<td>临时密钥完整性协议</td>
+<td><strong>仍然是 RC4</strong></td>
+<td>中等（过渡方案）</td>
+</tr>
+<tr>
+<td><strong>CCMP</strong></td>
+<td>计数器模式 CBC-MAC 协议</td>
+<td><strong>AES</strong></td>
+<td>高</td>
+</tr>
+</tbody>
+</table>
+<p><strong>这点最容易考错</strong>：TKIP 虽然比 WEP 强，但核心算法<strong>还是 RC4</strong>，只是加了密钥混合、每包换密钥、完整性校验（MIC）。真正换算法的是 CCMP / AES。</p>
+<hr>
+<h2 id="四、密码破解思路"><a class="headerlink" href="#四、密码破解思路"></a>四、密码破解思路</h2>
+<table>
+<thead>
+<tr>
+<th>对象</th>
+<th>攻击点</th>
+<th>需要的材料</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>WEP</strong></td>
+<td>IV 太短，密钥流重复</td>
+<td>大量数据包（越多越快），统计/PTW 攻击</td>
+</tr>
+<tr>
+<td><strong>WPA/WPA2-PSK</strong></td>
+<td>4 次握手包里的 MIC</td>
+<td>抓到一个完整握手包 + 字典/暴力计算</td>
+</tr>
+<tr>
+<td><strong>WPA 企业级（802.1x）</strong></td>
+<td>认证服务器与证书</td>
+<td>通常要伪造认证服务器（Evil Twin）骗凭据</td>
+</tr>
+</tbody>
+</table>
+<p><strong>为什么 WPA-PSK 抓握手包就能离线爆破</strong>：PSK 派生出 PMK，握手时用 PMK 计算 MIC。攻击者拿到握手包后有全部输入（SSID、ANonce、SNonce、MAC、MIC），只差密码，可以在本地反复试算，<strong>不需要与 AP 交互</strong>，所以强弱完全取决于密码强度和字典。</p>
+<p><strong>为什么 WPA2 至今仍被认为安全</strong>：CCMP 用了 AES 和计数器模式，没有 WEP 那种 IV 复用导致的密钥流重复，也没有 TKIP 的 RC4 弱点。剩下的攻击面主要是<strong>弱口令</strong>和 <strong>WPS PIN</strong>、<strong>KRACK</strong> 这类实现缺陷。</p>
+<hr>
+<h2 id="五、易错辨析"><a class="headerlink" href="#五、易错辨析"></a>五、易错辨析</h2>
+<table>
+<thead>
+<tr>
+<th>错误说法</th>
+<th>判据</th>
+<th>反例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&quot;WPA2 只能用 AES&quot;</td>
+<td>WPA2 同时支持 CCMP 与 TKIP</td>
+<td>兼容老设备时可协商成 TKIP</td>
+</tr>
+<tr>
+<td>&quot;TKIP 用的是 AES&quot;</td>
+<td>TKIP 核心仍是 RC4</td>
+<td>换算法的是 CCMP</td>
+</tr>
+<tr>
+<td>&quot;WPA 和 WPA2 认证方式不同&quot;</td>
+<td>认证能力相同</td>
+<td>都是 PSK + 802.1x，差别在加密</td>
+</tr>
+<tr>
+<td>&quot;WEP 密钥是动态的&quot;</td>
+<td>WEP 是静态共享密钥</td>
+<td>&quot;共享&quot;就是多人同一把</td>
+</tr>
+<tr>
+<td>&quot;WEP 密钥 104 位所以有 104 位安全强度&quot;</td>
+<td>加 24 位 IV 未提升密钥强度</td>
+<td>IV 明文传输，复用即失效</td>
+</tr>
+<tr>
+<td>&quot;WPA-PSK 要在线爆破&quot;</td>
+<td>抓握手包可离线算</td>
+<td>本地试算不影响 AP，也不会被锁定</td>
+</tr>
+<tr>
+<td>&quot;隐藏 SSID + WEP 就安全了&quot;</td>
+<td>WEP 本身可破</td>
+<td>抓够包就能算出密钥</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="六、自测（50-题）"><a class="headerlink" href="#六、自测（50-题）"></a>六、自测（50 题）</h2>
+<p><strong>15 道选择题</strong>（点选项立刻判对错，四个选项各有说明）、<strong>10 道判断题</strong>、<strong>16 道填空题</strong>、<strong>9 道简答题</strong>。</p>
+<h3 id="选择题"><a class="headerlink" href="#选择题"></a>选择题</h3>
+<div class="rl-quiz" data-quiz="nps11"></div>
+<h3 id="判断题"><a class="headerlink" href="#判断题"></a>判断题</h3>
+<p>对错先在纸上写，再展开对答案。</p>
+<details class="ly-fold">
+<summary>10 道判断题</summary>
+<p><strong>1.</strong> WEP 只支持 WEP 方式的认证和加密。</p>
+<p><strong>2.</strong> WPA 支持 CCMP 加密。</p>
+<p><strong>3.</strong> WPA2 支持 PSK 与 802.1x 两种认证。</p>
+<p><strong>4.</strong> WEP 使用的是静态共享密钥。</p>
+<p><strong>5.</strong> WEP 密钥长度为 40 bit 或 104 bit。</p>
+<p><strong>6.</strong> TKIP 的核心算法是 AES。</p>
+<p><strong>7.</strong> WEP 的 IV 向量过长导致容易被破解。</p>
+<p><strong>8.</strong> WPA 企业级采用 802.1x 认证。</p>
+<p><strong>9.</strong> CCMP 的核心算法是 AES。</p>
+<p><strong>10.</strong> 所有 WEP 用户共用同一个密钥。</p>
+<hr>
+<p><strong>答案</strong></p>
+<ol>
+<li>对。</li>
+<li>错。WPA 只支持 TKIP。</li>
+<li>对。</li>
+<li>对。</li>
+<li>对。</li>
+<li>错。仍是 RC4。</li>
+<li>错。太短才容易破。</li>
+<li>对。</li>
+<li>对。</li>
+<li>对。这是它最致命的缺陷之一。</li>
+</ol>
+</details>
+<h3 id="填空题"><a class="headerlink" href="#填空题"></a>填空题</h3>
+<details class="ly-fold">
+<summary>16 道填空题</summary>
+<p><strong>1.</strong> WEP 的英文全称是 ______。</p>
+<p><strong>2.</strong> WPA 的英文全称是 ______。</p>
+<p><strong>3.</strong> WEP 的密钥是 ______ 密钥，长度为 ______ 或 ______ bit。</p>
+<p><strong>4.</strong> WEP 使用的加密算法是 ______。</p>
+<p><strong>5.</strong> WEP 的三个缺陷是静态密钥、<strong><strong><strong>、</strong></strong></strong>。</p>
+<p><strong>6.</strong> WEP 的解决办法是增加 ______ 机制、采用 ______ 算法。</p>
+<p><strong>7.</strong> WPA 支持的两种认证是 ______ 和 ______。</p>
+<p><strong>8.</strong> WPA 只支持的加密算法是 ______。</p>
+<p><strong>9.</strong> WPA2 支持的两种加密算法是 ______ 和 ______。</p>
+<p><strong>10.</strong> TKIP 的核心算法仍然是 ______。</p>
+<p><strong>11.</strong> CCMP 的核心算法是 ______。</p>
+<p><strong>12.</strong> TKIP 的中文名是 ______。</p>
+<p><strong>13.</strong> WPA 个人级使用的认证方式是 ______。</p>
+<p><strong>14.</strong> WPA/WPA2 中每个用户使用 ______ 的密钥。</p>
+<p><strong>15.</strong> 用于协商并安全传递数据加密密钥的过程叫 ______。</p>
+<p><strong>16.</strong> 802.11i 标准是 802.11 的 ______ 增强标准。</p>
+<hr>
+<p><strong>答案</strong></p>
+<ol>
+<li>Wired Equivalent Privacy（有线对等私有协议）。</li>
+<li>Wi-Fi Protected Access（无线保护接入）。</li>
+<li>静态共享；40；104。</li>
+<li>RC4。</li>
+<li>IV 向量太短；RC4 算法过于简单。</li>
+<li>密钥管理；更强壮的加密。</li>
+<li>PSK（预共享密钥）；802.1x。</li>
+<li>TKIP。</li>
+<li>CCMP（AES）；TKIP。</li>
+<li>RC4。</li>
+<li>AES。</li>
+<li>临时密钥完整性协议。</li>
+<li>Pre-shared key（预共享密钥）。</li>
+<li>独立。</li>
+<li>密钥协商。</li>
+<li>安全。</li>
+</ol>
+</details>
+<h3 id="简答题"><a class="headerlink" href="#简答题"></a>简答题</h3>
+<details class="ly-fold">
+<summary>9 道简答题</summary>
+<p><strong>1.</strong> 比较 WEP、WPA、WPA2 在认证与加密上的支持情况。</p>
+<p><strong>2.</strong> 说明 WEP 的密钥性质与长度。</p>
+<p><strong>3.</strong> WEP 有哪三个安全缺陷？各导致什么后果？</p>
+<p><strong>4.</strong> WEP 的改进方向有哪两条？</p>
+<p><strong>5.</strong> WPA/WPA2 相对 WEP 做了哪三点改进？</p>
+<p><strong>6.</strong> 比较 TKIP 与 CCMP。</p>
+<p><strong>7.</strong> WPA 企业级与个人级的区别是什么？</p>
+<p><strong>8.</strong> 为什么 WEP 抓的包越多越容易被破解？</p>
+<p><strong>9.</strong> WPA2-PSK 为什么能被离线破解？防御的关键是什么？</p>
+<hr>
+<p><strong>答案要点</strong></p>
+<p><strong>1.</strong> WEP 只支持 WEP 方式的认证和加密；WPA 支持 PSK 与 802.1x 两种认证，但只支持 TKIP 加密；WPA2 支持 PSK 与 802.1x，并同时支持 CCMP（AES）与 TKIP。可见 WPA 到 WPA2 的升级点是加密算法，不是认证方式。</p>
+<p><strong>2.</strong> WEP 使用静态共享密钥，长度 40 bit 或 104 bit（加上 24 bit IV 后对应 64/128 bit）；这个密钥就是用户自己设置的密码，全网共用一个。</p>
+<p><strong>3.</strong> ① 静态共享密钥且所有用户共用：一旦泄露，整个网络都不安全，且更换要逐台改；② IV 向量只有 24 位，流量大时必然重复，重复密钥流一异或就泄露明文关系，样本足够即可反推密钥；③ RC4 算法过于简单，本身存在统计弱点，可被 PTW 一类攻击有效利用。</p>
+<p><strong>4.</strong> 一是增加密钥管理机制，解决&quot;共用一把静态密钥&quot;的问题；二是采用更强壮的加密算法，替换 RC4。这两条正好对应后来的 WPA/WPA2。</p>
+<p><strong>5.</strong> ① 增强认证：引入 PSK 与 802.1x；② 增加密钥的生成、管理与传递机制：每用户独立密钥，并通过密钥协商安全传递；③ 增加两类对称加密算法 TKIP 与 CCMP，加密强度大幅提升。</p>
+<p><strong>6.</strong> TKIP 全称临时密钥完整性协议，核心仍是 RC4，通过每包换密钥、密钥混合和 MIC 完整性校验弥补 WEP 的弱点，属于过渡方案；CCMP 是计数器模式 CBC-MAC 协议，核心是 AES，从算法层面替换了 RC4，安全性明显更高。WPA 只能用 TKIP，WPA2 两者都支持。</p>
+<p><strong>7.</strong> 企业级用 802.1x，需要 RADIUS 认证服务器，每个用户一套独立凭据，可单独吊销；个人级用 PSK 预共享密钥，全网络一个口令，配置简单但没有个体身份，一人泄露全网失效。</p>
+<p><strong>8.</strong> WEP 每帧用 24 位 IV 参与生成密钥流，IV 空间仅约 1600 万且明文传输，流量累积后 IV 必然重复。两条密文若使用相同密钥流，异或后即可消去密钥流、暴露明文异或关系，进而识别明文模式；包越多，重复 IV 越多，统计攻击的样本越充分，所以破解越快。</p>
+<p><strong>9.</strong> PSK 模式下，PMK 完全由 SSID 与口令派生。攻击者抓到一次完整 4 次握手，就拿到了 ANonce、SNonce、双方 MAC、MIC 等全部已知量，只差口令，可以在本地无限次试算，不需要与 AP 交互，也不会触发锁定。防御关键在口令强度（长度与随机性），单纯换加密方式挡不住弱口令。</p>
+</details>
+<script src="/js/rl/quiz.js" defer></script>
+<hr>
+<blockquote>
+<p><strong>一句话总结</strong>：认证都是 PSK 与 802.1x 两种，差别在加密；WEP 死在三处——静态共享密钥、24 位 IV 太短、RC4 太弱；WPA 只给 TKIP（核心还是 RC4），WPA2 才加上 CCMP（AES）。</p>
+</blockquote>
+
+                
+              </div>
+            
+
+            
+
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8/" class="category-chain-item">网络协议安全</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>【网络协议安全】（十一）WLAN 安全标准与密码破解</div>
+      <div>https://lyzeromoon.github.io/2026/11/25/网络协议安全十一WLAN安全标准与破解/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>LyZeroMoon</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年11月25日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  
+                  
+                  <article class="post-prev col-6">
+                    
+                      <a href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%8D%81%E6%97%A0%E7%BA%BF80211%E4%B8%8E%E6%81%B6%E6%84%8F%E6%8E%A5%E5%85%A5%E7%82%B9/" title="【网络协议安全】（十）无线 802.11 与恶意接入点">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">【网络协议安全】（十）无线 802.11 与恶意接入点</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                      <a href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%8D%81%E4%BA%8CVLAN%E4%B8%8E8021Q/" title="【网络协议安全】（十二）VLAN 与 802.1Q">
+                        <span class="hidden-mobile">【网络协议安全】（十二）VLAN 与 802.1Q</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+    <div id="giscus" class="giscus"></div>
+    <script type="text/javascript">
+      Fluid.utils.loadComments('#giscus', function() {
+        var options = {"repo":"LyZeroMoon/LyZeroMoon.github.io","repo-id":"R_kgDOVHG-_g","category":"General","category-id":"DIC_kwDOVHG-_s4DIUgl","theme-light":"light","theme-dark":"dark","mapping":"pathname","reactions-enabled":1,"emit-metadata":0,"input-position":"top","lang":"zh-CN"};
+        var attributes = {};
+        for (let option in options) {
+          if (!option.startsWith('theme-')) {
+            var key = option.startsWith('data-') ? option : 'data-' + option;
+            attributes[key] = options[option];
+          }
+        }
+        var light = 'light';
+        var dark = 'dark';
+        window.GiscusThemeLight = light;
+        window.GiscusThemeDark = dark;
+        attributes['data-theme'] = document.documentElement.getAttribute('data-user-color-scheme') === 'dark' ? dark : light;
+        for (let attribute in attributes) {
+          var value = attributes[attribute];
+          if (value === undefined || value === null || value === '') {
+            delete attributes[attribute];
+          }
+        }
+        var s = document.createElement('script');
+        s.setAttribute('src', 'https://giscus.app/client.js');
+        s.setAttribute('crossorigin', 'anonymous');
+        for (let attribute in attributes) {
+          s.setAttribute(attribute, attributes[attribute]);
+        }
+        var ss = document.getElementsByTagName('script');
+        var e = ss.length > 0 ? ss[ss.length - 1] : document.head || document.documentElement;
+        e.parentNode.insertBefore(s, e.nextSibling);
+      });
+    </script>
+    <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="psn" aria-label="文章翻页">
+  
+  <a class="psn-item psn-prev" href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%8D%81%E6%97%A0%E7%BA%BF80211%E4%B8%8E%E6%81%B6%E6%84%8F%E6%8E%A5%E5%85%A5%E7%82%B9/"
+     title="上一篇：【网络协议安全】（十）无线 802.11 与恶意接入点" aria-label="上一篇：【网络协议安全】（十）无线 802.11 与恶意接入点">
+    <span class="psn-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+    </span>
+    <span class="psn-tip"><b>上一篇</b><em>【网络协议安全】（十）无线 802.11 与恶意接入点</em></span>
+  </a>
+  
+  
+  <a class="psn-item psn-next" href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%8D%81%E4%BA%8CVLAN%E4%B8%8E8021Q/"
+     title="下一篇：【网络协议安全】（十二）VLAN 与 802.1Q" aria-label="下一篇：【网络协议安全】（十二）VLAN 与 802.1Q">
+    <span class="psn-tip"><b>下一篇</b><em>【网络协议安全】（十二）VLAN 与 802.1Q</em></span>
+    <span class="psn-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+    </span>
+  </a>
+  
+</nav>
+
+
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="/atom.xml" target="_blank" rel="noopener" title="订阅本站更新"><i class="iconfont icon-rss"></i> RSS 订阅</a> &nbsp;·&nbsp; <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/skins.js"></script>
+<script src="/js/games-hub.js"></script>
+<script src="/js/column-order.js"></script>
+<script src="/js/xmas.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

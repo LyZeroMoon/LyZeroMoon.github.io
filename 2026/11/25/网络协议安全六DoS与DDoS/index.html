@@ -1,0 +1,1430 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <!-- 皮肤：越早越好，必须排在样式表之前。localStorage 里存着访客的选择，
+       没有记录（或记录已失效）就用站点默认值。 -->
+  <script>
+    window.LY_UI = {"default":"xmas","force":true,"allowSwitch":true,"game":true,"siteTitle":"\"零月小站\"","skins":[{"id":"default","name":"经典","desc":"Fluid 原味，干净克制","accent":"#2f4154","accent2":"#f6f8fa","game":false},{"id":"ink","name":"墨韵","desc":"暖纸底、衬线字、朱砂点缀","accent":"#2b2620","accent2":"#f3eee4","game":false},{"id":"midnight","name":"深海","desc":"深蓝夜色，为长时间阅读而调","accent":"#16324a","accent2":"#eef3f9","game":false},{"id":"glass","name":"玻璃","desc":"毛玻璃卡片 + 渐变背景","accent":"#5b7cfa","accent2":"#eef2ff","game":false},{"id":"sakura","name":"樱雾","desc":"粉紫柔和，轻盈通透","accent":"#7a4a63","accent2":"#fdf2f6","game":false},{"id":"terminal","name":"终端","desc":"等宽字体与磷光绿，极客风","accent":"#0f1a14","accent2":"#e8f5ec","game":false},{"id":"retro","name":"复古","desc":"Windows 95 视窗，青色桌面与立体边框","accent":"#008080","accent2":"#c0c0c0","game":false},{"id":"arcade","name":"街机","desc":"霓虹街机 + CRT 扫描线，附赠贪吃蛇","accent":"#0a0118","accent2":"#ffd60a","game":false},{"id":"magazine","name":"杂志","desc":"衬线大字、首字下沉、编辑式分栏","accent":"#8c1d18","accent2":"#fbf9f4","game":false},{"id":"cyber","name":"赛博","desc":"网格底纹、切角面板、霓虹辉光","accent":"#05060a","accent2":"#22d3ee","game":false},{"id":"xmas","name":"圣诞","desc":"壁炉夜景、飘雪与雪尘拖尾，节日期间整站强制","accent":"#c1443c","accent2":"#2f5d43","game":false}]};
+    (function () {
+      var cfg = window.LY_UI;
+      var fallback = (cfg.skins[0] && cfg.skins[0].id) || 'default';
+      try {
+        if (cfg.siteTitle) {
+          document.documentElement.style.setProperty('--ly-site-title', cfg.siteTitle);
+        }
+        var ids = cfg.skins.map(function (s) { return s.id; });
+        var saved = null;
+        try { saved = localStorage.getItem('ly_ui_skin'); } catch (e) {}
+        // force 时本地记录不算数：节日皮肤要对所有访客一致
+        var pick = (!cfg.force && ids.indexOf(saved) >= 0) ? saved : cfg.default;
+        if (ids.indexOf(pick) < 0) pick = fallback;
+        document.documentElement.setAttribute('data-ui', pick);
+      } catch (e) {
+        document.documentElement.setAttribute('data-ui', fallback);
+      }
+    })();
+  </script>
+
+  <!-- 小游戏清单：给 js/games-hub.js 用。放在这里（而不是页面里）是因为
+       街机皮肤的「直接开一局」入口在任何页面都可能被点到。 -->
+  <script>window.LY_GAMES = {"enabled":true,"featured":"snake","page":"/games/","dir":"/js/games/","css":"/css/games.css","games":[{"id":"snake","name":"贪吃蛇","bestMode":"high"},{"id":"g2048","name":"2048","bestMode":"high"},{"id":"tetris","name":"俄罗斯方块","bestMode":"high"},{"id":"breakout","name":"打砖块","bestMode":"high"},{"id":"minesweeper","name":"扫雷","bestMode":"low"}]};</script>
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="LyZeroMoon">
+  <meta name="keywords" content="编程, 技术博客, 架构, 踩坑, 笔记">
+  
+    <meta name="description" content="DoS 与 DDoS 标签： #网络协议安全 #DoS #DDoS #剧毒包 #流量清洗 对应第 1 章下册 P55–79。只列考点。    # 考点 考法     1 DoS &#x2F; DDoS 的定义 名词解释   2 DDoS 的三个特点 填空   3 DDoS 为什么能成功（三条） 简答   4 三大类攻击原理 填空、简答   5 剧毒包五种与 Teardrop 原理 简答   6 循环攻击的原">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【网络协议安全】（六）DoS 与 DDoS">
+<meta property="og:url" content="https://lyzeromoon.github.io/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E5%85%ADDoS%E4%B8%8EDDoS/index.html">
+<meta property="og:site_name" content="零月小站">
+<meta property="og:description" content="DoS 与 DDoS 标签： #网络协议安全 #DoS #DDoS #剧毒包 #流量清洗 对应第 1 章下册 P55–79。只列考点。    # 考点 考法     1 DoS &#x2F; DDoS 的定义 名词解释   2 DDoS 的三个特点 填空   3 DDoS 为什么能成功（三条） 简答   4 三大类攻击原理 填空、简答   5 剧毒包五种与 Teardrop 原理 简答   6 循环攻击的原">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-25T15:10:00.000Z">
+<meta property="article:modified_time" content="2026-11-25T16:53:50.999Z">
+<meta property="article:author" content="LyZeroMoon">
+<meta property="article:tag" content="编程, 技术博客, 架构, 踩坑, 笔记">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>【网络协议安全】（六）DoS 与 DDoS - 零月小站</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/kb.css">
+<link rel="stylesheet" href="/css/skins.css">
+<link rel="stylesheet" href="/css/rl.css">
+<link rel="stylesheet" href="/css/nps.css">
+<link rel="stylesheet" href="/css/post-nav.css">
+<link rel="stylesheet" href="/css/xmas.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"lyzeromoon.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"><link rel="alternate" href="/atom.xml" title="零月小站" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  
+<nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>零月小站</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/columns/" target="_self">
+                <i class="iconfont icon-books"></i>
+                <span>专栏</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/notes/" target="_self">
+                <i class="iconfont icon-note"></i>
+                <span>常用公式</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/resources/" target="_self">
+                <i class="iconfont icon-briefcase"></i>
+                <span>资源</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/admin/" target="_self">
+                <i class="iconfont icon-pencil"></i>
+                <span>写作后台</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="nav-games-btn">
+            <a class="nav-link" href="/games/" target="_self"
+               aria-label="小游戏" title="小游戏">
+              <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg><span>小游戏</span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="ui-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" role="button"
+               aria-label="界面风格" title="界面风格">
+              <i class="iconfont icon-brush"></i>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item nav-game-only" id="arcade-game-btn">
+            <a class="nav-link" target="_self" href="javascript:;" role="button"
+               aria-label="直接开一局" title="直接开一局：贪吃蛇">
+              <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/columns/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-books"></i>
+                  <span>专栏</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/notes/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-note"></i>
+                  <span>常用公式</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/resources/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-briefcase"></i>
+                  <span>资源</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/admin/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-pencil"></i>
+                  <span>写作后台</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-games-btn">
+            <a href="/games/" aria-label="小游戏">
+              <div class="mobile-grid-item">
+                <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+                <span>小游戏</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-ui-toggle-btn">
+            <a href="javascript:;" aria-label="界面风格">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-brush"></i>
+                <span>界面风格</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell nav-game-only" id="mobile-arcade-game-btn">
+            <a href="javascript:;" aria-label="直接开一局">
+              <div class="mobile-grid-item">
+                <svg class="nav-svg-ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="3.4" r="2"/><path d="M8 5.4v5.1"/><path d="M3.4 13.4h9.2"/><path d="M4.7 13.4l1.5-2.9"/><path d="M11.3 13.4l-1.5-2.9"/></svg>
+                <span>开一局</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="【网络协议安全】（六）DoS 与 DDoS"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-25 23:10" pubdate>
+          2026年11月25日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          48 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">【网络协议安全】（六）DoS 与 DDoS</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="DoS-与-DDoS"><a class="headerlink" href="#DoS-与-DDoS"></a>DoS 与 DDoS</h1>
+<p><strong>标签：</strong> #网络协议安全 #DoS #DDoS #剧毒包 #流量清洗</p>
+<p>对应第 1 章下册 P55–79。只列考点。</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>考点</th>
+<th>考法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>DoS / DDoS 的定义</td>
+<td>名词解释</td>
+</tr>
+<tr>
+<td>2</td>
+<td>DDoS 的三个特点</td>
+<td>填空</td>
+</tr>
+<tr>
+<td>3</td>
+<td>DDoS 为什么能成功（三条）</td>
+<td>简答</td>
+</tr>
+<tr>
+<td>4</td>
+<td>三大类攻击原理</td>
+<td>填空、简答</td>
+</tr>
+<tr>
+<td>5</td>
+<td>剧毒包五种与 Teardrop 原理</td>
+<td>简答</td>
+</tr>
+<tr>
+<td>6</td>
+<td>循环攻击的原理与防御</td>
+<td>简答（必考）</td>
+</tr>
+<tr>
+<td>7</td>
+<td>检测难点与检测依据</td>
+<td>简答</td>
+</tr>
+<tr>
+<td>8</td>
+<td>防范三条与流量清洗四环节</td>
+<td>填空、简答</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="一、概念"><a class="headerlink" href="#一、概念"></a>一、概念</h2>
+<p><strong>DoS</strong>：攻击者通过某种手段，<strong>有意地</strong>造成计算机或网络不能正常运转，从而不能向合法用户提供所需服务，或者使服务质量降低。</p>
+<ul>
+<li><strong>服务</strong>：系统提供的、用户在对其使用中会受益的功能。</li>
+<li><strong>拒绝服务</strong>：任何对服务的干涉，如果使其<strong>可用性降低或失去可用性</strong>，就称为拒绝服务。例：计算机系统崩溃、带宽耗尽、硬盘被填满。</li>
+<li><strong>三种攻击方式</strong>：<strong>消耗系统或网络资源</strong>、<strong>阻断访问路径</strong>、<strong>更改系统配置</strong>。</li>
+</ul>
+<p><strong>DDoS</strong>：处于不同位置的多个攻击者<strong>同时</strong>向一个或多个目标发起拒绝服务攻击；或一个/多个攻击者<strong>控制了位于不同位置的多台机器</strong>，利用这些机器对受害者同时实施拒绝服务攻击。</p>
+<p><strong>三个特点</strong>：攻击来源的<strong>分散性</strong>、<strong>协同性</strong>，攻击力度的<strong>汇聚性</strong>。</p>
+<p>1999 年 11 月，CERT/CC 组织的分布式系统入侵者工具研讨会（<strong>DSIT Workshop</strong>）上，与会专家<strong>首次概括</strong>了 DDoS 攻击技术。</p>
+<h2 id="二、为什么能成功"><a class="headerlink" href="#二、为什么能成功"></a>二、为什么能成功</h2>
+<p>三条，缺一不可：</p>
+<ol>
+<li><strong>TCP/IP 协议存在漏洞</strong>，可以被攻击者利用；</li>
+<li>网络提供 <strong>Best-Effort 服务</strong>，<strong>不区分数据流量是不是攻击流量</strong>；</li>
+<li>网络<strong>带宽和系统资源是有限的</strong>。</li>
+</ol>
+<p>这三条正好对应第（二）篇的“尽力而为”与“资源有限”。答题时把“协议有漏洞 + 不区分流量 + 资源有限”写全即可。</p>
+<p><strong>分类两个维度</strong>：</p>
+<ul>
+<li>按<strong>攻击协议层</strong>：数据链路层、网络层、传输层和应用层；</li>
+<li>按<strong>攻击协议</strong>：SMTP、ICMP、IP、TCP 等。</li>
+</ul>
+<h2 id="三、三大类原理"><a class="headerlink" href="#三、三大类原理"></a>三、三大类原理</h2>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>一句话</th>
+<th>代表</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>剧毒包型</td>
+<td>一个畸形包就让协议栈崩</td>
+<td>WinNuke、Teardrop、Land、Ping of death、循环攻击</td>
+</tr>
+<tr>
+<td>风暴型</td>
+<td>大量无用包占满资源（又叫带宽攻击）</td>
+<td>直接风暴、反射攻击 DRDoS</td>
+</tr>
+<tr>
+<td>重定向型</td>
+<td>把包引到别处</td>
+<td>改 ARP 表、改 DNS 缓存</td>
+</tr>
+</tbody>
+</table>
+<p><strong>剧毒包（Killer Packet）</strong>：利用<strong>协议本身或其软件实现中的漏洞</strong>，通过一些<strong>畸形的数据包</strong>使受害者系统崩溃，也称为“<strong>漏洞攻击</strong>”或“<strong>协议攻击</strong>”。PPT 明确说：这些方式虽已过时，但<strong>思路仍值得借鉴</strong>。</p>
+<p><strong>重定向型</strong>：通过修改网络中的一些参数，或 ARP 表、DNS 缓存，使受害者发出的、或发向受害者的数据包被<strong>重定向到其他地方</strong>。它常被用于窃听或中间人攻击，所以很多人不把它当 DoS。注意这句——<strong>它算不算 DoS 有争议</strong>，答简答时要写出来。</p>
+<h2 id="四、剧毒包细节"><a class="headerlink" href="#四、剧毒包细节"></a>四、剧毒包细节</h2>
+<p><strong>Teardrop（泪滴 / 碎片攻击）</strong>：利用<strong>异常的数据分片</strong>导致接收方在处理分片时崩溃。</p>
+<p>原理：利用 Windows 95/NT/3.1 和低版本 Linux 处理 IP 分片的漏洞，发送<strong>偏移地址重叠的 UDP 数据包分片</strong>，使目标机器在<strong>重组</strong>分片时出现异常错误，导致系统崩溃或重启。</p>
+<p>正常分片：偏移 0 / 175 / 350，各段首尾相接。攻击分片：第二片的偏移<strong>落在第一片内部</strong>，重组时长度计算出错（负长度或越界），拷入缓冲区时越界。</p>
+<p><strong>两个变种（都靠分片，但目的不同）</strong></p>
+<table>
+<thead>
+<tr>
+<th>变种</th>
+<th>目的</th>
+<th>原理</th>
+<th>防御</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>小片段攻击</td>
+<td><strong>不是 DoS，是穿透防火墙</strong></td>
+<td>用很小的片段，让防火墙要检测的信息落到<strong>下一个片段</strong>里。例：把 TCP 头拆到两片，标志位进入第二片，只按标志位过滤的防火墙找不到标志位就放行</td>
+<td>设置分片长度下限，确保第一个分片含所有必需头信息；或检测时先重组，重组后符合规则才放行</td>
+</tr>
+<tr>
+<td>分片耗尽</td>
+<td>让防火墙 / IDS 拒绝服务</td>
+<td>防火墙为检测碎片攻击要缓存分片、等齐再重组；攻击者发大量<strong>永远凑不齐</strong>的分片，占满其 CPU 与存储</td>
+<td>限制重组队列、超时丢弃、限制单源分片数</td>
+</tr>
+</tbody>
+</table>
+<p><strong>循环攻击（振荡攻击 / 乒乓攻击）</strong></p>
+<p>原理：两个<strong>都会产生输出</strong>的端口之间建立连接后，第一个端口的输出成为第二个端口的输入，导致第二个端口产生输出；第二个端口的输出又成为第一个端口的输入，如此往复，两端口间产生大量数据包，导致拒绝服务。</p>
+<p><strong>典型：Echo Chargen 攻击</strong></p>
+<ul>
+<li><strong>Chargen</strong>（UDP <strong>19</strong>）收到一个数据包后，产生一个字符串作为回应；</li>
+<li><strong>Echo</strong>（UDP <strong>7</strong>）收到数据包后原样返回；</li>
+<li>攻击者向 A 系统的 Echo 端口发一个<strong>好像来自 B 系统 Chargen 端口</strong>的包（伪造 B 的 IP 与端口），或反向发一个——A、B 两端口间就会来回不停地产生 UDP 包。</li>
+</ul>
+<p><strong>防御：用防火墙过滤 19 端口的数据包即可</strong>（一句话答案，考到就写这句）。</p>
+<h2 id="五、风暴型"><a class="headerlink" href="#五、风暴型"></a>五、风暴型</h2>
+<p>原理：通过<strong>大量“无用”的数据包</strong>占用过多资源，也称为“<strong>带宽攻击</strong>”。两类：<strong>直接风暴型</strong>、<strong>反射攻击（DRDoS）</strong>。</p>
+<p><strong>僵尸网络链条</strong>：Hacker（黑客）→ Master（主攻手）→ Zombie（僵尸）。准备过程：发现漏洞 → 取得用户权 → 取得控制权 → 植入木马 → 清除痕迹 → 留后门 → 做好攻击准备。危害分三级：<strong>骨干级、链路级、应用级</strong>——骨干网络资源浪费、链路堵塞、业务中断。</p>
+<p><strong>用于攻击的分组三类</strong></p>
+<ul>
+<li><strong>TCP 洪流（floods）</strong>：发大量设置了不同标志的 TCP 分组，常用 <strong>SYN、ACK、RST</strong>。其中 <strong>TCP SYN 攻击</strong>使目标主机不断为 TCP 连接分配内存，其他功能分配不到足够内存。</li>
+<li><strong>ICMP Echo 请求/响应（Ping floods）</strong>：发大量 ICMP 分组。</li>
+<li><strong>UDP 洪流</strong>：发大量基于 UDP 的应用协议包，如 <strong>NTP、SSDP、DNS</strong>——这类既能直接灌，也能做<strong>反射放大</strong>。</li>
+</ul>
+<h2 id="六、防御"><a class="headerlink" href="#六、防御"></a>六、防御</h2>
+<p><strong>一、检测</strong></p>
+<p><strong>难点：不容易定位攻击者的位置。</strong></p>
+<ul>
+<li>Internet 上绝大多数网络<strong>不限制源地址</strong>，伪造源地址非常容易；</li>
+<li>通过<strong>攻击代理</strong>的攻击，只能找到代理的位置；</li>
+<li>各种<strong>反射式</strong>攻击，无法定位源攻击者。</li>
+</ul>
+<p><strong>依据工具特征标志检测</strong>：</p>
+<ul>
+<li><strong>特定端口</strong>：trinoo 用 TCP <strong>27655</strong>、UDP <strong>27444</strong> 和 <strong>31335</strong>；NTP DRDoS 检测 <strong>123</strong> 端口；</li>
+<li><strong>标志位</strong>：Shaft 攻击所用的 TCP 分组序列号都是 <strong>0x28374839</strong>；</li>
+<li><strong>特定数据内容</strong>。</li>
+</ul>
+<p>另有<strong>统计检测</strong>、<strong>主机网络连接特征检测</strong>。</p>
+<p><strong>依据异常流量检测</strong>（四条，常考多选）：</p>
+<ul>
+<li>明显超出该网络正常工作时<strong>极限通信流量</strong>的现象（可在主干路由器建 <strong>ACL</strong> 监测过滤）；</li>
+<li><strong>特大型的 ICMP 和 UDP 数据包</strong>——很可能是 DDoS 的控制信息；</li>
+<li><strong>不属于正常连接通信</strong>的 TCP 和 UDP 数据包；</li>
+<li>数据段内容<strong>只包含文字和数字字符</strong>（没有空格、标点、控制字符）——往往是 <strong>BASE64</strong> 编码后的字符集。</li>
+</ul>
+<p><strong>二、防范</strong></p>
+<ul>
+<li><strong>限制带宽</strong>：限制特定协议占用的带宽，但<strong>并不是完善的方法</strong>；</li>
+<li><strong>终端防御</strong>：及时安装厂商补丁、运行尽可能少的服务、增强容忍性；</li>
+<li><strong>入口过滤</strong>：只允许必要的通信——设置严格的防火墙策略、封锁所有无用的数据。</li>
+</ul>
+<p>结论：<strong>完全阻止是不可能的，防范可减少被攻击的机会。</strong></p>
+<p><strong>三、流量清洗</strong></p>
+<p>定义：对 DDoS 攻击流量与正常业务数据<strong>混合在一起</strong>的流量进行净化，去掉攻击流量、保留正常业务流量，保证业务 <strong>7×24 小时</strong>不间断。</p>
+<p><strong>四个关键环节</strong>：攻击<strong>监测和判断</strong> → <strong>流量牵引</strong> → <strong>清洗过滤</strong> → <strong>流量回送</strong>。</p>
+<p>设备角色：<strong>Probe</strong> 负责攻击检测，<strong>Defender</strong> 负责流量牵引、攻击防护、流量注入，<strong>Datacenter</strong> 负责管理呈现；与路由器协调告警，通知<strong>黑洞</strong>防护。</p>
+<h2 id="七、易错辨析"><a class="headerlink" href="#七、易错辨析"></a>七、易错辨析</h2>
+<table>
+<thead>
+<tr>
+<th>错误说法</th>
+<th>判据</th>
+<th>反例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>“DDoS 就是很多台机器一起 ping”</td>
+<td>关键是受控与协同，不是数量</td>
+<td>僵尸网络被 Master 统一指挥，才有“汇聚性”</td>
+</tr>
+<tr>
+<td>“中毒包攻击已经过时，不用管”</td>
+<td>PPT 明说思路值得借鉴</td>
+<td>Teardrop 的重叠偏移思路，后来变成穿透防火墙的小片段攻击</td>
+</tr>
+<tr>
+<td>“Teardrop 靠超大包压垮目标”</td>
+<td>它靠分片偏移重叠</td>
+<td>每片都不大，是<strong>重组</strong>时长度算出负数而崩溃</td>
+</tr>
+<tr>
+<td>“循环攻击需要两个漏洞”</td>
+<td>只需要两个会回应的服务</td>
+<td>Echo 与 Chargen 都是正常服务，被互相指认才成攻击</td>
+</tr>
+<tr>
+<td>“过滤 7 端口可以防循环攻击”</td>
+<td>放大器是 Chargen</td>
+<td>过滤 <strong>19</strong> 端口即可；只封 7 仍可由 Chargen 发起</td>
+</tr>
+<tr>
+<td>“重定向型不算 DoS”</td>
+<td>定义上它降低可用性，但常归为窃听</td>
+<td>改 DNS 缓存把流量引走，业务确实不可用；学界通常放在中间人攻击里讲</td>
+</tr>
+<tr>
+<td>“流量清洗就是封 IP”</td>
+<td>清洗要保留正常业务</td>
+<td>直接封 IP 会误伤同网段正常用户，且攻击者换 IP 即绕过</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="八、自测（50-题）"><a class="headerlink" href="#八、自测（50-题）"></a>八、自测（50 题）</h2>
+<p><strong>15 道选择题</strong>、<strong>10 道判断题</strong>、<strong>16 道填空题</strong>、<strong>9 道简答题</strong>。</p>
+<h3 id="选择题"><a class="headerlink" href="#选择题"></a>选择题</h3>
+<div class="rl-quiz" data-quiz="nps6"></div>
+<h3 id="判断题"><a class="headerlink" href="#判断题"></a>判断题</h3>
+<details class="ly-fold">
+<summary>10 道判断题</summary>
+<p><strong>1.</strong> DoS 攻击必须侵入目标主机才能实施。</p>
+<p><strong>2.</strong> DDoS 的特点是分散性、协同性、汇聚性。</p>
+<p><strong>3.</strong> DDoS 技术是在 1999 年 11 月的 DSIT Workshop 上首次被概括的。</p>
+<p><strong>4.</strong> 网络提供 Best-Effort 服务，会区分攻击流量与正常流量。</p>
+<p><strong>5.</strong> 剧毒包型攻击利用的是协议本身或软件实现中的漏洞。</p>
+<p><strong>6.</strong> Teardrop 攻击利用的是偏移地址重叠的分片。</p>
+<p><strong>7.</strong> Xmas 扫描是剧毒包攻击的一种。</p>
+<p><strong>8.</strong> 循环攻击中，Chargen 服务使用 UDP 19 端口。</p>
+<p><strong>9.</strong> 防御循环攻击可以用防火墙过滤 19 端口。</p>
+<p><strong>10.</strong> 流量清洗的四个环节是监测判断、流量牵引、清洗过滤、流量回送。</p>
+<hr>
+<p><strong>答案</strong></p>
+<ol>
+<li>错。消耗资源、阻断路径、改配置都能造成拒绝服务，不必入侵。</li>
+<li>对。</li>
+<li>对。CERT/CC 组织的分布式系统入侵者工具研讨会。</li>
+<li>错。Best-Effort 不区分流量性质，这正是 DDoS 能成功的原因之一。</li>
+<li>对。所以又叫“漏洞攻击”或“协议攻击”。</li>
+<li>对。重组时长度计算出错，导致崩溃或重启。</li>
+<li>错。Xmas 是端口扫描（发全 1 标志位探端口），不是剧毒包。</li>
+<li>对。Chargen 19 产生字符串回应，Echo 7 原样返回。</li>
+<li>对。一句话答案就是过滤 19 端口。</li>
+<li>对。</li>
+</ol>
+</details>
+<h3 id="填空题"><a class="headerlink" href="#填空题"></a>填空题</h3>
+<details class="ly-fold">
+<summary>16 道填空题</summary>
+<p><strong>1.</strong> DoS 的三种攻击方式是：<strong><strong><strong>、</strong></strong></strong>、______。</p>
+<p><strong>2.</strong> 拒绝服务的三个典型例子：系统崩溃、<strong><strong><strong>、</strong></strong></strong>。</p>
+<p><strong>3.</strong> DDoS 的三个特点：<strong><strong><strong>、</strong></strong></strong>、______。</p>
+<p><strong>4.</strong> DDoS 能成功的三条原因：协议存在漏洞、<strong><strong><strong>、</strong></strong></strong>。</p>
+<p><strong>5.</strong> 三大类攻击原理：<strong><strong><strong>、</strong></strong></strong>、______。</p>
+<p><strong>6.</strong> 剧毒包又叫 ______ 或 ______。</p>
+<p><strong>7.</strong> 剧毒包的五种典型：WinNuke、<strong><strong><strong>、</strong></strong></strong>、______、循环攻击。</p>
+<p><strong>8.</strong> Teardrop 又称 ______ 攻击，利用 ______ 的分片。</p>
+<p><strong>9.</strong> 分片攻击的变种一目的不是 DoS，而是 ______。</p>
+<p><strong>10.</strong> 对付小片段攻击：设置分片长度 ______，或检测时先 ______。</p>
+<p><strong>11.</strong> 循环攻击又称 ______ 或 ______。</p>
+<p><strong>12.</strong> Echo 使用 UDP ______ 端口，Chargen 使用 UDP ______ 端口。</p>
+<p><strong>13.</strong> 风暴型 DoS 又称 ______，分 ______ 与 ______ 两类。</p>
+<p><strong>14.</strong> 僵尸网络的三个角色：<strong><strong><strong>、</strong></strong></strong>、______。</p>
+<p><strong>15.</strong> 检测 DDoS 的三个难点：源地址可伪造、<strong><strong><strong>、</strong></strong></strong>。</p>
+<p><strong>16.</strong> 流量清洗的四个环节：<strong><strong><strong>、</strong></strong></strong>、<strong><strong><strong>、</strong></strong></strong>。</p>
+<hr>
+<p><strong>答案</strong></p>
+<ol>
+<li>消耗系统或网络资源；阻断访问路径；更改系统配置。</li>
+<li>带宽耗尽；硬盘被填满。</li>
+<li>分散性；协同性；汇聚性。</li>
+<li>网络提供 Best-Effort 服务不区分流量；带宽和系统资源有限。</li>
+<li>剧毒包型；风暴型；重定向型。</li>
+<li>杀手包；漏洞攻击（或协议攻击）。</li>
+<li>Teardrop；Land；Ping of death。</li>
+<li>碎片；偏移地址重叠。</li>
+<li>穿透防火墙。</li>
+<li>下限；重组。</li>
+<li>振荡攻击；乒乓攻击。</li>
+<li>7；19。</li>
+<li>带宽攻击；直接风暴型；反射攻击（DRDoS）。</li>
+<li>Hacker（黑客）；Master（主攻手）；Zombie（僵尸）。</li>
+<li>通过代理只能找到代理；反射式无法定位源攻击者。</li>
+<li>攻击监测和判断；流量牵引；清洗过滤；流量回送。</li>
+</ol>
+</details>
+<h3 id="简答题"><a class="headerlink" href="#简答题"></a>简答题</h3>
+<details class="ly-fold">
+<summary>9 道简答题</summary>
+<p><strong>1.</strong> 写出 DoS 与 DDoS 的定义，并说明 DDoS 的三个特点。</p>
+<p><strong>2.</strong> DDoS 为什么能成功？</p>
+<p><strong>3.</strong> DoS 按原理分哪三类？各举一例。</p>
+<p><strong>4.</strong> 什么是剧毒包攻击？举出五种。</p>
+<p><strong>5.</strong> 叙述 Teardrop 攻击的原理。</p>
+<p><strong>6.</strong> 利用分片的攻击有哪两个变种？目的分别是什么？</p>
+<p><strong>7.</strong> 叙述循环攻击的原理，并说明 Echo Chargen 攻击怎么做、怎么防。</p>
+<p><strong>8.</strong> DDoS 检测的难点在哪？依据哪些特征检测？</p>
+<p><strong>9.</strong> DoS 防御分哪三个层面？流量清洗的四个环节是什么？</p>
+<hr>
+<p><strong>答案要点</strong></p>
+<p><strong>1.</strong> DoS：攻击者有意造成计算机或网络不能正常运转，从而不能向合法用户提供服务或使服务质量降低。DDoS：不同位置的多个攻击者同时向一个或多个目标发起 DoS，或一个/多个攻击者控制不同位置的多台机器同时实施。特点：分散性、协同性、汇聚性。</p>
+<p><strong>2.</strong> ① TCP/IP 协议存在漏洞可被利用；② 网络提供 Best-Effort 服务，不区分流量是否为攻击流量；③ 网络带宽和系统资源有限。</p>
+<p><strong>3.</strong> 剧毒包型——Teardrop，一个畸形包让协议栈崩溃；风暴型——SYN Flood / 反射放大，大量无用包占满带宽；重定向型——改 ARP 表或 DNS 缓存，把流量引走。</p>
+<p><strong>4.</strong> 利用协议本身或软件实现中的漏洞，通过畸形数据包使受害者系统崩溃，也叫漏洞攻击、协议攻击。五种：WinNuke、Teardrop、Land、Ping of death、循环攻击。</p>
+<p><strong>5.</strong> 发送偏移地址重叠的 UDP 数据包分片，第二片的偏移落在第一片内部；目标在重组时按偏移与长度计算出现负长度或越界，拷入缓冲区时出错，导致系统崩溃或重启。影响 Win95/NT/3.1 与低版本 Linux。</p>
+<p><strong>6.</strong> ① 小片段攻击：目的不是 DoS 而是穿透防火墙——把 TCP 头拆到两片，标志位落到第二片，只检测第一片或只按标志位过滤的防火墙就会放行；② 分片耗尽：发大量永远凑不齐的分片，占满防火墙/IDS 用于重组的 CPU 与存储，造成其拒绝服务。</p>
+<p><strong>7.</strong> 两个都会产生输出的端口互连后，一方输出成为另一方输入，往复放大。Echo（UDP 7）原样返回，Chargen（UDP 19）收到包就产生字符串；攻击者伪造源地址，让 A 的 Echo 与 B 的 Chargen 互相指认，两端口间来回不停产生 UDP 包。防御：防火墙过滤 19 端口。</p>
+<p><strong>8.</strong> 难点：Internet 上多数网络不限制源地址，伪造容易；经代理的攻击只能找到代理；反射攻击无法定位真实源。检测依据：工具特征（trinoo 的 TCP 27655、UDP 27444/31335，Shaft 序列号 0x28374839，特定数据内容）、统计特征、主机连接特征、异常流量（超极限流量、特大 ICMP/UDP 包、非正常连接、Base64 字符集内容）。</p>
+<p><strong>9.</strong> 检测、防范、流量清洗。防范：限制带宽、终端防御（打补丁、少开服务、增强容忍性）、入口过滤（严格防火墙策略、封锁无用数据）；完全阻止不可能。清洗四环节：监测判断、流量牵引、清洗过滤、流量回送。</p>
+</details>
+<script src="/js/rl/quiz.js" defer></script>
+<hr>
+<blockquote>
+<p><strong>一句话总结</strong>：三种原理一句话——<strong>一个包弄崩（剧毒包）、一堆包占满（风暴）、把包引走（重定向）</strong>；防御一句话——检测难在溯源，防范靠补丁与过滤，最后靠清洗四环节。</p>
+</blockquote>
+
+                
+              </div>
+            
+
+            
+
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8/" class="category-chain-item">网络协议安全</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>【网络协议安全】（六）DoS 与 DDoS</div>
+      <div>https://lyzeromoon.github.io/2026/11/25/网络协议安全六DoS与DDoS/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>LyZeroMoon</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年11月25日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  
+                  
+                  <article class="post-prev col-6">
+                    
+                      <a href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E4%BA%94%E7%AB%AF%E5%8F%A3%E6%89%AB%E6%8F%8F/" title="【网络协议安全】（五）端口扫描">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">【网络协议安全】（五）端口扫描</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                      <a href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E4%B8%83%E4%BB%A5%E5%A4%AA%E7%BD%91%E4%B8%8E%E4%BA%A4%E6%8D%A2%E6%9C%BA/" title="【网络协议安全】（七）以太网 802.3 与交换机转发">
+                        <span class="hidden-mobile">【网络协议安全】（七）以太网 802.3 与交换机转发</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+    <div id="giscus" class="giscus"></div>
+    <script type="text/javascript">
+      Fluid.utils.loadComments('#giscus', function() {
+        var options = {"repo":"LyZeroMoon/LyZeroMoon.github.io","repo-id":"R_kgDOVHG-_g","category":"General","category-id":"DIC_kwDOVHG-_s4DIUgl","theme-light":"light","theme-dark":"dark","mapping":"pathname","reactions-enabled":1,"emit-metadata":0,"input-position":"top","lang":"zh-CN"};
+        var attributes = {};
+        for (let option in options) {
+          if (!option.startsWith('theme-')) {
+            var key = option.startsWith('data-') ? option : 'data-' + option;
+            attributes[key] = options[option];
+          }
+        }
+        var light = 'light';
+        var dark = 'dark';
+        window.GiscusThemeLight = light;
+        window.GiscusThemeDark = dark;
+        attributes['data-theme'] = document.documentElement.getAttribute('data-user-color-scheme') === 'dark' ? dark : light;
+        for (let attribute in attributes) {
+          var value = attributes[attribute];
+          if (value === undefined || value === null || value === '') {
+            delete attributes[attribute];
+          }
+        }
+        var s = document.createElement('script');
+        s.setAttribute('src', 'https://giscus.app/client.js');
+        s.setAttribute('crossorigin', 'anonymous');
+        for (let attribute in attributes) {
+          s.setAttribute(attribute, attributes[attribute]);
+        }
+        var ss = document.getElementsByTagName('script');
+        var e = ss.length > 0 ? ss[ss.length - 1] : document.head || document.documentElement;
+        e.parentNode.insertBefore(s, e.nextSibling);
+      });
+    </script>
+    <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="psn" aria-label="文章翻页">
+  
+  <a class="psn-item psn-prev" href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E4%BA%94%E7%AB%AF%E5%8F%A3%E6%89%AB%E6%8F%8F/"
+     title="上一篇：【网络协议安全】（五）端口扫描" aria-label="上一篇：【网络协议安全】（五）端口扫描">
+    <span class="psn-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+    </span>
+    <span class="psn-tip"><b>上一篇</b><em>【网络协议安全】（五）端口扫描</em></span>
+  </a>
+  
+  
+  <a class="psn-item psn-next" href="/2026/11/25/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E5%AE%89%E5%85%A8%E4%B8%83%E4%BB%A5%E5%A4%AA%E7%BD%91%E4%B8%8E%E4%BA%A4%E6%8D%A2%E6%9C%BA/"
+     title="下一篇：【网络协议安全】（七）以太网 802.3 与交换机转发" aria-label="下一篇：【网络协议安全】（七）以太网 802.3 与交换机转发">
+    <span class="psn-tip"><b>下一篇</b><em>【网络协议安全】（七）以太网 802.3 与交换机转发</em></span>
+    <span class="psn-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+    </span>
+  </a>
+  
+</nav>
+
+
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="/atom.xml" target="_blank" rel="noopener" title="订阅本站更新"><i class="iconfont icon-rss"></i> RSS 订阅</a> &nbsp;·&nbsp; <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/skins.js"></script>
+<script src="/js/games-hub.js"></script>
+<script src="/js/column-order.js"></script>
+<script src="/js/xmas.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
